@@ -28,8 +28,6 @@
                     PDO::ATTR_ERRMODE,
                     PDO::ERRMODE_EXCEPTION
                 );
-
-                echo "conectado com sucesso!";
             
             } catch (PDOException $e) {
                 echo $e->getMessage();
