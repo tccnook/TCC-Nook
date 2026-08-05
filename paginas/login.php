@@ -25,6 +25,8 @@
             <br>
             <input type="submit" name="logar" value="logar">
         </form>
+        <br>
+        <a href="google-login.php"> Faça Login com o Google </a>
         <?php
             session_start();
 

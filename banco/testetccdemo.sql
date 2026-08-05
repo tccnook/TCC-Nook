@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict olJoF4PyoMpbB2yAGhJrzC58YpmcYav8YoE04EDryvBsgqscgQNOU5kVxQ1eD4D
+\restrict bqeR0UvxxslBVON3JikzVIWTQeICcWqPylAV9nUHF7MZY3NqwSklfXgXBRALZoU
 
 -- Dumped from database version 18.4
 -- Dumped by pg_dump version 18.4
@@ -631,7 +631,8 @@ CREATE TABLE public.usuario (
     data_nascimento date NOT NULL,
     email character varying(90) NOT NULL,
     senha character varying(250) NOT NULL,
-    criacao_conta timestamp without time zone DEFAULT CURRENT_TIMESTAMP
+    criacao_conta timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
+    google_id character varying(255)
 );
 
 
@@ -896,11 +897,12 @@ COPY public.top5_livros (id_user, id_livro, posicao, atualizado_em) FROM stdin;
 -- Data for Name: usuario; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.usuario (id_user, nome_completo, username, data_nascimento, email, senha, criacao_conta) FROM stdin;
-3	Gustavo Gomez	Xerife	1994-07-13	gugo@gmail.com	gomez15	2026-07-21 21:58:42.374901
-9	Luiz Antonio Ventura Passoli	bambas	1967-05-05	lpassoli@gmail.com	bamba	2026-07-31 21:58:30.643892
-13	Jos‚ Pedro	Caloteiro das Call	2009-04-20	passolicaio@gmail.com	$2y$10$ABOww0oqv9gabwnzKnow3eY6uPbijjGR7zzBJCpidhagkosj7ATvq	2026-08-04 23:22:28.150281
-14	Miguel Campos	viadinho	1960-03-12	miguel@gmail.com	$2y$10$eZYaMKmWYI.NoM0j3EHHwuB5ijcjeLB1hfYDQsMGw//VeTPl4ogGO	2026-08-05 08:50:11.4769
+COPY public.usuario (id_user, nome_completo, username, data_nascimento, email, senha, criacao_conta, google_id) FROM stdin;
+3	Gustavo Gomez	Xerife	1994-07-13	gugo@gmail.com	gomez15	2026-07-21 21:58:42.374901	\N
+9	Luiz Antonio Ventura Passoli	bambas	1967-05-05	lpassoli@gmail.com	bamba	2026-07-31 21:58:30.643892	\N
+13	Jos‚ Pedro	Caloteiro das Call	2009-04-20	passolicaio@gmail.com	$2y$10$ABOww0oqv9gabwnzKnow3eY6uPbijjGR7zzBJCpidhagkosj7ATvq	2026-08-04 23:22:28.150281	\N
+14	Miguel Campos	viadinho	1960-03-12	miguel@gmail.com	$2y$10$eZYaMKmWYI.NoM0j3EHHwuB5ijcjeLB1hfYDQsMGw//VeTPl4ogGO	2026-08-05 08:50:11.4769	\N
+15	Projeto LITTERA	littera	2008-09-12	projetolittera2026@gmail.com	$2y$10$Z3VWFD.Uz8t1hRyPjUxc1ex04Lqrzfoj/mGMgpBR4c2Ktmkl/lqoO	2026-08-05 16:50:04.066867	109725691836031282460
 \.
 
 
@@ -1028,7 +1030,7 @@ SELECT pg_catalog.setval('public.resenha_id_resenha_seq', 1, false);
 -- Name: usuario_id_user_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.usuario_id_user_seq', 14, true);
+SELECT pg_catalog.setval('public.usuario_id_user_seq', 15, true);
 
 
 --
@@ -1188,6 +1190,14 @@ ALTER TABLE ONLY public.resenha
 
 ALTER TABLE ONLY public.usuario
     ADD CONSTRAINT usuario_email_key UNIQUE (email);
+
+
+--
+-- Name: usuario usuario_google_id_key; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.usuario
+    ADD CONSTRAINT usuario_google_id_key UNIQUE (google_id);
 
 
 --
@@ -1498,5 +1508,5 @@ ALTER TABLE ONLY public.whishlist
 -- PostgreSQL database dump complete
 --
 
-\unrestrict olJoF4PyoMpbB2yAGhJrzC58YpmcYav8YoE04EDryvBsgqscgQNOU5kVxQ1eD4D
+\unrestrict bqeR0UvxxslBVON3JikzVIWTQeICcWqPylAV9nUHF7MZY3NqwSklfXgXBRALZoU
 

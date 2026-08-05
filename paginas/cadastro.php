@@ -1,9 +1,16 @@
 <?php
     session_start();
 
+    if(isset($_SESSION['cadastro_google'])){
+        $cadGoogle = $_SESSION['cadastro_google'];
+        $idGoogle = $cadGoogle['google_id'];
+        $nome_completo_google = $cadGoogle['nome_completo'];
+        $email_google = $cadGoogle['email'];
+    }
+
     ?>
     <!DOCTYPE html>
-    <html lang="en">
+    <html lang="pt-br">
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -13,7 +20,7 @@
         <form name="cadastro" method="POST" action="#">
             <label for="nome_comp"> Nome Completo </label>
             <br>
-            <input type="text" name="nome_comp" id="nome_comp">
+            <input type="text" name="nome_comp" id="nome_comp" value="<?php if(isset($nome_completo_google)){ echo $nome_completo_google; }  ?>">
             <br>
             <label for="nome_user"> Nome de Usuário </label>
             <br>
@@ -25,7 +32,7 @@
             <br>
             <label for="email"> Email </label>
             <br>
-            <input type="text" name="email" id="email">
+            <input type="text" name="email" id="email" value="<?php if(isset($email_google)){ echo $email_google; }  ?>">
             <br>
             <label for="senha"> Senha </label>
             <br>
@@ -96,6 +103,38 @@
 
         $senha_cripto = password_hash($senha, PASSWORD_DEFAULT);
 
+        if(isset($idGoogle)){
+            $insert = "insert into usuario (nome_completo, username, data_nascimento, email, senha, google_id) values (:nome_completo, :username, :data_nascimento, :email, :senha, :google_id);";
+        
+            try {
+                $stmt = $db->conectar()->prepare($insert);
+                $stmt->execute([
+                    ":nome_completo" => $nome_comp,
+                    ":username" => $nome_user,
+                    ":data_nascimento" => $data_nasc,
+                    ":email" => $email,
+                    ":senha" => $senha_cripto,
+                    ":google_id" => $idGoogle
+                ]);
+
+                unset($_SESSION["dadosCadastrados"]);
+
+                $sql = 'select id_user from usuario where google_id=?';
+                $stmt = $db->conectar()->prepare($sql);
+                $stmt->execute([$idGoogle]);
+                $resultado = $stmt->fetch(PDO::FETCH_ASSOC);
+                $_SESSION['id_user'] = $resultado['id_user'];
+                unset($_SESSION["cadastro_google"]);
+
+                header("location:preferencia_gen.php");
+
+                exit();
+
+                } catch (PDOException $e){
+                echo "Erro ao cadastrar: ". $e->getMessage();
+            }
+        }
+
         $insert = "INSERT INTO usuario (nome_completo, username, data_nascimento, email, senha) VALUES (:nome_completo, :username, :data_nascimento, :email, :senha);"; 
 
         try {
@@ -108,9 +147,11 @@
             ":senha" => $senha_cripto
         ]);
 
-        header("location:preferencia_gen.php");
 
         unset($_SESSION["dadosCadastrados"]);
+        unset($_SESSION["cadastro_google"]);
+
+        header("location:preferencia_gen.php");
 
         exit();
 
