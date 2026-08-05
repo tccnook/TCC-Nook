@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict nMMfY4ebkREGsa4a5nDnFuol7bB9FDzTQahdkUYC4AbghcHB51IHi78VERVi5Tx
+\restrict olJoF4PyoMpbB2yAGhJrzC58YpmcYav8YoE04EDryvBsgqscgQNOU5kVxQ1eD4D
 
 -- Dumped from database version 18.4
 -- Dumped by pg_dump version 18.4
@@ -532,6 +532,35 @@ ALTER SEQUENCE public.progresso_leitura_id_progresso_seq OWNED BY public.progres
 
 
 --
+-- Name: recuperacao_senha; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.recuperacao_senha (
+    id_recuperacao integer NOT NULL,
+    id_user integer NOT NULL,
+    token text NOT NULL,
+    expira_em timestamp without time zone NOT NULL,
+    usado boolean DEFAULT false NOT NULL
+);
+
+
+ALTER TABLE public.recuperacao_senha OWNER TO postgres;
+
+--
+-- Name: recuperacao_senha_id_recuperacao_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+ALTER TABLE public.recuperacao_senha ALTER COLUMN id_recuperacao ADD GENERATED ALWAYS AS IDENTITY (
+    SEQUENCE NAME public.recuperacao_senha_id_recuperacao_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1
+);
+
+
+--
 -- Name: rel_worldbuild; Type: TABLE; Schema: public; Owner: postgres
 --
 
@@ -601,7 +630,7 @@ CREATE TABLE public.usuario (
     username character varying(90) NOT NULL,
     data_nascimento date NOT NULL,
     email character varying(90) NOT NULL,
-    senha character varying(90) NOT NULL,
+    senha character varying(250) NOT NULL,
     criacao_conta timestamp without time zone DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -831,6 +860,15 @@ COPY public.progresso_leitura (id_progresso, id_user, id_livro, capitulo_atual, 
 
 
 --
+-- Data for Name: recuperacao_senha; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.recuperacao_senha (id_recuperacao, id_user, token, expira_em, usado) FROM stdin;
+2	13	0bd99f963f9d945b6c9bea5f0383b9eac119ce12de1c70f651a7ad8d7760eedc	2026-08-05 04:52:52	t
+\.
+
+
+--
 -- Data for Name: rel_worldbuild; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
@@ -861,6 +899,8 @@ COPY public.top5_livros (id_user, id_livro, posicao, atualizado_em) FROM stdin;
 COPY public.usuario (id_user, nome_completo, username, data_nascimento, email, senha, criacao_conta) FROM stdin;
 3	Gustavo Gomez	Xerife	1994-07-13	gugo@gmail.com	gomez15	2026-07-21 21:58:42.374901
 9	Luiz Antonio Ventura Passoli	bambas	1967-05-05	lpassoli@gmail.com	bamba	2026-07-31 21:58:30.643892
+13	Jos‚ Pedro	Caloteiro das Call	2009-04-20	passolicaio@gmail.com	$2y$10$ABOww0oqv9gabwnzKnow3eY6uPbijjGR7zzBJCpidhagkosj7ATvq	2026-08-04 23:22:28.150281
+14	Miguel Campos	viadinho	1960-03-12	miguel@gmail.com	$2y$10$eZYaMKmWYI.NoM0j3EHHwuB5ijcjeLB1hfYDQsMGw//VeTPl4ogGO	2026-08-05 08:50:11.4769
 \.
 
 
@@ -971,6 +1011,13 @@ SELECT pg_catalog.setval('public.progresso_leitura_id_progresso_seq', 1, false);
 
 
 --
+-- Name: recuperacao_senha_id_recuperacao_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.recuperacao_senha_id_recuperacao_seq', 2, true);
+
+
+--
 -- Name: resenha_id_resenha_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
@@ -981,7 +1028,7 @@ SELECT pg_catalog.setval('public.resenha_id_resenha_seq', 1, false);
 -- Name: usuario_id_user_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.usuario_id_user_seq', 9, true);
+SELECT pg_catalog.setval('public.usuario_id_user_seq', 14, true);
 
 
 --
@@ -1120,6 +1167,14 @@ ALTER TABLE ONLY public.progresso_leitura
 
 
 --
+-- Name: recuperacao_senha recuperacao_senha_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.recuperacao_senha
+    ADD CONSTRAINT recuperacao_senha_pkey PRIMARY KEY (id_recuperacao);
+
+
+--
 -- Name: resenha resenha_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1245,6 +1300,14 @@ ALTER TABLE ONLY public.conversa
 
 ALTER TABLE ONLY public.conta
     ADD CONSTRAINT fk_conta_usuario FOREIGN KEY (id_user) REFERENCES public.usuario(id_user) ON DELETE CASCADE;
+
+
+--
+-- Name: recuperacao_senha fk_recuperacao_senha; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.recuperacao_senha
+    ADD CONSTRAINT fk_recuperacao_senha FOREIGN KEY (id_user) REFERENCES public.usuario(id_user) ON DELETE CASCADE;
 
 
 --
@@ -1435,5 +1498,5 @@ ALTER TABLE ONLY public.whishlist
 -- PostgreSQL database dump complete
 --
 
-\unrestrict nMMfY4ebkREGsa4a5nDnFuol7bB9FDzTQahdkUYC4AbghcHB51IHi78VERVi5Tx
+\unrestrict olJoF4PyoMpbB2yAGhJrzC58YpmcYav8YoE04EDryvBsgqscgQNOU5kVxQ1eD4D
 
