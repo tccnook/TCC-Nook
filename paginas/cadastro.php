@@ -1,6 +1,15 @@
 <?php
     session_start();
 
+    if (isset($_SESSION['cadastro_concluido'])) {
+        header("location:preferencia_gen.php");
+        exit();
+    }
+
+    if((isset($_GET['tipo'])) && $_GET['tipo'] === 'normal'){
+        unset($_SESSION["cadastro_google"]);
+    }
+
     if(isset($_SESSION['cadastro_google'])){
         $cadGoogle = $_SESSION['cadastro_google'];
         $idGoogle = $cadGoogle['google_id'];
@@ -65,7 +74,7 @@
             "email" => $email,
             "nome_completo" => $nome_comp,
             "data_nascimento" => $data_nasc,
-            "username" => $nome_user            
+            "username" => $nome_user         
         ];
         
         if(empty($email) || empty($nome_comp) || empty($data_nasc) || empty($nome_user) || empty($senha) || empty($confirmar_senha)){
@@ -75,29 +84,31 @@
 
         if($senha !== $confirmar_senha){
             $_SESSION["erro"] = "As senhas não coincidem, tente novamente";
-            header('location:cadastro.html');
+            header('location:cadastro.php');
             exit();
         }
         
         include("conexao.php");
         $db = new Database;
+        $conn = $db->conectar();
+
         $verif_email = "SELECT * FROM usuario WHERE email=:email";
-        $stmt = $db->conectar()->prepare($verif_email);
+        $stmt = $conn->prepare($verif_email);
         $stmt ->execute([":email" => $email]);
 
         if($stmt->fetch()){
             $_SESSION["erro"] = "Email já cadastrado!";
-            header("location:cadastro_usuario.php");
+            header("location:cadastro.php");
             exit();
         }
 
         $verif_username = "SELECT * FROM usuario WHERE username=:username";
-        $stmt = $db->conectar()->prepare($verif_username);
+        $stmt = $conn->prepare($verif_username);
         $stmt ->execute([":username" => $nome_user]);
 
         if($stmt->fetch()){
             $_SESSION["erro"] = "Este username já existe!";
-            header("location:cadastro_usuario.php");
+            header("location:cadastro.php");
             exit();
         }
 
@@ -107,7 +118,7 @@
             $insert = "insert into usuario (nome_completo, username, data_nascimento, email, senha, google_id) values (:nome_completo, :username, :data_nascimento, :email, :senha, :google_id);";
         
             try {
-                $stmt = $db->conectar()->prepare($insert);
+                $stmt = $conn->prepare($insert);
                 $stmt->execute([
                     ":nome_completo" => $nome_comp,
                     ":username" => $nome_user,
@@ -120,7 +131,7 @@
                 unset($_SESSION["dadosCadastrados"]);
 
                 $sql = 'select id_user from usuario where google_id=?';
-                $stmt = $db->conectar()->prepare($sql);
+                $stmt = $conn->prepare($sql);
                 $stmt->execute([$idGoogle]);
                 $resultado = $stmt->fetch(PDO::FETCH_ASSOC);
                 $_SESSION['id_user'] = $resultado['id_user'];
@@ -138,7 +149,7 @@
         $insert = "INSERT INTO usuario (nome_completo, username, data_nascimento, email, senha) VALUES (:nome_completo, :username, :data_nascimento, :email, :senha);"; 
 
         try {
-        $stmt = $db->conectar()->prepare($insert);
+        $stmt = $conn->prepare($insert);
         $stmt->execute([
             ":nome_completo" => $nome_comp,
             ":username" => $nome_user,
@@ -147,9 +158,14 @@
             ":senha" => $senha_cripto
         ]);
 
+        $idUser = $conn->lastInsertId();
+        $_SESSION['id_user'] = $idUser;
+
 
         unset($_SESSION["dadosCadastrados"]);
         unset($_SESSION["cadastro_google"]);
+
+        $_SESSION['cadastro_concluido'] = true;
 
         header("location:preferencia_gen.php");
 

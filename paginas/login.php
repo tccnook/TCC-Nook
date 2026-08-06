@@ -27,6 +27,8 @@
         </form>
         <br>
         <a href="google-login.php"> Faça Login com o Google </a>
+        <br>
+        <a href="cadastro.php?tipo=normal"> Cadastre-se </a>
         <?php
             session_start();
 
