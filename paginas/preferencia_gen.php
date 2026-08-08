@@ -26,6 +26,13 @@
     require_once("conexao.php");
     $db = new Database;
     $conn = $db->conectar();
+
+    $select = "select * from preferencia;";
+    $stmt = $conn->prepare($select);
+    $stmt->execute();
+
+    $generos = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
 ?>
 
 <!DOCTYPE html>
@@ -38,25 +45,35 @@
 <body>
     <main>
         <form action="#" method="POST">
-            <input type="checkbox" name="generos[]" value="1">Terror
-
-            <input type="checkbox" name="generos[]" value="2">Comédia
-
-            <input type="checkbox" name="generos[]" value="3">Romance
-
-            <input type="checkbox" name="generos[]" value="4">Ficção
-            <br>
+            <section>
+                <?php 
+                    $contador=0;
+                    foreach ($generos as $genero) {
+                ?>
+                <input type="checkbox" name="generos[]" value="<?= $genero['id_preferencia'];?>"> <?php echo $genero['nome_preferencia'];?><br>
+                <?php
+                
+                    $contador++;
+                    $rest_cont = $contador%5;
+                
+                    if($rest_cont == 0){
+                        echo "</section><section><br>";
+                    }
+                
+                ?>
+            <?php }?>
             <input type="submit" name="continuar" value="continuar">
             <input type="submit" name="pular" value="pular">
+
         </form>
     </main>
     <section>
         <?php
             if(isset($_POST['continuar'])){
 
-                if(!isset($_POST["generos"]) || count($_POST["generos"]) != 3){ //mudar para 5 dps
-                    $_SESSION['erro'] = "Escolha exatamente 3 gêneros!";
-                    echo "<script>alert('Escolha exatamente 3 gêneros!')</script>";
+                if(!isset($_POST["generos"]) || count($_POST["generos"]) != 5){ 
+                    $_SESSION['erro'] = "Escolha exatamente 5 gêneros!";
+                    echo "<script>alert('Escolha exatamente 5 gêneros!')</script>";
                     exit();
                 } 
 
@@ -69,8 +86,7 @@
                             ":id_user" => $id_user,
                             ":id_preferencia" => $idGenero
                         ]);
-
-                         echo "Inserido gênero: $idGenero <br>";
+                        
 
                     } catch (PDOException $e) {
                         echo "Erro: ". $e->getMessage();
