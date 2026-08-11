@@ -21,6 +21,12 @@
     require_once("conexao.php");
     $db = new Database;
     $conn = $db->conectar();
+
+    $select = "select * from autor;";
+    $stmt = $conn->prepare($select);
+    $stmt->execute();
+
+    $autores = $stmt->fetchAll(PDO::FETCH_ASSOC);
 ?>
 
 <!DOCTYPE html>
@@ -33,24 +39,34 @@
 <body>
     <main>
         <form action="#" method="POST">
-            <input type="checkbox" name="autores[]" value="1">Machado de Assis
-
-            <input type="checkbox" name="autores[]" value="2">Edgar Allan Paul
-
-            <input type="checkbox" name="autores[]" value="3">JK Rowling
-
-            <input type="checkbox" name="autores[]" value="4">Abel Ferreira
-            <br>
+            <section>
+                <?php 
+                    $contador=0;
+                    foreach ($autores as $autor) {
+                ?>
+                <input type="checkbox" name="autores[]" value="<?= $autor['id_autor'];?>"> <?php echo $autor['nome_autor'];?><br>
+                <?php
+                
+                    $contador++;
+                    $rest_cont = $contador%5;
+                
+                    if($rest_cont == 0){
+                        echo "</section><section><br>";
+                    }
+                
+                ?>
+            <?php }?>
             <input type="submit" name="continuar" value="continuar">
+            <input type="submit" name="pular" value="pular">
         </form>
     </main>
     <section>
         <?php
             if(isset($_POST['continuar'])){
 
-                if(!isset($_POST["autores"]) || count($_POST["autores"]) != 3){ //mudar para 5 dps
-                    $_SESSION['erro'] = "Escolha exatamente 3 autores!";
-                    echo "<script>alert('Escolha exatamente 3 autores!')</script>";
+                if(!isset($_POST["autores"]) || count($_POST["autores"]) != 5){
+                    $_SESSION['erro'] = "Escolha exatamente 5 autores!";
+                    echo "<script>alert('Escolha exatamente 5 autores!')</script>";
                     exit();
                 }
 

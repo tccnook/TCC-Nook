@@ -21,7 +21,7 @@
             <br>
             <label for="senha"> Senha </label>
             <br>
-            <input type="text" name="senha" id="senha">
+            <input type="password" name="senha" id="senha">
             <br>
             <input type="submit" name="logar" value="logar">
         </form>
@@ -82,7 +82,7 @@
 
                 if ($usuario && password_verify($parametroBusca->getSenha(), $usuario['senha'])){
                         $_SESSION["id"] = $usuario['id_user'];    
-                        header("Location: dashboard.php");
+                        header("Location: perfil.php");
                     } else{
                         echo '<script> alert("Dados Inválidos, tente novamente"); </script>';
                     }

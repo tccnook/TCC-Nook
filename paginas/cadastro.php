@@ -25,7 +25,7 @@
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title> Cadastro </title>
     </head>
-    <body>
+    <body> <!--Aprimorar a senha-->
         <form name="cadastro" method="POST" action="#">
             <label for="nome_comp"> Nome Completo </label>
             <br>
@@ -45,11 +45,11 @@
             <br>
             <label for="senha"> Senha </label>
             <br>
-            <input type="text" name="senha" id="senha">
+            <input type="password" name="senha" id="senha">
             <br>
             <label for="confirmar_senha"> Confirmar Senha </label>
             <br>
-            <input type="text" name="confirmar_senha" id="confirmar_senha">
+            <input type="password" name="confirmar_senha" id="confirmar_senha">
             <br>
             <input type="submit" name="proximo" value="avançar">
         
