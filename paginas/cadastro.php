@@ -128,15 +128,22 @@
                     ":google_id" => $idGoogle
                 ]);
 
+                $idUser = $conn->lastInsertId();
+
+                $insert = "insert into conta (id_user) values (:id_user);";
+                try{
+                    $stmt = $conn->prepare($insert);
+                    $stmt->execute([
+                        ":id_user" => $idUser
+                    ]);
+                } catch(PDOException $e){
+
+                }
+
                 unset($_SESSION["dadosCadastrados"]);
 
-                $sql = 'select id_user from usuario where google_id=?';
-                $stmt = $conn->prepare($sql);
-                $stmt->execute([$idGoogle]);
-                $resultado = $stmt->fetch(PDO::FETCH_ASSOC);
-                $_SESSION['id_user'] = $resultado['id_user'];
-                unset($_SESSION["cadastro_google"]);
 
+                
                 header("location:preferencia_gen.php");
 
                 exit();
@@ -161,6 +168,15 @@
         $idUser = $conn->lastInsertId();
         $_SESSION['id_user'] = $idUser;
 
+        $insert = "INSERT INTO conta (id_user) VALUES (:id_user);";
+        try{
+            $stmt = $conn->prepare($insert);
+            $stmt->execute([
+                ":id_user" => $idUser
+            ]);
+        } catch (PDOException $e){
+            echo 'Erro ao cadastrar: '.$e->getMessage();
+        }
 
         unset($_SESSION["dadosCadastrados"]);
         unset($_SESSION["cadastro_google"]);

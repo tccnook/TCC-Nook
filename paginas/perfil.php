@@ -1,3 +1,7 @@
+<?php
+    require_once('header_perfil.php');
+?>
+
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
@@ -6,8 +10,6 @@
     <title>Perfil</title>
 </head>
 <body>
-    <?php
-        include('header_perfil.php');
-    ?>
+
 </body>
 </html>
