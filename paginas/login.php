@@ -21,12 +21,16 @@
             <br>
             <label for="senha"> Senha </label>
             <br>
-            <input type="text" name="senha" id="senha">
+            <input type="password" name="senha" id="senha">
             <br>
             <input type="submit" name="logar" value="logar">
         </form>
         <br>
         <a href="google-login.php"> Faça Login com o Google </a>
+        <br>
+        <a href="cadastro.php?tipo=normal"> Cadastre-se </a>
+        <br>
+        <a href="esqueceu-senha.php"> Esqueceu a sua senha? </a>
         <?php
             session_start();
 
@@ -80,7 +84,7 @@
 
                 if ($usuario && password_verify($parametroBusca->getSenha(), $usuario['senha'])){
                         $_SESSION["id"] = $usuario['id_user'];    
-                        header("Location: dashboard.php");
+                        header("Location: perfil_user_proprio.php");
                     } else{
                         echo '<script> alert("Dados Inválidos, tente novamente"); </script>';
                     }

@@ -28,7 +28,7 @@ session_start();
             $db = new Database;
             $sql = 'select id_user from usuario where email=?;';
             
-            var_dump($db->conectar());
+            // var_dump($db->conectar());
             $stmt = $db->conectar()->prepare($sql);
             $stmt->execute([$email]);
             if($stmt->rowCount()===0){
