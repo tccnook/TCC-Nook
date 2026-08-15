@@ -81,6 +81,8 @@
             }
         ?>
 
+        <a href="config_user.php"><button>Configurações</button></a>
+
         <section>
             <button type="button" id="btnEditar">
                 Editar perfil
@@ -93,10 +95,10 @@
                 <form action="#" method="POST" enctype="multipart/form-data"><!--colocar coiso de formato de imagem-->
 
                     <label for="foto_perfil">Foto de perfil</label><br>
-                    <input type="file" name="foto_perfil"><br>
+                    <input type="file" name="foto_perfil" accept="image/jpeg,image/png"><br>
 
                     <label for="banner">Banner do perfil</label><br>
-                    <input type="file" name="banner"><br>
+                    <input type="file" name="banner" accept="image/jpeg,image/png"><br>
 
                     <label for="bio">Bio</label><br>
                     <textarea name="bio"><?= htmlspecialchars($conta['bio'] ?? '') ?></textarea><br>
