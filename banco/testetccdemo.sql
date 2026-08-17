@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict d2sBcucx3gcjpQgGjizon7erGSzL8YOpc2ziDmHCbmisaATyaqSCDhkBO7k4nPw
+\restrict UWYv0IM2UwUQsAOSVHPDsetKyRt25RTKCX5g04l1DT8hoYxDvdprsQ9WHN35YHC
 
 -- Dumped from database version 18.4
 -- Dumped by pg_dump version 18.4
@@ -197,6 +197,35 @@ ALTER TABLE public.comentario_livro OWNER TO postgres;
 
 ALTER TABLE public.comentario_livro ALTER COLUMN id_comentario ADD GENERATED ALWAYS AS IDENTITY (
     SEQUENCE NAME public.comentario_livro_id_comentario_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1
+);
+
+
+--
+-- Name: comentario_resenha; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.comentario_resenha (
+    id_comentario integer NOT NULL,
+    id_user integer,
+    id_resenha integer,
+    nota_avaliacao real,
+    comentario text
+);
+
+
+ALTER TABLE public.comentario_resenha OWNER TO postgres;
+
+--
+-- Name: comentario_resenha_id_comentario_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+ALTER TABLE public.comentario_resenha ALTER COLUMN id_comentario ADD GENERATED ALWAYS AS IDENTITY (
+    SEQUENCE NAME public.comentario_resenha_id_comentario_seq
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
@@ -493,6 +522,7 @@ CREATE TABLE public.post (
     conteudo text,
     criado_em timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
     visibilidade character varying(20) DEFAULT 'publico'::character varying NOT NULL,
+    legenda text,
     CONSTRAINT post_visibilidade_check CHECK (((visibilidade)::text = ANY ((ARRAY['publico'::character varying, 'privado'::character varying])::text[])))
 );
 
@@ -846,6 +876,11 @@ COPY public.autor_user (id_user, id_autor, id) FROM stdin;
 27	1	10
 27	2	11
 27	3	12
+28	4	13
+28	6	14
+28	7	15
+28	8	16
+28	3	17
 \.
 
 
@@ -910,11 +945,20 @@ COPY public.comentario_livro (id_comentario, id_user, id_livro, nota_avaliacao, 
 
 
 --
+-- Data for Name: comentario_resenha; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.comentario_resenha (id_comentario, id_user, id_resenha, nota_avaliacao, comentario) FROM stdin;
+\.
+
+
+--
 -- Data for Name: conta; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
 COPY public.conta (id_user, foto_perfil_url, bio, visibilidade, banner_url) FROM stdin;
 3	foto_do_gomez	Zagueiro Paraguaio, dono da sele‡Æo paraguaia e maior capitÆo da hist¢ria do Palmeiras	publico	\N
+28	\N	\N	publico	\N
 \.
 
 
@@ -984,6 +1028,8 @@ COPY public.meta_leitura (id, id_user, periodo, num_livros, criacao, status, exp
 3	19	semanal	4	2026-08-13 18:34:54.374628	andamento	2026-08-20	meta de hoje
 5	19	mensal	20	2026-08-13 18:36:13.450308	andamento	2026-09-12	meta do mês
 6	19	anual	200	2026-08-13 18:36:50.420783	andamento	2027-08-13	meta do ano
+7	19	mensal	200	2026-08-16 20:34:51.764024	andamento	2026-09-15	Meta de agosto
+8	19	semanal	6	2026-08-16 21:43:51.885478	andamento	2026-08-23	meta de drama
 \.
 
 
@@ -1376,7 +1422,7 @@ COPY public.personagem (id_personagem, nome_personagem, genero, idade, funcao, d
 -- Data for Name: post; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.post (id_post, titulo_post, id_user, url_imagem, conteudo, criado_em, visibilidade) FROM stdin;
+COPY public.post (id_post, titulo_post, id_user, url_imagem, conteudo, criado_em, visibilidade, legenda) FROM stdin;
 \.
 
 
@@ -1435,6 +1481,11 @@ COPY public.preferencia_user (id_user, id_preferencia, id) FROM stdin;
 27	1	10
 27	2	11
 27	3	12
+28	16	13
+28	17	14
+28	23	15
+28	24	16
+28	27	17
 \.
 
 
@@ -1453,6 +1504,8 @@ COPY public.progresso_leitura (id_progresso, id_user, id_livro, capitulo_atual, 
 COPY public.recuperacao_senha (id_recuperacao, id_user, token, expira_em, usado) FROM stdin;
 3	19	8727e2129763237457fe0177f3988048fc2747d3bafdcb5a4cb3d6cf451fc9fd	2026-08-07 15:40:13	t
 4	27	8aa12f41246f5fbb5025766e44d11cc25eaef9f4d0c3dda780c2510c23ff9d68	2026-08-10 22:34:27	t
+5	28	d9ac25f22c46833b6160a655f8d4e1f63cb73b72d4d2ebb9853060f6b187e636	2026-08-17 01:52:14	f
+6	19	89e2d93f37900f37fea3845a65f37dcc631c6277b1c61a4340a7553553b62de0	2026-08-17 02:56:37	t
 \.
 
 
@@ -1477,11 +1530,11 @@ COPY public.resenha (id_resenha, titulo_resenha, id_user, sinopse, class_ind, da
 --
 
 COPY public.top5_livros (id_user, id_livro, posicao, atualizado_em) FROM stdin;
-19	3	2	2026-08-10 14:02:21.28066
-19	1	4	2026-08-11 21:18:28.213477
-19	5	5	2026-08-12 10:51:44.127281
-19	2	3	2026-08-10 14:02:13.520825
-19	4	1	2026-08-10 14:02:16.897917
+19	1	2	2026-08-11 21:18:28.213477
+19	5	3	2026-08-12 10:51:44.127281
+19	2	4	2026-08-16 20:33:08.892341
+19	4	5	2026-08-16 21:42:56.995374
+19	3	1	2026-08-10 14:02:13.520825
 \.
 
 
@@ -1501,8 +1554,9 @@ COPY public.usuario (id_user, nome_completo, username, data_nascimento, email, s
 22	Mirian	mii	1912-12-12	mirian@gmail.com	$2y$10$RJQzpg1wk5gYoBeOfPVa0eBeLoraIIeVYrX8V8Pbl/ad9N9i2aVx.	2026-08-06 15:45:03.121692	\N
 23	fsdf	fsdf	1999-09-21	fsdfsdfsdfsdfsdf	$2y$10$JEIPcLrkYrwip/Gl/n/tJO9utlt1RdnbIKzYyHrosCyNYHEnRdC5m	2026-08-06 15:46:16.596591	\N
 24	Usuario1	usuario1	0205-03-12	usuario1@gmail.com	$2y$10$GIFMX/YuDNE18m1ym7WORuAbg58lpeUOj7UKH7001b8Ez5Hr2lVJG	2026-08-06 15:53:11.91489	\N
-19	Caio Passoli	caico	2008-09-16	passolicaio@gmail.com	$2y$10$JiSiDnS7fSc9ZnJqrcuVVuO6kfEs2aVP8Tt3OEgF2/nOLfAnhTOG.	2026-08-06 11:19:29.329523	114771290742095317837
 27	Projeto LITTERA	luizviado	2000-03-12	projetolittera2026@gmail.com	$2y$10$1K5vbJhwufuVWYg5CberAO6hmFLX/zR8pQJYcNZ6sxuidzf9lgcdS	2026-08-10 17:04:04.083766	109725691836031282460
+28	lucas passoli	Lucas P	2004-09-13	lucaspassoli1309@gmail.com	$2y$10$NOvNUh.2gtHJXV95U3uU/.B7tp3ETcQkNJzy0L0VVpik3MqUwwq8i	2026-08-16 20:20:39.23169	\N
+19	Caio Passoli	caico	2008-09-16	passolicaio@gmail.com	$2y$10$lKNJFtjCN0UedXL6R3mB9OrVqI.F7Zj0LnReH0YurYd5h71xAoTmK	2026-08-06 11:19:29.329523	114771290742095317837
 \.
 
 
@@ -1539,7 +1593,7 @@ SELECT pg_catalog.setval('public.autor_id_autor_seq', 9, true);
 -- Name: autor_user_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.autor_user_id_seq', 12, true);
+SELECT pg_catalog.setval('public.autor_user_id_seq', 17, true);
 
 
 --
@@ -1571,6 +1625,13 @@ SELECT pg_catalog.setval('public.comentario_livro_id_comentario_seq', 5, true);
 
 
 --
+-- Name: comentario_resenha_id_comentario_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.comentario_resenha_id_comentario_seq', 1, false);
+
+
+--
 -- Name: conversa_id_conversa_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
@@ -1595,7 +1656,7 @@ SELECT pg_catalog.setval('public.mensagem_id_mensagem_seq', 1, false);
 -- Name: meta_leitura_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.meta_leitura_id_seq', 6, true);
+SELECT pg_catalog.setval('public.meta_leitura_id_seq', 8, true);
 
 
 --
@@ -1644,7 +1705,7 @@ SELECT pg_catalog.setval('public.preferencia_livro_id_seq', 1, false);
 -- Name: preferencia_user_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.preferencia_user_id_seq', 12, true);
+SELECT pg_catalog.setval('public.preferencia_user_id_seq', 17, true);
 
 
 --
@@ -1658,7 +1719,7 @@ SELECT pg_catalog.setval('public.progresso_leitura_id_progresso_seq', 1, false);
 -- Name: recuperacao_senha_id_recuperacao_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.recuperacao_senha_id_recuperacao_seq', 4, true);
+SELECT pg_catalog.setval('public.recuperacao_senha_id_recuperacao_seq', 6, true);
 
 
 --
@@ -1672,7 +1733,7 @@ SELECT pg_catalog.setval('public.resenha_id_resenha_seq', 1, false);
 -- Name: usuario_id_user_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.usuario_id_user_seq', 27, true);
+SELECT pg_catalog.setval('public.usuario_id_user_seq', 28, true);
 
 
 --
@@ -1743,6 +1804,14 @@ ALTER TABLE ONLY public.cenario
 
 ALTER TABLE ONLY public.comentario_livro
     ADD CONSTRAINT comentario_livro_pkey PRIMARY KEY (id_comentario);
+
+
+--
+-- Name: comentario_resenha comentario_resenha_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.comentario_resenha
+    ADD CONSTRAINT comentario_resenha_pkey PRIMARY KEY (id_comentario);
 
 
 --
@@ -1982,7 +2051,7 @@ ALTER TABLE ONLY public.comentario_livro
 --
 
 ALTER TABLE ONLY public.comentario_livro
-    ADD CONSTRAINT coment_user FOREIGN KEY (id_user) REFERENCES public.usuario(id_user);
+    ADD CONSTRAINT coment_user FOREIGN KEY (id_user) REFERENCES public.usuario(id_user) ON DELETE CASCADE;
 
 
 --
@@ -2062,7 +2131,7 @@ ALTER TABLE ONLY public.autor_user
 --
 
 ALTER TABLE ONLY public.whishbook
-    ADD CONSTRAINT fk_user_book FOREIGN KEY (id_user) REFERENCES public.usuario(id_user);
+    ADD CONSTRAINT fk_user_book FOREIGN KEY (id_user) REFERENCES public.usuario(id_user) ON DELETE CASCADE;
 
 
 --
@@ -2078,7 +2147,7 @@ ALTER TABLE ONLY public.preferencia_user
 --
 
 ALTER TABLE ONLY public.whishlist
-    ADD CONSTRAINT fk_user_whish FOREIGN KEY (id_user) REFERENCES public.usuario(id_user);
+    ADD CONSTRAINT fk_user_whish FOREIGN KEY (id_user) REFERENCES public.usuario(id_user) ON DELETE CASCADE;
 
 
 --
@@ -2158,7 +2227,7 @@ ALTER TABLE ONLY public.mensagem
 --
 
 ALTER TABLE ONLY public.meta_leitura
-    ADD CONSTRAINT meta_user FOREIGN KEY (id_user) REFERENCES public.usuario(id_user);
+    ADD CONSTRAINT meta_user FOREIGN KEY (id_user) REFERENCES public.usuario(id_user) ON DELETE CASCADE;
 
 
 --
@@ -2218,6 +2287,14 @@ ALTER TABLE ONLY public.post
 
 
 --
+-- Name: comentario_resenha resenha_coment_resenha; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.comentario_resenha
+    ADD CONSTRAINT resenha_coment_resenha FOREIGN KEY (id_resenha) REFERENCES public.resenha(id_resenha);
+
+
+--
 -- Name: resenha resenha_livro; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -2250,16 +2327,24 @@ ALTER TABLE ONLY public.top5_livros
 
 
 --
+-- Name: comentario_resenha user_coment_resenha; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.comentario_resenha
+    ADD CONSTRAINT user_coment_resenha FOREIGN KEY (id_user) REFERENCES public.usuario(id_user) ON DELETE CASCADE;
+
+
+--
 -- Name: progresso_leitura user_progresso; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.progresso_leitura
-    ADD CONSTRAINT user_progresso FOREIGN KEY (id_user) REFERENCES public.usuario(id_user);
+    ADD CONSTRAINT user_progresso FOREIGN KEY (id_user) REFERENCES public.usuario(id_user) ON DELETE CASCADE;
 
 
 --
 -- PostgreSQL database dump complete
 --
 
-\unrestrict d2sBcucx3gcjpQgGjizon7erGSzL8YOpc2ziDmHCbmisaATyaqSCDhkBO7k4nPw
+\unrestrict UWYv0IM2UwUQsAOSVHPDsetKyRt25RTKCX5g04l1DT8hoYxDvdprsQ9WHN35YHC
 
