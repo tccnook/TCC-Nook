@@ -135,8 +135,8 @@ $sql = "select
 t.posicao, l.id_livro, l.titulo_livro, l.capa_url, AVG(c.nota_avaliacao) as nota_avaliacao
 from top5_livros t 
 inner join livro l on l.id_livro = t.id_livro 
-left join comentario_livro c on c.id_livro = l.id_livro
-where t.id_user = :id_user
+left join comentario c on c.id_coisocurtido = l.id_livro
+where t.id_user = :id_user and c.categoria_curtida = 'livro'
 group by t.posicao, l.id_livro, l.titulo_livro, l.capa_url 
 order by t.posicao;";
 
@@ -434,7 +434,7 @@ try{
 
 $total_livros_lidos = $stmt->fetch(PDO::FETCH_ASSOC)['total_livros_lidos'];
 
-$select_avaliacoes = 'select AVG(nota_avaliacao) as media_avaliacoes from comentario_livro where id_user = :id_user;';
+$select_avaliacoes = "select AVG(nota_avaliacao) as media_avaliacoes from comentario where id_user = :id_user and categoria_curtida = 'livro';";
 try{
     $stmt = $conn->prepare($select_avaliacoes);
     $stmt->execute([
@@ -539,6 +539,10 @@ echo 'Autor mais lido: <br>';
 echo $autor_mais_lido['nome_autor'].' - '.$genero_mais_lido['quantidade_autores'].' livros <br>';
 echo 'Maio livro lido: <br>';
 echo $maior_livro_lido['titulo_livro'].' - '.$maior_livro_lido['quantidade_capitulos'].' capítulo <br>';
+
+
+echo '<a href="paginaprincipal.php"> Home </a>';
+echo '<a href="catalogo.php"> Catálogo </a>';
 
 
 ?>

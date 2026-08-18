@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict UWYv0IM2UwUQsAOSVHPDsetKyRt25RTKCX5g04l1DT8hoYxDvdprsQ9WHN35YHC
+\restrict HmxbDLQN7feiiB1xeC7OkuTODeSFRou4bic3GLtqfzHttMUwksA0T2biZguYFLA
 
 -- Dumped from database version 18.4
 -- Dumped by pg_dump version 18.4
@@ -30,7 +30,9 @@ SET default_table_access_method = heap;
 CREATE TABLE public.autor (
     id_autor integer NOT NULL,
     nome_autor character varying(90),
-    autor character varying(90) NOT NULL
+    autor character varying(90) NOT NULL,
+    bio text,
+    foto_url character varying(250)
 );
 
 
@@ -177,55 +179,28 @@ ALTER TABLE public.cenario ALTER COLUMN id_cenario ADD GENERATED ALWAYS AS IDENT
 
 
 --
--- Name: comentario_livro; Type: TABLE; Schema: public; Owner: postgres
+-- Name: comentario; Type: TABLE; Schema: public; Owner: postgres
 --
 
-CREATE TABLE public.comentario_livro (
+CREATE TABLE public.comentario (
     id_comentario integer NOT NULL,
     id_user integer,
-    id_livro integer,
+    categoria_curtida character varying(50),
+    id_coisocurtido integer,
     nota_avaliacao real,
-    comentario text
+    comentario text,
+    criado_em timestamp without time zone DEFAULT CURRENT_TIMESTAMP
 );
 
 
-ALTER TABLE public.comentario_livro OWNER TO postgres;
+ALTER TABLE public.comentario OWNER TO postgres;
 
 --
--- Name: comentario_livro_id_comentario_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+-- Name: comentario_id_comentario_seq; Type: SEQUENCE; Schema: public; Owner: postgres
 --
 
-ALTER TABLE public.comentario_livro ALTER COLUMN id_comentario ADD GENERATED ALWAYS AS IDENTITY (
-    SEQUENCE NAME public.comentario_livro_id_comentario_seq
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1
-);
-
-
---
--- Name: comentario_resenha; Type: TABLE; Schema: public; Owner: postgres
---
-
-CREATE TABLE public.comentario_resenha (
-    id_comentario integer NOT NULL,
-    id_user integer,
-    id_resenha integer,
-    nota_avaliacao real,
-    comentario text
-);
-
-
-ALTER TABLE public.comentario_resenha OWNER TO postgres;
-
---
--- Name: comentario_resenha_id_comentario_seq; Type: SEQUENCE; Schema: public; Owner: postgres
---
-
-ALTER TABLE public.comentario_resenha ALTER COLUMN id_comentario ADD GENERATED ALWAYS AS IDENTITY (
-    SEQUENCE NAME public.comentario_resenha_id_comentario_seq
+ALTER TABLE public.comentario ALTER COLUMN id_comentario ADD GENERATED ALWAYS AS IDENTITY (
+    SEQUENCE NAME public.comentario_id_comentario_seq
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
@@ -294,6 +269,34 @@ CREATE TABLE public.conversa_participante (
 
 
 ALTER TABLE public.conversa_participante OWNER TO postgres;
+
+--
+-- Name: curtida; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.curtida (
+    id_curtida integer NOT NULL,
+    id_user integer,
+    categoria_curtido character varying(50),
+    id_coisocurtido integer
+);
+
+
+ALTER TABLE public.curtida OWNER TO postgres;
+
+--
+-- Name: curtida_id_curtida_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+ALTER TABLE public.curtida ALTER COLUMN id_curtida ADD GENERATED ALWAYS AS IDENTITY (
+    SEQUENCE NAME public.curtida_id_curtida_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1
+);
+
 
 --
 -- Name: follow; Type: TABLE; Schema: public; Owner: postgres
@@ -849,16 +852,16 @@ ALTER TABLE ONLY public.progresso_leitura ALTER COLUMN id_progresso SET DEFAULT 
 -- Data for Name: autor; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.autor (id_autor, nome_autor, autor) FROM stdin;
-1	Machado de Assis	machado
-2	Edgar Allan Paul	edgar
-4	Abel Ferreira	abel
-5	Rick Riordan	rick-riordan
-6	Agatha Christie	agatha-christie
-7	George Orwell	george-orwell
-8	Stephen King	stephen-king
-9	J.R.R. Tolkien	jrr-tolkien
-3	J.K Rowling	jk-rowling
+COPY public.autor (id_autor, nome_autor, autor, bio, foto_url) FROM stdin;
+1	Machado de Assis	machado	\N	\N
+2	Edgar Allan Paul	edgar	\N	\N
+4	Abel Ferreira	abel	\N	\N
+5	Rick Riordan	rick-riordan	\N	\N
+6	Agatha Christie	agatha-christie	\N	\N
+7	George Orwell	george-orwell	\N	\N
+8	Stephen King	stephen-king	\N	\N
+9	J.R.R. Tolkien	jrr-tolkien	\N	\N
+3	J.K Rowling	jk-rowling	\N	\N
 \.
 
 
@@ -881,6 +884,11 @@ COPY public.autor_user (id_user, id_autor, id) FROM stdin;
 28	7	15
 28	8	16
 28	3	17
+29	1	18
+29	2	19
+29	4	20
+29	6	21
+29	8	22
 \.
 
 
@@ -932,23 +940,23 @@ COPY public.cenario (id_cenario, nome_cenario, descricao_cenario, id_livro) FROM
 
 
 --
--- Data for Name: comentario_livro; Type: TABLE DATA; Schema: public; Owner: postgres
+-- Data for Name: comentario; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.comentario_livro (id_comentario, id_user, id_livro, nota_avaliacao, comentario) FROM stdin;
-1	19	1	4.5	livro maneiro
-2	19	2	2.5	achei paia
-3	19	3	5	SIX SEVEEEN
-4	19	4	4	maneiro cheirou muito mas ARRASOU
-5	19	5	1	bela bosta
-\.
-
-
---
--- Data for Name: comentario_resenha; Type: TABLE DATA; Schema: public; Owner: postgres
---
-
-COPY public.comentario_resenha (id_comentario, id_user, id_resenha, nota_avaliacao, comentario) FROM stdin;
+COPY public.comentario (id_comentario, id_user, categoria_curtida, id_coisocurtido, nota_avaliacao, comentario, criado_em) FROM stdin;
+1	19	livro	1	4.5	Livro Maneiro	2026-08-17 11:50:45.740211
+2	19	livro	2	2.5	Achei Paia	2026-08-17 11:50:45.740211
+3	19	livro	3	5	SIX SEVEENN	2026-08-17 11:50:45.740211
+4	19	livro	4	4	mano cherou muito mais ARRASOU	2026-08-17 11:50:45.740211
+5	19	livro	5	1	bela bosta	2026-08-17 11:50:45.740211
+6	19	post	2	\N	Olá Mundo	2026-08-17 13:58:40.717021
+7	19	post	1	\N	Hello World	2026-08-18 16:58:09.544344
+8	19	post	3	\N	Por que ele ta subindo?	2026-08-18 17:06:08.96099
+9	19	post	3	\N	Agora ele não subiu	2026-08-18 17:06:26.337766
+10	19	post	3	\N	Parece que ele sobe só quando ainda não tem nenhum comentário	2026-08-18 17:06:54.23185
+11	19	post	3	\N	Agora ele subiu dnv	2026-08-18 17:07:11.280932
+12	19	post	3	\N	continua subindo	2026-08-18 17:07:29.271428
+13	19	post	3	\N	Olá Mundo	2026-08-18 17:12:44.883935
 \.
 
 
@@ -959,6 +967,7 @@ COPY public.comentario_resenha (id_comentario, id_user, id_resenha, nota_avaliac
 COPY public.conta (id_user, foto_perfil_url, bio, visibilidade, banner_url) FROM stdin;
 3	foto_do_gomez	Zagueiro Paraguaio, dono da sele‡Æo paraguaia e maior capitÆo da hist¢ria do Palmeiras	publico	\N
 28	\N	\N	publico	\N
+29	\N	\N	publico	\N
 \.
 
 
@@ -979,6 +988,17 @@ COPY public.conversa_participante (id_conversa, id_user, cargo, joinet_at, last_
 
 
 --
+-- Data for Name: curtida; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.curtida (id_curtida, id_user, categoria_curtido, id_coisocurtido) FROM stdin;
+1	19	post	1
+2	19	post	2
+3	19	post	3
+\.
+
+
+--
 -- Data for Name: follow; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
@@ -991,10 +1011,10 @@ COPY public.follow (id_follower, id_following, status_follow, data_follow) FROM 
 --
 
 COPY public.livro (id_livro, titulo_livro, resumo_livro, class_ind, nome_autor, id_user, sinopse_livro, capa_url, data_publi, idioma, visibilidade) FROM stdin;
-2	A Cartomante	"A Cartomante", de Machado de Assis, conta a hist¢ria de Camilo e Rita, dois amigos que se envolvem em um relacionamento amoroso proibido, apesar de Rita ser casada com Vilela, amigo de Camilo. Com medo de que o marido descubra a trai‡Æo, Rita procura uma cartomante, que lhe garante que nada de ruim acontecer . Camilo inicialmente duvida desse tipo de previsÆo, mas, diante de acontecimentos que despertam seu medo e sua inseguran‡a, tamb‚m acaba recorrendo … cartomante. Ap¢s receber uma previsÆo tranquilizadora, ele segue confiante para encontrar Vilela, sem imaginar o destino que o aguarda. A narrativa combina suspense, ironia e cr¡tica … supersti‡Æo, mostrando como os personagens tentam encontrar seguran‡a em cren‡as diante da incerteza.	12	Machado de Assis	\N	"A Cartomante", de Machado de Assis, acompanha Camilo e Rita, dois amantes que vivem um relacionamento secreto, enquanto Vilela, marido de Rita e amigo de Camilo, come‡a a despertar preocupa‡Æo no casal. Em meio ao medo de serem descobertos, Rita procura uma cartomante em busca de respostas. A partir da¡, a hist¢ria conduz os personagens por uma sequˆncia de tensÆo e acontecimentos inesperados, marcada por suspense, ironia e uma reviravolta surpreendente.	../img/capas_livros/semana-capa.jpeg	2026-08-10 12:42:47.362398	Portugues-BR	publico
-3	A Semana	""A Semana", de Machado de Assis, re£ne uma s‚rie de cr“nicas publicadas originalmente em jornais, nas quais o autor observa acontecimentos cotidianos, pol¡ticos e sociais de seu tempo. Com uma escrita marcada pela ironia, pelo humor e pela reflexÆo, Machado transforma situa‡äes aparentemente simples em oportunidades para analisar o comportamento humano e as contradi‡äes da sociedade. Ao comentar fatos da vida p£blica e do dia a dia, o autor questiona costumes, valores e atitudes presentes na sociedade brasileira. A obra se destaca pela capacidade de unir cr¡tica social e entretenimento, apresentando uma visÆo inteligente e muitas vezes bem-humorada da realidade.	12	Machado de Assis	\N	""A Semana", de Machado de Assis, re£ne cr“nicas em que o autor aborda acontecimentos cotidianos e questäes sociais e pol¡ticas de sua ‚poca. Com ironia, humor e olhar cr¡tico, Machado transforma fatos comuns em reflexäes sobre a sociedade e o comportamento humano. A obra apresenta um retrato interessante e perspicaz do Brasil de seu tempo.	../img/capas_livros/mensagem-capa.jpeg	2026-08-10 12:53:45.173089	Portugues-BR	publico
-4	Mensagem	Mensagem, de Fernando Pessoa, ‚ uma obra po‚tica que revisita a hist¢ria e os s¡mbolos de Portugal, destacando figuras como reis, navegadores e her¢is nacionais. Dividido em trˆs partes, o livro apresenta a forma‡Æo, a realiza‡Æo e a queda simb¢lica do imp‚rio portuguˆs, relacionando o passado glorioso do pa¡s a um futuro de renova‡Æo. Por meio de poemas marcados pelo nacionalismo, pelo simbolismo e pelo misticismo, Pessoa reflete sobre o destino de Portugal e sobre a importƒncia de sua identidade hist¢rica. A obra tamb‚m aborda o sonho de um novo per¡odo de grandeza, representado pelo retorno simb¢lico de D. SebastiÆo e pelo surgimento de um novo imp‚rio, agora ligado … cultura e ao esp¡rito	10	JoÆo Pessoa	\N	Mensagem, de Fernando Pessoa, re£ne poemas que celebram e reinterpretam a hist¢ria, os her¢is e os mitos de Portugal. A obra percorre momentos fundamentais da trajet¢ria portuguesa e transforma o passado em uma reflexÆo sobre o destino e o futuro do pa¡s. Entre simbolismo, patriotismo e misticismo, Pessoa constr¢i uma visÆo po‚tica de renascimento e de uma nova grandeza portuguesa.	../img/capas_livros/alienista-capa.jpeg	2026-08-10 13:06:38.938784	Portugues-BR	publico
-1	O Alienista	O Alienista, de Machado de Assis, conta a hist¢ria de SimÆo Bacamarte, um m‚dico que decide estudar a mente humana e compreender os limites entre a razÆo e a loucura. Para realizar suas pesquisas, ele cria a Casa Verde, onde come‡a a internar pessoas consideradas mentalmente desequilibradas. Com o passar do tempo, Bacamarte amplia tanto seus crit‚rios que grande parte da popula‡Æo de Itagua¡ acaba sendo considerada louca. Depois, ele muda sua teoria e passa a acreditar que aqueles que apresentam equil¡brio perfeito sÆo os verdadeiros anormais. No final, conclui que ele pr¢prio possui essa caracter¡stica e decide se internar na Casa Verde. A obra utiliza ironia e humor para criticar o abuso da ciˆncia, do poder e a dificuldade de definir o que ‚ realmente normal.	12	Machado de Assis	\N	O Alienista, de Machado de Assis, acompanha SimÆo Bacamarte, um m‚dico que se dedica a estudar a loucura e cria a Casa Verde, um local destinado … interna‡Æo de pessoas consideradas desequilibradas. Por‚m, sua busca pela defini‡Æo da normalidade faz com que cada vez mais habitantes de Itagua¡ sejam considerados loucos. A obra apresenta, de forma ir“nica e humor¡stica, uma cr¡tica ao excesso de poder, ao cientificismo e … dificuldade de determinar os limites entre a razÆo e a loucura.	../img/capas_livros/cartomante-capa.jpeg	2026-08-10 11:37:10.803001	Portugues-BR	publico
+2	A Cartomante	"A Cartomante", de Machado de Assis, conta a hist¢ria de Camilo e Rita, dois amigos que se envolvem em um relacionamento amoroso proibido, apesar de Rita ser casada com Vilela, amigo de Camilo. Com medo de que o marido descubra a trai‡Æo, Rita procura uma cartomante, que lhe garante que nada de ruim acontecer . Camilo inicialmente duvida desse tipo de previsÆo, mas, diante de acontecimentos que despertam seu medo e sua inseguran‡a, tamb‚m acaba recorrendo … cartomante. Ap¢s receber uma previsÆo tranquilizadora, ele segue confiante para encontrar Vilela, sem imaginar o destino que o aguarda. A narrativa combina suspense, ironia e cr¡tica … supersti‡Æo, mostrando como os personagens tentam encontrar seguran‡a em cren‡as diante da incerteza.	12	Machado de Assis	\N	"A Cartomante", de Machado de Assis, acompanha Camilo e Rita, dois amantes que vivem um relacionamento secreto, enquanto Vilela, marido de Rita e amigo de Camilo, come‡a a despertar preocupa‡Æo no casal. Em meio ao medo de serem descobertos, Rita procura uma cartomante em busca de respostas. A partir da¡, a hist¢ria conduz os personagens por uma sequˆncia de tensÆo e acontecimentos inesperados, marcada por suspense, ironia e uma reviravolta surpreendente.	../img/capas_livros/cartomante-capa.jpeg	2026-08-10 12:42:47.362398	Portugues-BR	publico
+3	A Semana	""A Semana", de Machado de Assis, re£ne uma s‚rie de cr“nicas publicadas originalmente em jornais, nas quais o autor observa acontecimentos cotidianos, pol¡ticos e sociais de seu tempo. Com uma escrita marcada pela ironia, pelo humor e pela reflexÆo, Machado transforma situa‡äes aparentemente simples em oportunidades para analisar o comportamento humano e as contradi‡äes da sociedade. Ao comentar fatos da vida p£blica e do dia a dia, o autor questiona costumes, valores e atitudes presentes na sociedade brasileira. A obra se destaca pela capacidade de unir cr¡tica social e entretenimento, apresentando uma visÆo inteligente e muitas vezes bem-humorada da realidade.	12	Machado de Assis	\N	""A Semana", de Machado de Assis, re£ne cr“nicas em que o autor aborda acontecimentos cotidianos e questäes sociais e pol¡ticas de sua ‚poca. Com ironia, humor e olhar cr¡tico, Machado transforma fatos comuns em reflexäes sobre a sociedade e o comportamento humano. A obra apresenta um retrato interessante e perspicaz do Brasil de seu tempo.	../img/capas_livros/semana-capa.jpeg	2026-08-10 12:53:45.173089	Portugues-BR	publico
+4	Mensagem	Mensagem, de Fernando Pessoa, ‚ uma obra po‚tica que revisita a hist¢ria e os s¡mbolos de Portugal, destacando figuras como reis, navegadores e her¢is nacionais. Dividido em trˆs partes, o livro apresenta a forma‡Æo, a realiza‡Æo e a queda simb¢lica do imp‚rio portuguˆs, relacionando o passado glorioso do pa¡s a um futuro de renova‡Æo. Por meio de poemas marcados pelo nacionalismo, pelo simbolismo e pelo misticismo, Pessoa reflete sobre o destino de Portugal e sobre a importƒncia de sua identidade hist¢rica. A obra tamb‚m aborda o sonho de um novo per¡odo de grandeza, representado pelo retorno simb¢lico de D. SebastiÆo e pelo surgimento de um novo imp‚rio, agora ligado … cultura e ao esp¡rito	10	JoÆo Pessoa	\N	Mensagem, de Fernando Pessoa, re£ne poemas que celebram e reinterpretam a hist¢ria, os her¢is e os mitos de Portugal. A obra percorre momentos fundamentais da trajet¢ria portuguesa e transforma o passado em uma reflexÆo sobre o destino e o futuro do pa¡s. Entre simbolismo, patriotismo e misticismo, Pessoa constr¢i uma visÆo po‚tica de renascimento e de uma nova grandeza portuguesa.	../img/capas_livros/mensagem-capa.jpeg	2026-08-10 13:06:38.938784	Portugues-BR	publico
+1	O Alienista	O Alienista, de Machado de Assis, conta a hist¢ria de SimÆo Bacamarte, um m‚dico que decide estudar a mente humana e compreender os limites entre a razÆo e a loucura. Para realizar suas pesquisas, ele cria a Casa Verde, onde come‡a a internar pessoas consideradas mentalmente desequilibradas. Com o passar do tempo, Bacamarte amplia tanto seus crit‚rios que grande parte da popula‡Æo de Itagua¡ acaba sendo considerada louca. Depois, ele muda sua teoria e passa a acreditar que aqueles que apresentam equil¡brio perfeito sÆo os verdadeiros anormais. No final, conclui que ele pr¢prio possui essa caracter¡stica e decide se internar na Casa Verde. A obra utiliza ironia e humor para criticar o abuso da ciˆncia, do poder e a dificuldade de definir o que ‚ realmente normal.	12	Machado de Assis	\N	O Alienista, de Machado de Assis, acompanha SimÆo Bacamarte, um m‚dico que se dedica a estudar a loucura e cria a Casa Verde, um local destinado … interna‡Æo de pessoas consideradas desequilibradas. Por‚m, sua busca pela defini‡Æo da normalidade faz com que cada vez mais habitantes de Itagua¡ sejam considerados loucos. A obra apresenta, de forma ir“nica e humor¡stica, uma cr¡tica ao excesso de poder, ao cientificismo e … dificuldade de determinar os limites entre a razÆo e a loucura.	../img/capas_livros/alienista-capa.jpeg	2026-08-10 11:37:10.803001	Portugues-BR	publico
 5	Guardador de Rebanhos	Guardador de Rebanhos, de Fernando Pessoa, escrito sob o heter“nimo Alberto Caeiro, ‚ um conjunto de poemas que apresenta uma visÆo simples, direta e profundamente ligada … natureza. O eu l¡rico rejeita interpreta‡äes filos¢ficas e metaf¡sicas do mundo e prefere observar as coisas exatamente como elas sÆo. Para Caeiro, pensar demais sobre a realidade pode afastar o ser humano da experiˆncia verdadeira de simplesmente ver, sentir e existir. A natureza, os animais, as  rvores, as flores, o c‚u e as sensa‡äes cotidianas tornam-se elementos centrais de sua poesia. O poema tamb‚m questiona conceitos tradicionais sobre Deus, espiritualidade e transcendˆncia, defendendo uma esp‚cie de rela‡Æo concreta e imediata com o mundo.	10	JoÆo Pessoa	\N	Guardador de Rebanhos acompanha o olhar de um eu l¡rico que se apresenta como um pastor que guarda rebanhos, embora esses rebanhos sejam, sobretudo, pensamentos e sensa‡äes. Ao observar a natureza, ele desenvolve uma filosofia baseada na simplicidade, recusando explica‡äes abstratas e procurando enxergar o mundo sem atribuir-lhe significados ocultos. Ao longo da obra, a natureza funciona como fonte de conhecimento e verdade, enquanto o pensamento excessivo ‚ visto como algo que complica aquilo que deveria ser simples. A obra constr¢i, assim, uma reflexÆo po‚tica sobre a existˆncia, a percep‡Æo e a rela‡Æo do ser humano com a realidade.	../img/capas_livros/rebanhos-capa.jpg	2026-08-10 13:21:21.325504	Portugues-BR	publico
 \.
 
@@ -1025,11 +1045,11 @@ COPY public.mensagem (id_mensagem, id_conversa, id_envio, tipo, conteudo, criaca
 --
 
 COPY public.meta_leitura (id, id_user, periodo, num_livros, criacao, status, expiracao, nome_meta) FROM stdin;
-3	19	semanal	4	2026-08-13 18:34:54.374628	andamento	2026-08-20	meta de hoje
 5	19	mensal	20	2026-08-13 18:36:13.450308	andamento	2026-09-12	meta do mês
 6	19	anual	200	2026-08-13 18:36:50.420783	andamento	2027-08-13	meta do ano
 7	19	mensal	200	2026-08-16 20:34:51.764024	andamento	2026-09-15	Meta de agosto
 8	19	semanal	6	2026-08-16 21:43:51.885478	andamento	2026-08-23	meta de drama
+9	19	semanal	1	2026-08-17 13:32:04.349551	andamento	2026-08-24	Meta do Miguel
 \.
 
 
@@ -1423,6 +1443,8 @@ COPY public.personagem (id_personagem, nome_personagem, genero, idade, funcao, d
 --
 
 COPY public.post (id_post, titulo_post, id_user, url_imagem, conteudo, criado_em, visibilidade, legenda) FROM stdin;
+2	POST MANEIRO	19	\N	Hoje eu acordei e vi o Miguel dando a bunda	2026-08-17 13:54:58.379895	publico	ele tava rebolando lentinho
+3	POST TESTE	19	\N	esse post é um test	2026-08-18 16:59:40.151209	publico	vamos ver se funciona
 \.
 
 
@@ -1464,6 +1486,16 @@ COPY public.preferencia (id_preferencia, nome_preferencia, preferencia) FROM std
 --
 
 COPY public.preferencia_livro (id, id_preferencia, id_livro) FROM stdin;
+1	7	1
+2	8	1
+3	3	2
+4	7	2
+5	7	3
+6	8	3
+7	8	4
+8	7	4
+9	7	5
+10	8	5
 \.
 
 
@@ -1486,6 +1518,11 @@ COPY public.preferencia_user (id_user, id_preferencia, id) FROM stdin;
 28	23	15
 28	24	16
 28	27	17
+29	3	18
+29	6	19
+29	12	20
+29	17	21
+29	26	22
 \.
 
 
@@ -1532,8 +1569,8 @@ COPY public.resenha (id_resenha, titulo_resenha, id_user, sinopse, class_ind, da
 COPY public.top5_livros (id_user, id_livro, posicao, atualizado_em) FROM stdin;
 19	1	2	2026-08-11 21:18:28.213477
 19	5	3	2026-08-12 10:51:44.127281
+19	4	5	2026-08-17 13:30:48.192147
 19	2	4	2026-08-16 20:33:08.892341
-19	4	5	2026-08-16 21:42:56.995374
 19	3	1	2026-08-10 14:02:13.520825
 \.
 
@@ -1557,6 +1594,7 @@ COPY public.usuario (id_user, nome_completo, username, data_nascimento, email, s
 27	Projeto LITTERA	luizviado	2000-03-12	projetolittera2026@gmail.com	$2y$10$1K5vbJhwufuVWYg5CberAO6hmFLX/zR8pQJYcNZ6sxuidzf9lgcdS	2026-08-10 17:04:04.083766	109725691836031282460
 28	lucas passoli	Lucas P	2004-09-13	lucaspassoli1309@gmail.com	$2y$10$NOvNUh.2gtHJXV95U3uU/.B7tp3ETcQkNJzy0L0VVpik3MqUwwq8i	2026-08-16 20:20:39.23169	\N
 19	Caio Passoli	caico	2008-09-16	passolicaio@gmail.com	$2y$10$lKNJFtjCN0UedXL6R3mB9OrVqI.F7Zj0LnReH0YurYd5h71xAoTmK	2026-08-06 11:19:29.329523	114771290742095317837
+29	Anselmo Paulo Florentino	selmao	1980-06-09	anselmo@gmail.com	$2y$10$6f.Fv3fslTq5ss5iC91TkuFE16FAWKOIOWyHeH9J7V77vLk2aElfS	2026-08-17 13:28:22.52121	\N
 \.
 
 
@@ -1593,7 +1631,7 @@ SELECT pg_catalog.setval('public.autor_id_autor_seq', 9, true);
 -- Name: autor_user_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.autor_user_id_seq', 17, true);
+SELECT pg_catalog.setval('public.autor_user_id_seq', 22, true);
 
 
 --
@@ -1618,17 +1656,10 @@ SELECT pg_catalog.setval('public.cenario_id_cenario_seq', 1, false);
 
 
 --
--- Name: comentario_livro_id_comentario_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+-- Name: comentario_id_comentario_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.comentario_livro_id_comentario_seq', 5, true);
-
-
---
--- Name: comentario_resenha_id_comentario_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
---
-
-SELECT pg_catalog.setval('public.comentario_resenha_id_comentario_seq', 1, false);
+SELECT pg_catalog.setval('public.comentario_id_comentario_seq', 13, true);
 
 
 --
@@ -1636,6 +1667,13 @@ SELECT pg_catalog.setval('public.comentario_resenha_id_comentario_seq', 1, false
 --
 
 SELECT pg_catalog.setval('public.conversa_id_conversa_seq', 1, false);
+
+
+--
+-- Name: curtida_id_curtida_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.curtida_id_curtida_seq', 3, true);
 
 
 --
@@ -1656,7 +1694,7 @@ SELECT pg_catalog.setval('public.mensagem_id_mensagem_seq', 1, false);
 -- Name: meta_leitura_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.meta_leitura_id_seq', 8, true);
+SELECT pg_catalog.setval('public.meta_leitura_id_seq', 9, true);
 
 
 --
@@ -1684,7 +1722,7 @@ SELECT pg_catalog.setval('public.personagem_id_personagem_seq', 1, false);
 -- Name: post_id_post_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.post_id_post_seq', 1, false);
+SELECT pg_catalog.setval('public.post_id_post_seq', 4, true);
 
 
 --
@@ -1698,14 +1736,14 @@ SELECT pg_catalog.setval('public.preferencia_id_preferencia_seq', 29, true);
 -- Name: preferencia_livro_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.preferencia_livro_id_seq', 1, false);
+SELECT pg_catalog.setval('public.preferencia_livro_id_seq', 10, true);
 
 
 --
 -- Name: preferencia_user_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.preferencia_user_id_seq', 17, true);
+SELECT pg_catalog.setval('public.preferencia_user_id_seq', 22, true);
 
 
 --
@@ -1733,7 +1771,7 @@ SELECT pg_catalog.setval('public.resenha_id_resenha_seq', 1, false);
 -- Name: usuario_id_user_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.usuario_id_user_seq', 28, true);
+SELECT pg_catalog.setval('public.usuario_id_user_seq', 29, true);
 
 
 --
@@ -1799,19 +1837,11 @@ ALTER TABLE ONLY public.cenario
 
 
 --
--- Name: comentario_livro comentario_livro_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: comentario comentario_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
-ALTER TABLE ONLY public.comentario_livro
-    ADD CONSTRAINT comentario_livro_pkey PRIMARY KEY (id_comentario);
-
-
---
--- Name: comentario_resenha comentario_resenha_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
---
-
-ALTER TABLE ONLY public.comentario_resenha
-    ADD CONSTRAINT comentario_resenha_pkey PRIMARY KEY (id_comentario);
+ALTER TABLE ONLY public.comentario
+    ADD CONSTRAINT comentario_pkey PRIMARY KEY (id_comentario);
 
 
 --
@@ -1820,6 +1850,14 @@ ALTER TABLE ONLY public.comentario_resenha
 
 ALTER TABLE ONLY public.conversa
     ADD CONSTRAINT conversa_pkey PRIMARY KEY (id_conversa);
+
+
+--
+-- Name: curtida curtida_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.curtida
+    ADD CONSTRAINT curtida_pkey PRIMARY KEY (id_curtida);
 
 
 --
@@ -2039,22 +2077,6 @@ ALTER TABLE ONLY public.rel_worldbuild
 
 
 --
--- Name: comentario_livro coment_livro; Type: FK CONSTRAINT; Schema: public; Owner: postgres
---
-
-ALTER TABLE ONLY public.comentario_livro
-    ADD CONSTRAINT coment_livro FOREIGN KEY (id_livro) REFERENCES public.livro(id_livro);
-
-
---
--- Name: comentario_livro coment_user; Type: FK CONSTRAINT; Schema: public; Owner: postgres
---
-
-ALTER TABLE ONLY public.comentario_livro
-    ADD CONSTRAINT coment_user FOREIGN KEY (id_user) REFERENCES public.usuario(id_user) ON DELETE CASCADE;
-
-
---
 -- Name: conversa conversa_dono; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -2132,6 +2154,22 @@ ALTER TABLE ONLY public.autor_user
 
 ALTER TABLE ONLY public.whishbook
     ADD CONSTRAINT fk_user_book FOREIGN KEY (id_user) REFERENCES public.usuario(id_user) ON DELETE CASCADE;
+
+
+--
+-- Name: comentario fk_user_comentario; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.comentario
+    ADD CONSTRAINT fk_user_comentario FOREIGN KEY (id_user) REFERENCES public.usuario(id_user);
+
+
+--
+-- Name: curtida fk_user_curtida; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.curtida
+    ADD CONSTRAINT fk_user_curtida FOREIGN KEY (id_user) REFERENCES public.usuario(id_user);
 
 
 --
@@ -2287,14 +2325,6 @@ ALTER TABLE ONLY public.post
 
 
 --
--- Name: comentario_resenha resenha_coment_resenha; Type: FK CONSTRAINT; Schema: public; Owner: postgres
---
-
-ALTER TABLE ONLY public.comentario_resenha
-    ADD CONSTRAINT resenha_coment_resenha FOREIGN KEY (id_resenha) REFERENCES public.resenha(id_resenha);
-
-
---
 -- Name: resenha resenha_livro; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -2327,14 +2357,6 @@ ALTER TABLE ONLY public.top5_livros
 
 
 --
--- Name: comentario_resenha user_coment_resenha; Type: FK CONSTRAINT; Schema: public; Owner: postgres
---
-
-ALTER TABLE ONLY public.comentario_resenha
-    ADD CONSTRAINT user_coment_resenha FOREIGN KEY (id_user) REFERENCES public.usuario(id_user) ON DELETE CASCADE;
-
-
---
 -- Name: progresso_leitura user_progresso; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -2346,5 +2368,5 @@ ALTER TABLE ONLY public.progresso_leitura
 -- PostgreSQL database dump complete
 --
 
-\unrestrict UWYv0IM2UwUQsAOSVHPDsetKyRt25RTKCX5g04l1DT8hoYxDvdprsQ9WHN35YHC
+\unrestrict HmxbDLQN7feiiB1xeC7OkuTODeSFRou4bic3GLtqfzHttMUwksA0T2biZguYFLA
 

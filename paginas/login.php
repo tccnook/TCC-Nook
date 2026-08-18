@@ -1,38 +1,8 @@
-<!DOCTYPE html>
-<html lang="pt-br">
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title> LOGIN </title>
-    </head>
-    <body>
-        <?php
-            require_once('conexao.php');
-        ?>
+<?php
 
+require_once('conexao.php');
 
-        <h1> Bem-Vindo, Faça Login </h1>
-        <br>
-        <br>
-        <form name="login" method="POST" action="#"> 
-            <label for="email"> Email </label>
-            <br>
-            <input type="text" name="email" id="name">
-            <br>
-            <label for="senha"> Senha </label>
-            <br>
-            <input type="password" name="senha" id="senha">
-            <br>
-            <input type="submit" name="logar" value="logar">
-        </form>
-        <br>
-        <a href="google-login.php"> Faça Login com o Google </a>
-        <br>
-        <a href="cadastro.php?tipo=normal"> Cadastre-se </a>
-        <br>
-        <a href="esqueceu-senha.php"> Esqueceu a sua senha? </a>
-        <?php
-            session_start();
+session_start();
 
             class parametroBusca {
                 private $email;
@@ -83,16 +53,46 @@
                 $usuario = $busca->buscarUsuario($parametroBusca);
 
                 if ($usuario && password_verify($parametroBusca->getSenha(), $usuario['senha'])){
-                        $_SESSION["id"] = $usuario['id_user'];    
-                        header("Location: perfil_user_proprio.php");
+                        $_SESSION["id_user"] = $usuario['id_user'];    
+                        header("location:perfil_user_proprio.php");
                     } else{
                         echo '<script> alert("Dados Inválidos, tente novamente"); </script>';
                     }
 
                 
             }
-        
-        ?>
+?>
+
+
+
+<!DOCTYPE html>
+<html lang="pt-br">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title> LOGIN </title>
+    </head>
+    <body>
+        <h1> Bem-Vindo, Faça Login </h1>
+        <br>
+        <br>
+        <form name="login" method="POST" action="#"> 
+            <label for="email"> Email </label>
+            <br>
+            <input type="text" name="email" id="name">
+            <br>
+            <label for="senha"> Senha </label>
+            <br>
+            <input type="password" name="senha" id="senha">
+            <br>
+            <input type="submit" name="logar" value="logar">
+        </form>
+        <br>
+        <a href="google-login.php"> Faça Login com o Google </a>
+        <br>
+        <a href="cadastro.php?tipo=normal"> Cadastre-se </a>
+        <br>
+        <a href="esqueceu-senha.php"> Esqueceu a sua senha? </a>
         
     </body>
 </html>
