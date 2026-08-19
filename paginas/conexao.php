@@ -27,16 +27,25 @@
                 $this->conn->setAttribute(
                     PDO::ATTR_ERRMODE,
                     PDO::ERRMODE_EXCEPTION
+                    
                 );
 
-                // echo "conectado com sucesso!";
+                $this->conn->exec("SET CLIENT_ENCODING TO 'UTF-8'");
 
+                // echo "conectado com sucesso!";
                 return $this->conn;
+
             
             } catch (PDOException $e) {
                 echo $e->getMessage();
             }
         }
     }
+    
+// $db = new Database;
+// $conn = $db->conectar();
+    
+// $resultado = $conn->query("SHOW CLIENT_ENCODING");
+// echo $resultado->fetchColumn();
 
 ?>

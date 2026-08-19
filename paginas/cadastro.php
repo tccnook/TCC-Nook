@@ -128,6 +128,8 @@
                     ":google_id" => $idGoogle
                 ]);
 
+
+                
                 $idUser = $conn->lastInsertId();
 
                 $insert = "insert into conta (id_user) values (:id_user);";
@@ -140,10 +142,27 @@
 
                 }
 
+                $idUser = $conn->lastInsertId();
+
+                $insert = "insert into conta (id_user) values (:id_user);";
+                try{
+                    $stmt = $conn->prepare($insert);
+                    $stmt->execute([
+                        ":id_user" => $idUser
+                    ]);
+                } catch(PDOException $e){
+
+                }
+                $_SESSION['id_user'] = $idUser;
                 unset($_SESSION["dadosCadastrados"]);
 
+                $sql = 'select id_user from usuario where google_id=?';
+                $stmt = $db->conectar()->prepare($sql);
+                $stmt->execute([$idGoogle]);
+                $resultado = $stmt->fetch(PDO::FETCH_ASSOC);
+                $_SESSION['id_user'] = $resultado['id_user'];
+                unset($_SESSION["cadastro_google"]);
 
-                
                 header("location:preferencia_gen.php");
 
                 exit();
@@ -166,6 +185,20 @@
         ]);
 
         $idUser = $conn->lastInsertId();
+
+        $insert = "INSERT INTO conta (id_user) VALUES (:id_user);";
+        try{
+            $stmt = $conn->prepare($insert);
+            $stmt->execute([
+                ":id_user" => $idUser
+            ]);
+        } catch (PDOException $e){
+            echo 'Erro ao cadastrar: '.$e->getMessage();
+        }
+
+        $_SESSION['id_user'] = $idUser;
+
+        $idUser = $conn->lastInsertId();
         $_SESSION['id_user'] = $idUser;
 
         $insert = "INSERT INTO conta (id_user) VALUES (:id_user);";
@@ -181,6 +214,8 @@
         unset($_SESSION["dadosCadastrados"]);
         unset($_SESSION["cadastro_google"]);
 
+
+        
         $_SESSION['cadastro_concluido'] = true;
 
         header("location:preferencia_gen.php");
