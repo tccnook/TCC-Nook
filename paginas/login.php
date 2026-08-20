@@ -54,7 +54,7 @@ session_start();
 
                 if ($usuario && password_verify($parametroBusca->getSenha(), $usuario['senha'])){
                         $_SESSION["id"] = $usuario['id_user'];    
-                        header("Location: dashboard.php");
+                        header("Location: pesquisa_user.php");
                     } else{
                         echo '<script> alert("Dados Inválidos, tente novamente"); </script>';
                     }
