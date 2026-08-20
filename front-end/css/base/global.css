@@ -1,0 +1,24 @@
+body {
+    font-family: var(--font-primary);
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
+    min-height: 100vh;
+}
+
+a {
+    text-decoration: none;
+    color: var(--color-accent2);
+}
+
+img {
+    max-width: 100%;
+    height: auto;
+    display: block;
+}
+svg {
+    display: block;
+}
+
+button {
+    all: unset;
+}

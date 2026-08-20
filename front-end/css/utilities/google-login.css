@@ -1,0 +1,23 @@
+.google-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 90%;
+    height: 52px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-primary);
+    border-radius: 12px;
+    font-weight: 600;
+    color: var(--text-primary);
+    transition: .2s;
+}
+
+.google-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 10px rgba(0,0,0,.08);
+}
+
+.ico-google {
+    width: 15px;
+    border-left: 5px;
+}
