@@ -64,7 +64,7 @@
         </section>
         <?php
             if(empty($conta['foto_perfil_url'])){
-                echo "Adicione uma foto de perfil!";
+                echo "<img src='../img/foto_perfil/foto_perfil_default.png alt='Foto de Perfil'>";
             } else {
                 echo "<img src='../".htmlspecialchars($conta['foto_perfil_url'])."' alt='Foto de Perfil'>";
             }
@@ -122,7 +122,7 @@
 
             </dialog>
 
-            <button>Compartilhar</button><!--fazer isso depois-->
+            <button>Compartilhar</button><!--fazer isso depois, se n me enagano é com JS-->
         </section>
 
         <p><?=$seguidores['count']?> Seguidores</p>

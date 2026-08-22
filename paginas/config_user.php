@@ -56,7 +56,7 @@
     <form action="#" method="POST" enctype="multipart/form-data">
         <?php
                 if(empty($foto_perfil_url)){
-                    echo "<label for='foto_perfil'><section id='foto_vazia'>vazio</section></label>";
+                    echo "<label for='foto_perfil'><img src='../img/foto_perfil/foto_perfil_default.png alt='Foto de Perfil'></label>";
                 } else {
                     echo "<label for='foto_perfil'><img id='foto' src='../".htmlspecialchars($foto_perfil_url)."' alt='Foto de Perfil'></label>";
                 }
@@ -125,31 +125,46 @@
                 <button type="button" id="fechar_senha">Cancelar</button>
             </form>
         </dialog>
+        <section>
+            Excluir Conta
+            <form action="" method="POST">
+                <button type="submit" name="excluir_conta" id="excluir_conta" onclick="return excluirConta();">
+                    Excluir
+                </button>
+            </form>
+        </section>
     </section>
         <script>
-        const btn_alterar_email = document.getElementById("btn_alterar_email");
-        const fechar_email = document.getElementById("fechar_email");
-        const alterar_email = document.getElementById("alterar_email");
+            function excluirConta() {
+                const confirmar = confirm(
+                    "Você realmente deseja excluir essa conta?"
+                );
+                return confirmar;
+            }
+            
+            const btn_alterar_email = document.getElementById("btn_alterar_email");
+            const fechar_email = document.getElementById("fechar_email");
+            const alterar_email = document.getElementById("alterar_email");
 
-        const btn_alterar_senha = document.getElementById("btn_alterar_senha");
-        const fechar_senha = document.getElementById("fechar_senha");
-        const alterar_senha = document.getElementById("alterar_senha");
+            const btn_alterar_senha = document.getElementById("btn_alterar_senha");
+            const fechar_senha = document.getElementById("fechar_senha");
+            const alterar_senha = document.getElementById("alterar_senha");
 
-        btn_alterar_email.addEventListener("click", function () {
-            alterar_email.showModal();
-        });
+            btn_alterar_email.addEventListener("click", function () {
+                alterar_email.showModal();
+            });
 
-        fechar_email.addEventListener("click", function () {
-            alterar_email.close();
-        });
+            fechar_email.addEventListener("click", function () {
+                alterar_email.close();
+            });
 
-        btn_alterar_senha.addEventListener("click", function () {
-            alterar_senha.showModal();
-        });
+            btn_alterar_senha.addEventListener("click", function () {
+                alterar_senha.showModal();
+            });
 
-        fechar_senha.addEventListener("click", function () {
-            alterar_senha.close();
-        });
+            fechar_senha.addEventListener("click", function () {
+                alterar_senha.close();
+            });
 
 
     </script>
@@ -322,7 +337,21 @@
             }
         }
 
-        //colocar exclusão de conta
+        //exclusão da conta
+        if(isset($_POST["excluir_conta"])){
+            $exclusao = "delete from usuario where id_user = :id_user";
+            try{
+                $stmt = $conn->prepare($exclusao);
+                $stmt->execute([
+                    ":id_user" => $id_user
+                ]);
+
+                header("Location: " . $_SERVER['PHP_SELF']);
+                exit();
+            } catch (PDOException $e){
+                echo "Erro ao excluir conta: ". $e->getMessage();
+            }
+        }
 
     ?>
 </body>

@@ -34,12 +34,39 @@
             if(trim($pesquisa) !== ''){
                 
                 $pesquisa = '%'.$pesquisa.'%';
-
-                $busca_user = "select id_user,nome_completo,username from usuario where nome_completo ilike :pesquisa
-                or username ilike :pesquisa order by nome_completo;";
+                //busca usuarios q n tem relaçao com a tabela de bloqueios e n exibe o propio user
+                $busca_user =  "SELECT 
+                        u.id_user,
+                        u.nome_completo,
+                        u.username,
+                        c.foto_perfil_url
+                    FROM usuario u
+                    LEFT JOIN conta c 
+                        ON c.id_user = u.id_user
+                    WHERE (
+                        u.nome_completo ILIKE :pesquisa
+                        OR u.username ILIKE :pesquisa
+                    )
+                    AND u.id_user <> :id_user
+                    AND NOT EXISTS (
+                        SELECT 1
+                        FROM bloqueio b
+                        WHERE b.status_bloqueio = 'bloqueado'
+                        AND (
+                            (b.id_bloqueador = :id_user 
+                            AND b.id_bloqueado = u.id_user)
+                            OR
+                            (b.id_bloqueador = u.id_user 
+                            AND b.id_bloqueado = :id_user)
+                        )
+                    )
+                    ORDER BY u.nome_completo;";
                 
                 $stmt = $conn->prepare($busca_user);
-                $stmt->execute([":pesquisa" => $pesquisa]);
+                $stmt->execute([
+                    ":pesquisa" => $pesquisa,
+                    "id_user" => $id_user
+                ]);
                 $usuarios = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
                 foreach ($usuarios as $usuario){
@@ -52,11 +79,19 @@
 
                     //arrumar para quando n tiver foto de perfil
             ?>
-                    <section>
-                        <img src="../<?= htmlspecialchars($foto['foto_perfil_url'])?>" alt="Foto de perfil">
-                        <h3><?= htmlspecialchars($usuario['nome_completo'])?></h3>
-                        <p>@<?= htmlspecialchars($usuario['username'])?></p>
-                    </section>
+                    <a href="perfil_user_terceiro.php?id_user=<?= $usuario['id_user']?>" style="text-decoration:none">
+                        <section>
+                            <?php
+                                if(empty($foto['foto_perfil_url'])){
+                                    echo "<img src='../img/foto_perfil/foto_perfil_default.png' alt='Foto de Perfil'>";
+                                } else {
+                                    echo "<img src='../".htmlspecialchars($foto['foto_perfil_url'])."' alt='Foto de Perfil'>";
+                                }
+                            ?>
+                            <h3><?= htmlspecialchars($usuario['nome_completo'])?></h3>
+                            <p>@<?= htmlspecialchars($usuario['username'])?></p>
+                        </section>
+                    </a>
         
             <?php
                     }
