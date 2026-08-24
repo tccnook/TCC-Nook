@@ -23,37 +23,67 @@
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title> Cadastro </title>
+        <link rel="stylesheet" href="/TCC-Nook/front-end/css/main.css">    
+        <link rel="stylesheet" href="/TCC-Nook/front-end/css/pages/login.css">
+        <link rel="stylesheet" href="/TCC-Nook/front-end/css/pages/logup.css">
+
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600;1,700&display=swap" rel="stylesheet">
+
+    
+        <link rel="shortcut icon" href="/TCC-Nook/img/icons/ico-nook/ico-nook.ico" type="image/x-icon">
+
+        <script src="/TCC-Nook/front-end/js/pages/cadastro.js" defer></script>
+
+        <title> Nook - Cadastro </title>
     </head>
     <body>
-        <form name="cadastro" method="POST" action="#">
-            <label for="nome_comp"> Nome Completo </label>
-            <br>
-            <input type="text" name="nome_comp" id="nome_comp" value="<?php if(isset($nome_completo_google)){ echo $nome_completo_google; }  ?>">
-            <br>
-            <label for="nome_user"> Nome de Usuário </label>
-            <br>
-            <input type="text" name="nome_user" id="nome_user">
-            <br>
-            <label for="data_nasc"> Data de Nascimento </label>
-            <br>
-            <input type="date" name="data_nasc" id="data_nasc">
-            <br>
-            <label for="email"> Email </label>
-            <br>
-            <input type="text" name="email" id="email" value="<?php if(isset($email_google)){ echo $email_google; }  ?>">
-            <br>
-            <label for="senha"> Senha </label>
-            <br>
-            <input type="password" name="senha" id="senha">
-            <br>
-            <label for="confirmar_senha"> Confirmar Senha </label>
-            <br>
-            <input type="password" name="confirmar_senha" id="confirmar_senha">
-            <br>
-            <input type="submit" name="proximo" value="avançar">
-        
-        </form>
+        <main>
+            <h1>Criar conta</h1>
+        <form name="cadastro" method="POST" action="">
+
+    <section class="step active" data-step="1">
+
+        <label for="email">Email</label>
+        <input type="email" name="email" id="email" value="<?php echo htmlspecialchars($email_google ?? ''); ?>">
+
+        <label for="nome_comp">Nome Completo</label>
+        <input type="text" name="nome_comp" id="nome_comp" value="<?php echo htmlspecialchars($nome_completo_google ?? ''); ?>">
+
+        <label for="nome_user">Nome de Usuário</label>
+        <input type="text" name="nome_user" id="nome_user">
+
+        <button type="button" class="next-step">
+            Avançar
+        </button>
+
+    </section>
+
+    <section class="step" data-step="2">
+
+        <label for="data_nasc">Data de Nascimento</label>
+        <input type="date" name="data_nasc" id="data_nasc">
+
+        <label for="senha">Senha</label>
+        <input type="password" name="senha" id="senha">
+
+        <label for="confirmar_senha">Confirmar Senha</label>
+        <input type="password" name="confirmar_senha" id="confirmar_senha">
+
+        <button type="button" class="previous-step button-action">
+            Voltar
+        </button>
+
+        <button type="submit" name="proximo" class="button-action">
+            Finalizar cadastro
+        </button>
+
+    </section>
+
+</form>
+
+</main>
         
     </body>
     </html>

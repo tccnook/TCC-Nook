@@ -2,15 +2,17 @@
     --bg-primary: #F5F3ED;
     --bg-cards: #2B1F47;
     --bg-cards-light: #3A2A5C;
-    --all-white: #FFF;
+    --all-white: #F4F4F4;
     --color-accent: #8B5CF6;
     --color-accent2: #A855F7;
-    --bg-gradient:linear-gradient(180deg,rgba(123, 106, 168, 1) 0%, rgba(246, 242, 235, 1) 100%);
+    --bg-gradient:linear-gradient(0deg,rgba(123, 106, 168, 1) 0%, rgba(246, 242, 235, 1) 100%);
 
     --text-primary: #000000;
     --text-secondary: #252525;
     --text-on-dark: #FFFFFF;
     --text-title:#2B1F47;
+
+    --width-login: 45vw;
 
 
     --warning: #F59E0B;

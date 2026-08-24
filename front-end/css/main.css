@@ -1,22 +1,22 @@
 /*pasta base*/
-@import url('/nook/front-end/css/base/global.css');
-@import url('/nook/front-end/css/base/reset.css');
-@import url('/nook/front-end/css/base/variables.css');
+@import url('/TCC-Nook/front-end/css/base/global.css');
+@import url('/TCC-Nook/front-end/css/base/reset.css');
+@import url('/TCC-Nook/front-end/css/base/variables.css');
 
 /*pasta components*/
 
-@import url('/nook/front-end/css/components/forms.css');
-@import url('/nook/front-end/css/components/modal.css');
+@import url('/TCC-Nook/front-end/css/components/forms.css');
+@import url('/TCC-Nook/front-end/css/components/modal.css');
 
 /*pasta layout*/
 
-@import url('/nook/front-end/css/layout/footer.css');
-@import url('/nook/front-end/css/layout/header.css');
-@import url('/nook/front-end/css/layout/navbar.css');
+@import url('/TCC-Nook/front-end/css/layout/footer.css');
+@import url('/TCC-Nook/front-end/css/layout/header.css');
+@import url('/TCC-Nook/front-end/css/layout/navbar.css');
 
 /*pasta themes*/
-@import url('/nook/front-end/css/themes/dark.css');
-@import url('/nook/front-end/css/themes/light.css');
+@import url('/TCC-Nook/front-end/css/themes/dark.css');
+@import url('/TCC-Nook/front-end/css/themes/light.css');
 
 /*pasta utilities*/
-@import url('/nook/front-end/css/utilities/google-login.css');
+@import url('/TCC-Nook/front-end/css/utilities/google-login.css');
