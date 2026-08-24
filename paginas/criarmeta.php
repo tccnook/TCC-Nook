@@ -40,9 +40,16 @@ if(isset($_POST['cadastrar'])){
         $prazo = 365;
     }
     $nome_meta = $_POST['nomemeta'];
-    if(isset($_GET['atualizar'])){
+    if(isset($id_atualizacao)){
+    //     var_dump($nome_meta);
+    // var_dump($periodo);
+    // var_dump($num_livros);
+    // var_dump($prazo);
+    // var_dump($id_atualizacao);
+    // var_dump($id_user);
+    // exit();
         $update = 'update meta_leitura set 
-        nome_meta = :nome_meta, periodo = :periodo, num_livros = :num_livros, expiracao = (criacao + CAST(:prazo AS INTEGER))::DATE 
+        nome_meta = :nome_meta, periodo = :periodo, num_livros = :num_livros, expiracao = (criacao + CAST(:prazo AS INTEGER) * INTERVAL \'1 day\')::DATE 
         where id = :id_atualizacao and id_user = :id_user;';
         try{
             $stmt = $conn->prepare($update);
@@ -50,18 +57,22 @@ if(isset($_POST['cadastrar'])){
                 ":nome_meta" => $nome_meta,
                 ":periodo" => $periodo,
                 ":num_livros" => $num_livros,
-                ":prazo" => $prazo,
-                ":id_atualizacao" => $id_atualizacao,
-                ":id_user" => $id_user
+               ":prazo" => $prazo,
+                ":id_atualizacao" => 7,
+                ":id_user" => 19
             ]);
+            // $linhas_afetadas = $stmt->rowCount();
+            // echo $linhas_afetadas;
+            // exit();
             header("location:gerenciarmetas.php");
             exit();
+            
         } catch(PDOException $e){
             echo 'Erro: '.$e->getMessage();
             header("location:gerenciarmetas.php");
             exit();
         }
-    }
+    } else{
     $insert = 'insert into meta_leitura (id_user, periodo, num_livros, expiracao, nome_meta) values (:id_user, :periodo, :num_livros, CURRENT_DATE + CAST(:prazo AS INTEGER), :nome_meta);';
     try{
         $stmt = $conn->prepare($insert);
@@ -75,6 +86,7 @@ if(isset($_POST['cadastrar'])){
         echo 'Meta cadastrada com sucesso!';
     } catch(PDOException $e){
         echo 'Erro: '.$e->getMessage();
+    }
     }
 
 }

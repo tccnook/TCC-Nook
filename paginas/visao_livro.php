@@ -32,7 +32,8 @@ $stmt->execute([
 ]);
 $generos = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-$select_avaliacao = "select count(*) as numero_avaliacoes, AVG(nota_avaliacao) as avaliacao_media from comentario where categoria = 'livro' and id_coisocurtido = :id_livro";
+$select_avaliacao = "select count(*) as numero_avaliacoes, AVG(nota_avaliacao) as avaliacao_media 
+from comentario where categoria_curtida = 'livro' and id_coisocurtido = :id_livro";
 $stmt_avaliacao = $conn->prepare($select_avaliacao);
 $stmt_avaliacao->execute([
     ":id_livro" => $id_livro
@@ -54,7 +55,7 @@ echo '<section class="livro-externo">';
     foreach($generos as $genero){
         echo $genero['nome_preferencia'].'  ';
     }
-    echo 'Avaliação média: '.$avaliacao['avaliacao_media'].' - '.$avaliacao['numero_avaliacoes'].'<br>';
+    echo 'Avaliação média: '.$avaliacao['avaliacao_media'].' // '.$avaliacao['numero_avaliacoes'].'<br>';
     if($livro['origem'] == 'interna'){
     echo '<a href="ler_Livro.php?id_livro='.$livro['id_livro'].'"> Ler Livro </a>';
     } else if($livro['origem'] == 'externa'){
@@ -68,9 +69,11 @@ echo '<section class="resenhas">';
     u.nome_completo, u.username, r.titulo_resenha, 
     r.data_publi, r.sinopse, r.class_ind, AVG(c.nota_avaliacao) as media_avaliaco
     from resenha r
-    left join comentario c on c.id_coisocurtido = r.id_resenha
+    left join comentario c on c.id_coisocurtido = r.id_resenha and c.categoria_curtida = 'resenha'
     inner join usuario u on u.id_user = r.id_user
-    where c.categoria_curtida = 'resenha', id_livro = :id_livro and visibilidade = 'publico'";
+    where c.categoria_curtida = 'resenha' and id_livro = :id_livro and visibilidade = 'publico'
+    group by u.nome_completo, u.username, r.titulo_resenha, r.data_publi, r.sinopse, r.class_ind 
+    ";
 
     $stmt_resenhas = $conn->prepare($select_resenhas);
     $stmt_resenhas->execute([
@@ -85,13 +88,12 @@ echo '<section class="comentarios">';
     c.comentario, c.nota_avaliacao, c.criado_em, u.nome_completo, u.username 
     from comentario c
     inner join usuario u on u.id_user = c.id_user
-    where categoria_curtida = 'livro' and id_coisocurtido = :id_livro";
+    where c.categoria_curtida = 'livro' and id_coisocurtido = :id_livro";
 $stmt_comentarios = $conn->prepare($select_comentarios);
 $stmt_comentarios->execute([
     ":id_livro" => $id_livro
 ]);
 $comentarios = $stmt_comentarios->fetchAll(PDO::FETCH_ASSOC);
-
 
 echo '</section>';
 

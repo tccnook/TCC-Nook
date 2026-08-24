@@ -359,6 +359,9 @@ foreach ($metas as $meta) {
     }
 
     $percent = ($quantidade / $meta['num_livros']) * 100;
+    if ($percent > 100){
+        $percent = 100;
+    }
 
     $faltando = $meta['num_livros'] - $quantidade;
 
@@ -536,7 +539,7 @@ $maior_livro_lido = $stmt->fetch(PDO::FETCH_ASSOC);
 echo 'Gênero mais lido: <br>'; 
 echo $genero_mais_lido['nome_preferencia'].' - '.$genero_mais_lido['quantidade_livros'].' livros <br>';
 echo 'Autor mais lido: <br>';
-echo $autor_mais_lido['nome_autor'].' - '.$genero_mais_lido['quantidade_autores'].' livros <br>';
+echo $autor_mais_lido['nome_autor'].' - '.$autor_mais_lido['quantidade_autores'].' livros <br>';
 echo 'Maio livro lido: <br>';
 echo $maior_livro_lido['titulo_livro'].' - '.$maior_livro_lido['quantidade_capitulos'].' capítulo <br>';
 

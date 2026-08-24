@@ -188,7 +188,6 @@
             }
 
             $editar = "update conta set foto_perfil_url = :foto_perfil_url, visibilidade = :visibilidade, bio = :bio, banner_url = :banner_url where id_user = :id_user;";
-
             try {
                 $stmt = $conn->prepare($editar);
                 $stmt->execute([

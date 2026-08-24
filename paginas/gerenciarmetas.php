@@ -199,6 +199,10 @@ foreach ($metas as $meta) {
     }
 
     $percent = ($quantidade / $meta['num_livros']) * 100;
+    if($percent > 100){
+        $percent = 100;
+    }
+    $percent = number_format($percent, 2);
 
     $faltando = $meta['num_livros'] - $quantidade;
 
