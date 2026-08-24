@@ -61,7 +61,7 @@
             <?php
                 if(isset($_POST['desbloquear'])){
                     $id_bloqueado = $_POST['id_bloqueado'];
-
+                    //ou apenas excluir o registro
                     $update_bloq = "update bloqueio set status_bloqueio = 'desbloqueado'
                     where id_bloqueador = :id_user and id_bloqueado = :id_bloqueado
                     and status_bloqueio = 'bloqueado';";

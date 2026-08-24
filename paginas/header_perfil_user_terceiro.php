@@ -114,7 +114,7 @@
         ':id_user' => $id_user, 
         ':id_user_terceiro' => $id_user_terceiro
     ]);
-    $seguindo = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    $seguindos = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 ?>
 
@@ -149,54 +149,98 @@
 
         <?php
             if(empty($conta['bio'])){
-                echo "Bio vazia";
+                echo "Bio vazia<br>";
             } else {
                 echo "<p>".htmlspecialchars($conta['bio'])."</p>";
             }
 
             $status_follow = "select status_follow from follow where id_follower = :id_user and id_following = :id_user_terceiro;";
+
             $stmt = $conn->prepare($status_follow);
             $stmt->execute([
                 ":id_user" => $id_user,
                 ":id_user_terceiro" => $id_user_terceiro
             ]);
+
             $msg = $stmt->fetch(PDO::FETCH_ASSOC);
 
-            if($msg == null){
-                $msg['status_follow'] = 'Seguir';
+            if ($msg == false) {
+                $msg['status_follow'] = 'seguir';
             }
 
-            if($msg['status_follow'] !== 'seguindo'){
-                //fazer deixar de seguir dps
-                if(isset($_POST['seguir'])){
-                    $seguir = "insert into follow (id_follower, id_following, status_follow) values (:id_follower, :id_following, :status_follow);";
+            if (isset($_POST['seguir'])) {
 
-                    try {
-                        $stmt = $conn->prepare($seguir);
-                        $stmt->execute([
-                            ":id_follower" => $id_user,
-                            ":id_following" => $id_user_terceiro,
-                            ":status_follow" => 'seguindo'
-                        ]);
+                $seguir = "insert into follow (id_follower, id_following, status_follow) values (:id_follower, :id_following, :status_follow);";
 
-                        header("Location: header_perfil_user_terceiro.php?id_user=".$id_user_terceiro);
-                        //exit();
-                    } catch (PDOException $e) {
-                        echo "Erro ao inserir: ".$e->getMessage();
-                    }
+                try {
+                    $stmt = $conn->prepare($seguir);
+                    $stmt->execute([
+                        ":id_follower" => $id_user,
+                        ":id_following" => $id_user_terceiro,
+                        ":status_follow" => 'seguindo'
+                    ]);
+
+                    header("Location: header_perfil_user_terceiro.php?id_user=".$id_user_terceiro);
+                    exit();
+
+                } catch (PDOException $e) {
+                    echo "Erro ao inserir: ".$e->getMessage();
                 }
             }
 
-            $msg = ucfirst($msg['status_follow']);
-        ?>
-        <form action="#" method="POST">
-            <button type='submit' name='seguir'><?= $msg ?></button>
-        </form>
-        <button>Compartilhar</button>
+
+            // SE CLICOU EM DEIXAR DE SEGUIR
+            if (isset($_POST['dxr_seguir'])) {
+
+                $dxr_seguir = "delete from follow where id_follower = :id_user and id_following = :id_user_terceiro";
+
+                try {
+                    $stmt = $conn->prepare($dxr_seguir);
+                    $stmt->execute([
+                        ":id_user" => $id_user,
+                        ":id_user_terceiro" => $id_user_terceiro
+                    ]);
+
+                    header("Location: header_perfil_user_terceiro.php?id_user=".$id_user_terceiro);
+                    exit();
+
+                } catch (PDOException $e) {
+                    echo "Erro ao deletar: ".$e->getMessage();
+                }
+            }
+            ?>
+
+            <?php if ($msg['status_follow'] === 'seguir') { ?>
+
+                <form action="#" method="POST">
+                    <button type="submit" name="seguir">
+                        Seguir
+                    </button>
+                </form>
+
+            <?php } elseif ($msg['status_follow'] === 'seguindo') { ?>
+
+                <button type="button" id="btnSeguir">
+                    Seguindo
+                </button>
+
+            <?php } ?>
+
+        <dialog id='modal_seguir'>
+            <form action="#" method="POST">
+                <button type="button" id="fechar_seguir">
+                    X
+                </button><br>
+                <button type='submit' name='dxr_seguir'>Deixar de Seguir</button><br>
+                <button type='submit' name='bloquear'>Bloquear</button>
+            </form>
+        </dialog>
+
+        <button>Compartilhar</button><br>
 
         <button type="button" id="btnSeguidores">
             <?=$n_seguidores['count']?> Seguidores
-        </button>
+        </button><br>
 
         <dialog id="modal_seguidores">
             <button type="button" id="fechar_seguidores">
@@ -204,10 +248,12 @@
             </button>
             <h3>Seguidores</h3>
             <p>@<?= $usuario['username']?></p>
+            <hr>
 
             <?php
                 foreach ($seguidores as $seguidor) {
                     $id_seguidor = $seguidor['id_user'];
+
                     if (empty($seguidor['foto_perfil_url'])) {
                         echo "<img src='../img/foto_perfil/foto_perfil_default.png' alt='Foto de Perfil'>";
                     } else {
@@ -248,27 +294,144 @@
                     $msg2 = ucfirst($msg2['status_follow']);
                     ?>
                     <h4><?= $seguidor['nome_completo']?></h4>
-                    <p><?= $seguidor['username']?></p>
+                    <p>@<?= $seguidor['username']?></p>
+                    <?php
+                        if($id_seguidor == $id_user){
+
+                        }else{
+                    ?>
                     <form action="#" method="POST">
+                        <input type="hidden" name="id_seguidor" value="<?= $id_seguidor?>">
                         <button type='submit' name='seguir2'><?= $msg2 ?></button>
                     </form>
-                    
+
             <?php
+                    if (isset($_POST['seguir2'])) {
+                        $id_seguindo = $_POST['id_seguindo'];
+                        $seguir = "insert into follow (id_follower, id_following, status_follow) values (:id_follower, :id_following, :status_follow)";
+
+                        $stmt = $conn->prepare($seguir);
+
+                        $stmt->execute([
+                            ":id_follower" => $id_user,
+                            ":id_following" => $id_seguidor,
+                            ":status_follow" => "seguindo"
+                        ]);
+
+                        header("Location: header_perfil_user_terceiro.php?id_user=".$id_user_terceiro);
+                        exit();
+                    }
                 }
+            }
             ?>
         </dialog>
 
         <button type="button" id="btnSeguindo">
             <?=$n_seguindo['count']?> Seguindo
-        </button>
+        </button><br>
 
         <dialog id="modal_seguindo">
-            <h3>Seguindo</h3>
-            <p>@<?= $usuario['username']?></p>
-
-           <button type="button" id="fechar_seguindo">
+            <button type="button" id="fechar_seguindo">
                 X
             </button>
+            <h3>Seguindo</h3>
+            <p>@<?= $usuario['username']?></p>
+            <hr>
+
+            <?php
+                foreach ($seguindos as $seguindo) {
+                    $id_seguindo = $seguindo['id_user'];
+
+                    if (empty($seguindo['foto_perfil_url'])) {
+                        echo "<img src='../img/foto_perfil/foto_perfil_default.png' alt='Foto de Perfil'>";
+                    } else {
+                        echo "<img src='../".htmlspecialchars($seguindo['foto_perfil_url'])."' alt='Foto de Perfil'>";
+                    }
+
+                    $status_follow3 = "select status_follow from follow where id_follower = :id_user and id_following = :id_seguindo;";
+                    $stmt = $conn->prepare($status_follow3);
+                    $stmt->execute([
+                        ":id_user" => $id_user,
+                        ":id_seguindo" => $id_seguindo
+                    ]);
+                    $msg3 = $stmt->fetch(PDO::FETCH_ASSOC);
+
+                    if($msg3 == null){
+                        $msg3['status_follow'] = 'Seguir';
+                    }
+
+                    if($msg3['status_follow'] !== 'seguindo'){
+                        if(isset($_POST['seguir'])){
+                            $seguir = "insert into follow (id_follower, id_following, status_follow) values (:id_follower, :id_following, :status_follow);";
+
+                            try {
+                                $stmt = $conn->prepare($seguir);
+                                $stmt->execute([
+                                    ":id_follower" => $id_user,
+                                    ":id_following" => $id_seguindo,
+                                    ":status_follow" => 'seguindo'
+                                ]);
+
+                                header("Location: header_perfil_user_terceiro.php?id_user=".$id_user_terceiro);
+                            } catch (PDOException $e) {
+                                echo "Erro ao inserir: ".$e->getMessage();
+                            }
+                        }
+                    }
+
+                    $msg3 = ucfirst($msg3['status_follow']);
+                    ?>
+                    <h4><?= $seguindo['nome_completo']?></h4>
+                    <p>@<?= $seguindo['username']?></p>
+                    <?php
+                        if($id_seguindo == $id_user){
+
+                        }else{
+                    ?>
+                    <form action="#" method="POST">
+                        <input type="hidden" name="id_seguindo" value="<?= $id_seguindo?>">
+                        <button type='submit' name='seguir3'><?= $msg3 ?></button>
+                    </form>
+            <?php
+                    if (isset($_POST['seguir3'])) {
+                        $id_seguindo = $_POST['id_seguindo'];
+                        $seguir = "insert into follow (id_follower, id_following, status_follow) values (:id_follower, :id_following, :status_follow)";
+
+                        try{
+                            $stmt = $conn->prepare($seguir);
+
+                            $stmt->execute([
+                                ":id_follower" => $id_user,
+                                ":id_following" => $id_seguindo,
+                                ":status_follow" => "seguindo"
+                            ]);
+
+                            header("Location: header_perfil_user_terceiro.php?id_user=".$id_user_terceiro);
+                            exit();
+                        } catch(PDOException $e){
+                            echo "Erro ao inserir: ". $e->getMessage();
+                        }
+                    }
+                }
+            }
+
+            if(isset($_POST['bloquear'])){
+
+                $bloquear = "insert into bloqueio (id_bloqueador, id_bloqueado, status_bloqueio) values (:id_bloqueador, :id_bloqueado, :status_bloqueio);";
+
+                try {
+                    $stmt = $conn->prepare($bloquear);
+                    $stmt->execute([
+                        ":id_bloqueador" => $id_user,
+                        ":id_bloqueado" => $id_user_terceiro,
+                        ":status_bloqueio" => 'bloqueado'
+                    ]);
+
+                } catch (PDOException $e) {
+                    echo "Erro ao inserir:". $e->getMessage();
+                }
+            }
+            ?>
         </dialog>
 
         <p><?=$resenhas['count']?> Resenhas</p>
@@ -278,6 +441,7 @@
     <script>
         const modalSeguidores = document.getElementById("modal_seguidores");
         const modalSeguindo = document.getElementById("modal_seguindo");
+        const modalSeguir = document.getElementById("modal_seguir");
 
         document.getElementById("btnSeguidores").addEventListener("click", () => {
             modalSeguidores.showModal();
@@ -293,6 +457,14 @@
 
         document.getElementById("fechar_seguindo").addEventListener("click", () => {
             modalSeguindo.close();
+        });
+
+        document.getElementById("fechar_seguir").addEventListener("click", () => {
+            modalSeguir.close();
+        });
+
+        document.getElementById("btnSeguir").addEventListener("click", () => {
+            modalSeguir.showModal();
         });
     </script>
 </body>
