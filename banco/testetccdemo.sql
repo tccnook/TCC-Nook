@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict AZ5qHKv9rBk0uzDr2hPJgL40iZDUo1sgbFiaepsMskwLXhUQm0CtzmNKKoleUb3
+\restrict bc8ovSui1CIXmB6h62ICD60F2ndLC0kBdGNBGdtz2yseA4ue4hLcmCxDqXbPkf9
 
 -- Dumped from database version 18.4
 -- Dumped by pg_dump version 18.4
@@ -32,7 +32,8 @@ CREATE TABLE public.autor (
     nome_autor character varying(90),
     autor character varying(90) NOT NULL,
     bio text,
-    foto_url character varying(250)
+    foto_url character varying(250),
+    id_user integer
 );
 
 
@@ -890,16 +891,16 @@ ALTER TABLE ONLY public.progresso_leitura ALTER COLUMN id_progresso SET DEFAULT 
 -- Data for Name: autor; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.autor (id_autor, nome_autor, autor, bio, foto_url) FROM stdin;
-1	Machado de Assis	machado	\N	\N
-2	Edgar Allan Paul	edgar	\N	\N
-4	Abel Ferreira	abel	\N	\N
-5	Rick Riordan	rick-riordan	\N	\N
-6	Agatha Christie	agatha-christie	\N	\N
-7	George Orwell	george-orwell	\N	\N
-8	Stephen King	stephen-king	\N	\N
-9	J.R.R. Tolkien	jrr-tolkien	\N	\N
-3	J.K Rowling	jk-rowling	\N	\N
+COPY public.autor (id_autor, nome_autor, autor, bio, foto_url, id_user) FROM stdin;
+1	Machado de Assis	machado	\N	\N	\N
+2	Edgar Allan Paul	edgar	\N	\N	\N
+4	Abel Ferreira	abel	\N	\N	\N
+5	Rick Riordan	rick-riordan	\N	\N	\N
+6	Agatha Christie	agatha-christie	\N	\N	\N
+7	George Orwell	george-orwell	\N	\N	\N
+8	Stephen King	stephen-king	\N	\N	\N
+9	J.R.R. Tolkien	jrr-tolkien	\N	\N	\N
+3	J.K Rowling	jk-rowling	\N	\N	\N
 \.
 
 
@@ -1006,6 +1007,7 @@ COPY public.conta (id_user, foto_perfil_url, bio, visibilidade, banner_url) FROM
 3	foto_do_gomez	Zagueiro Paraguaio, dono da sele‡Æo paraguaia e maior capitÆo da hist¢ria do Palmeiras	publico	\N
 28	\N	\N	publico	\N
 29	\N	\N	publico	\N
+19	img/foto_perfil/4f3a97f338ba0c7c65039d97f02cc401.webp	Apenas um cara tranquilo que gosta do palmeiras	publico	img/banner_perfil/25cfe8fb7c9a8d15943d86263f962fda.webp
 \.
 
 
@@ -1083,11 +1085,11 @@ COPY public.mensagem (id_mensagem, id_conversa, id_envio, tipo, conteudo, criaca
 --
 
 COPY public.meta_leitura (id, id_user, periodo, num_livros, criacao, status, expiracao, nome_meta) FROM stdin;
-5	19	mensal	20	2026-08-13 18:36:13.450308	andamento	2026-09-12	meta do mês
-6	19	anual	200	2026-08-13 18:36:50.420783	andamento	2027-08-13	meta do ano
-7	19	mensal	200	2026-08-16 20:34:51.764024	andamento	2026-09-15	Meta de agosto
-8	19	semanal	6	2026-08-16 21:43:51.885478	andamento	2026-08-23	meta de drama
-9	19	semanal	1	2026-08-17 13:32:04.349551	andamento	2026-08-24	Meta do Miguel
+8	19	semanal	6	2026-08-16 21:43:51.885478	expirado	2026-08-23	meta de drama
+9	19	semanal	1	2026-08-17 13:32:04.349551	concluida	2026-08-24	Meta do Miguel
+10	19	semanal	20	2026-08-24 09:10:52.388167	andamento	2026-08-31	meta xxxx
+6	19	semanal	50	2026-08-13 18:36:50.420783	andamento	2027-08-13	meta do ano
+7	19	anual	5000	2026-08-16 20:34:51.764024	andamento	2027-08-16	Meta de agosto
 \.
 
 
@@ -1477,6 +1479,9 @@ COPY public.paragrafo_resenha (id_paragrafo_resenha, texto_paragrafo_resenha, id
 2	Na hist¢ria, o Alienista que inicialmente julgava todos da cidade loucos, at‚ que uma hora ele pensa se na verdade o louco pode ser ele.	1	2
 3	Ele entÆo decide se trancar no hosp¡cio onde colocava os loucos at‚ que pudesse se autotratar.	1	3
 4	A reflexÆo sobre como as denomina‡äes humanas podem ser flu¡das e flex¡veis de acordo com o julgamento de cada um!	1	4
+5	O Livro a Cartomante ‚ bem maneiro	2	1
+6	Tem uns trechos bem interessantes	2	2
+7	Tem uns trechos bem eu achei muito bom	2	3
 \.
 
 
@@ -1581,6 +1586,11 @@ COPY public.preferencia_user (id_user, id_preferencia, id) FROM stdin;
 --
 
 COPY public.progresso_leitura (id_progresso, id_user, id_livro, capitulo_atual, porcentagem_progresso, ultima_leitura) FROM stdin;
+1	19	1	5	100.00	2026-08-24 08:26:56.264076
+2	19	2	1	100.00	2026-08-24 08:27:21.619593
+3	19	3	4	100.00	2026-08-24 08:27:51.692601
+4	19	5	3	100.00	2026-08-24 08:28:28.659305
+5	19	4	2	100.00	2026-08-24 08:28:57.71822
 \.
 
 
@@ -1610,6 +1620,7 @@ COPY public.rel_worldbuild (id_cena, id_cenario, id_personagem) FROM stdin;
 
 COPY public.resenha (id_resenha, titulo_resenha, id_user, sinopse, class_ind, data_publi, id_livro, visibilidade, interacao_de) FROM stdin;
 1	An lise do Alienista	19	Nesta resenha pretende-se analisar o livro O Alienista	12	2026-08-20 13:41:58.747008	1	publico	todos
+2	Vendo A Cartomante	19	pretendo analisar o livro A Cartomante	14	2026-08-24 07:55:23.811656	2	publico	todos
 \.
 
 
@@ -1745,7 +1756,7 @@ SELECT pg_catalog.setval('public.mensagem_id_mensagem_seq', 1, false);
 -- Name: meta_leitura_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.meta_leitura_id_seq', 9, true);
+SELECT pg_catalog.setval('public.meta_leitura_id_seq', 10, true);
 
 
 --
@@ -1766,7 +1777,7 @@ SELECT pg_catalog.setval('public.paragrafo_id_paragrafo_seq', 362, true);
 -- Name: paragrafo_resenha_id_paragrafo_resenha_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.paragrafo_resenha_id_paragrafo_resenha_seq', 4, true);
+SELECT pg_catalog.setval('public.paragrafo_resenha_id_paragrafo_resenha_seq', 7, true);
 
 
 --
@@ -1808,7 +1819,7 @@ SELECT pg_catalog.setval('public.preferencia_user_id_seq', 22, true);
 -- Name: progresso_leitura_id_progresso_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.progresso_leitura_id_progresso_seq', 1, false);
+SELECT pg_catalog.setval('public.progresso_leitura_id_progresso_seq', 5, true);
 
 
 --
@@ -1822,7 +1833,7 @@ SELECT pg_catalog.setval('public.recuperacao_senha_id_recuperacao_seq', 6, true)
 -- Name: resenha_id_resenha_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.resenha_id_resenha_seq', 1, true);
+SELECT pg_catalog.setval('public.resenha_id_resenha_seq', 2, true);
 
 
 --
@@ -2455,8 +2466,16 @@ ALTER TABLE ONLY public.progresso_leitura
 
 
 --
+-- Name: autor usuario_autor; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.autor
+    ADD CONSTRAINT usuario_autor FOREIGN KEY (id_user) REFERENCES public.usuario(id_user);
+
+
+--
 -- PostgreSQL database dump complete
 --
 
-\unrestrict AZ5qHKv9rBk0uzDr2hPJgL40iZDUo1sgbFiaepsMskwLXhUQm0CtzmNKKoleUb3
+\unrestrict bc8ovSui1CIXmB6h62ICD60F2ndLC0kBdGNBGdtz2yseA4ue4hLcmCxDqXbPkf9
 
