@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict HmxbDLQN7feiiB1xeC7OkuTODeSFRou4bic3GLtqfzHttMUwksA0T2biZguYFLA
+\restrict AZ5qHKv9rBk0uzDr2hPJgL40iZDUo1sgbFiaepsMskwLXhUQm0CtzmNKKoleUb3
 
 -- Dumped from database version 18.4
 -- Dumped by pg_dump version 18.4
@@ -328,6 +328,8 @@ CREATE TABLE public.livro (
     data_publi timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
     idioma character varying(90),
     visibilidade character varying(20) DEFAULT 'publico'::character varying NOT NULL,
+    origem character varying(20),
+    interacao_de character varying(20) DEFAULT 'todos'::character varying,
     CONSTRAINT livro_visibilidade_check CHECK (((visibilidade)::text = ANY ((ARRAY['publico'::character varying, 'privado'::character varying])::text[])))
 );
 
@@ -417,6 +419,38 @@ ALTER TABLE public.meta_leitura OWNER TO postgres;
 
 ALTER TABLE public.meta_leitura ALTER COLUMN id ADD GENERATED ALWAYS AS IDENTITY (
     SEQUENCE NAME public.meta_leitura_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1
+);
+
+
+--
+-- Name: notificacao; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.notificacao (
+    id_notificacao integer NOT NULL,
+    id_user_recebido integer NOT NULL,
+    id_user_origem integer,
+    tipo character varying(50) NOT NULL,
+    id_referencia integer,
+    mensagem text,
+    lida boolean DEFAULT false,
+    criada_em timestamp without time zone DEFAULT CURRENT_TIMESTAMP
+);
+
+
+ALTER TABLE public.notificacao OWNER TO postgres;
+
+--
+-- Name: notificacao_id_notificacao_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+ALTER TABLE public.notificacao ALTER COLUMN id_notificacao ADD GENERATED ALWAYS AS IDENTITY (
+    SEQUENCE NAME public.notificacao_id_notificacao_seq
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
@@ -526,6 +560,7 @@ CREATE TABLE public.post (
     criado_em timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
     visibilidade character varying(20) DEFAULT 'publico'::character varying NOT NULL,
     legenda text,
+    interacao_de character varying(20) DEFAULT 'todos'::character varying,
     CONSTRAINT post_visibilidade_check CHECK (((visibilidade)::text = ANY ((ARRAY['publico'::character varying, 'privado'::character varying])::text[])))
 );
 
@@ -720,6 +755,7 @@ CREATE TABLE public.resenha (
     data_publi timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
     id_livro integer,
     visibilidade character varying(20) DEFAULT 'publico'::character varying NOT NULL,
+    interacao_de character varying(20) DEFAULT 'todos'::character varying,
     CONSTRAINT resenha_visibilidade_check CHECK (((visibilidade)::text = ANY ((ARRAY['publico'::character varying, 'privado'::character varying])::text[])))
 );
 
@@ -821,7 +857,9 @@ ALTER TABLE public.whishbook ALTER COLUMN id ADD GENERATED ALWAYS AS IDENTITY (
 CREATE TABLE public.whishlist (
     id integer NOT NULL,
     nome_lista character varying(120),
-    id_user integer
+    id_user integer,
+    descricao character varying(90),
+    capa character varying(250)
 );
 
 
@@ -1010,12 +1048,12 @@ COPY public.follow (id_follower, id_following, status_follow, data_follow) FROM 
 -- Data for Name: livro; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.livro (id_livro, titulo_livro, resumo_livro, class_ind, nome_autor, id_user, sinopse_livro, capa_url, data_publi, idioma, visibilidade) FROM stdin;
-2	A Cartomante	"A Cartomante", de Machado de Assis, conta a hist¢ria de Camilo e Rita, dois amigos que se envolvem em um relacionamento amoroso proibido, apesar de Rita ser casada com Vilela, amigo de Camilo. Com medo de que o marido descubra a trai‡Æo, Rita procura uma cartomante, que lhe garante que nada de ruim acontecer . Camilo inicialmente duvida desse tipo de previsÆo, mas, diante de acontecimentos que despertam seu medo e sua inseguran‡a, tamb‚m acaba recorrendo … cartomante. Ap¢s receber uma previsÆo tranquilizadora, ele segue confiante para encontrar Vilela, sem imaginar o destino que o aguarda. A narrativa combina suspense, ironia e cr¡tica … supersti‡Æo, mostrando como os personagens tentam encontrar seguran‡a em cren‡as diante da incerteza.	12	Machado de Assis	\N	"A Cartomante", de Machado de Assis, acompanha Camilo e Rita, dois amantes que vivem um relacionamento secreto, enquanto Vilela, marido de Rita e amigo de Camilo, come‡a a despertar preocupa‡Æo no casal. Em meio ao medo de serem descobertos, Rita procura uma cartomante em busca de respostas. A partir da¡, a hist¢ria conduz os personagens por uma sequˆncia de tensÆo e acontecimentos inesperados, marcada por suspense, ironia e uma reviravolta surpreendente.	../img/capas_livros/cartomante-capa.jpeg	2026-08-10 12:42:47.362398	Portugues-BR	publico
-3	A Semana	""A Semana", de Machado de Assis, re£ne uma s‚rie de cr“nicas publicadas originalmente em jornais, nas quais o autor observa acontecimentos cotidianos, pol¡ticos e sociais de seu tempo. Com uma escrita marcada pela ironia, pelo humor e pela reflexÆo, Machado transforma situa‡äes aparentemente simples em oportunidades para analisar o comportamento humano e as contradi‡äes da sociedade. Ao comentar fatos da vida p£blica e do dia a dia, o autor questiona costumes, valores e atitudes presentes na sociedade brasileira. A obra se destaca pela capacidade de unir cr¡tica social e entretenimento, apresentando uma visÆo inteligente e muitas vezes bem-humorada da realidade.	12	Machado de Assis	\N	""A Semana", de Machado de Assis, re£ne cr“nicas em que o autor aborda acontecimentos cotidianos e questäes sociais e pol¡ticas de sua ‚poca. Com ironia, humor e olhar cr¡tico, Machado transforma fatos comuns em reflexäes sobre a sociedade e o comportamento humano. A obra apresenta um retrato interessante e perspicaz do Brasil de seu tempo.	../img/capas_livros/semana-capa.jpeg	2026-08-10 12:53:45.173089	Portugues-BR	publico
-4	Mensagem	Mensagem, de Fernando Pessoa, ‚ uma obra po‚tica que revisita a hist¢ria e os s¡mbolos de Portugal, destacando figuras como reis, navegadores e her¢is nacionais. Dividido em trˆs partes, o livro apresenta a forma‡Æo, a realiza‡Æo e a queda simb¢lica do imp‚rio portuguˆs, relacionando o passado glorioso do pa¡s a um futuro de renova‡Æo. Por meio de poemas marcados pelo nacionalismo, pelo simbolismo e pelo misticismo, Pessoa reflete sobre o destino de Portugal e sobre a importƒncia de sua identidade hist¢rica. A obra tamb‚m aborda o sonho de um novo per¡odo de grandeza, representado pelo retorno simb¢lico de D. SebastiÆo e pelo surgimento de um novo imp‚rio, agora ligado … cultura e ao esp¡rito	10	JoÆo Pessoa	\N	Mensagem, de Fernando Pessoa, re£ne poemas que celebram e reinterpretam a hist¢ria, os her¢is e os mitos de Portugal. A obra percorre momentos fundamentais da trajet¢ria portuguesa e transforma o passado em uma reflexÆo sobre o destino e o futuro do pa¡s. Entre simbolismo, patriotismo e misticismo, Pessoa constr¢i uma visÆo po‚tica de renascimento e de uma nova grandeza portuguesa.	../img/capas_livros/mensagem-capa.jpeg	2026-08-10 13:06:38.938784	Portugues-BR	publico
-1	O Alienista	O Alienista, de Machado de Assis, conta a hist¢ria de SimÆo Bacamarte, um m‚dico que decide estudar a mente humana e compreender os limites entre a razÆo e a loucura. Para realizar suas pesquisas, ele cria a Casa Verde, onde come‡a a internar pessoas consideradas mentalmente desequilibradas. Com o passar do tempo, Bacamarte amplia tanto seus crit‚rios que grande parte da popula‡Æo de Itagua¡ acaba sendo considerada louca. Depois, ele muda sua teoria e passa a acreditar que aqueles que apresentam equil¡brio perfeito sÆo os verdadeiros anormais. No final, conclui que ele pr¢prio possui essa caracter¡stica e decide se internar na Casa Verde. A obra utiliza ironia e humor para criticar o abuso da ciˆncia, do poder e a dificuldade de definir o que ‚ realmente normal.	12	Machado de Assis	\N	O Alienista, de Machado de Assis, acompanha SimÆo Bacamarte, um m‚dico que se dedica a estudar a loucura e cria a Casa Verde, um local destinado … interna‡Æo de pessoas consideradas desequilibradas. Por‚m, sua busca pela defini‡Æo da normalidade faz com que cada vez mais habitantes de Itagua¡ sejam considerados loucos. A obra apresenta, de forma ir“nica e humor¡stica, uma cr¡tica ao excesso de poder, ao cientificismo e … dificuldade de determinar os limites entre a razÆo e a loucura.	../img/capas_livros/alienista-capa.jpeg	2026-08-10 11:37:10.803001	Portugues-BR	publico
-5	Guardador de Rebanhos	Guardador de Rebanhos, de Fernando Pessoa, escrito sob o heter“nimo Alberto Caeiro, ‚ um conjunto de poemas que apresenta uma visÆo simples, direta e profundamente ligada … natureza. O eu l¡rico rejeita interpreta‡äes filos¢ficas e metaf¡sicas do mundo e prefere observar as coisas exatamente como elas sÆo. Para Caeiro, pensar demais sobre a realidade pode afastar o ser humano da experiˆncia verdadeira de simplesmente ver, sentir e existir. A natureza, os animais, as  rvores, as flores, o c‚u e as sensa‡äes cotidianas tornam-se elementos centrais de sua poesia. O poema tamb‚m questiona conceitos tradicionais sobre Deus, espiritualidade e transcendˆncia, defendendo uma esp‚cie de rela‡Æo concreta e imediata com o mundo.	10	JoÆo Pessoa	\N	Guardador de Rebanhos acompanha o olhar de um eu l¡rico que se apresenta como um pastor que guarda rebanhos, embora esses rebanhos sejam, sobretudo, pensamentos e sensa‡äes. Ao observar a natureza, ele desenvolve uma filosofia baseada na simplicidade, recusando explica‡äes abstratas e procurando enxergar o mundo sem atribuir-lhe significados ocultos. Ao longo da obra, a natureza funciona como fonte de conhecimento e verdade, enquanto o pensamento excessivo ‚ visto como algo que complica aquilo que deveria ser simples. A obra constr¢i, assim, uma reflexÆo po‚tica sobre a existˆncia, a percep‡Æo e a rela‡Æo do ser humano com a realidade.	../img/capas_livros/rebanhos-capa.jpg	2026-08-10 13:21:21.325504	Portugues-BR	publico
+COPY public.livro (id_livro, titulo_livro, resumo_livro, class_ind, nome_autor, id_user, sinopse_livro, capa_url, data_publi, idioma, visibilidade, origem, interacao_de) FROM stdin;
+2	A Cartomante	"A Cartomante", de Machado de Assis, conta a hist¢ria de Camilo e Rita, dois amigos que se envolvem em um relacionamento amoroso proibido, apesar de Rita ser casada com Vilela, amigo de Camilo. Com medo de que o marido descubra a trai‡Æo, Rita procura uma cartomante, que lhe garante que nada de ruim acontecer . Camilo inicialmente duvida desse tipo de previsÆo, mas, diante de acontecimentos que despertam seu medo e sua inseguran‡a, tamb‚m acaba recorrendo … cartomante. Ap¢s receber uma previsÆo tranquilizadora, ele segue confiante para encontrar Vilela, sem imaginar o destino que o aguarda. A narrativa combina suspense, ironia e cr¡tica … supersti‡Æo, mostrando como os personagens tentam encontrar seguran‡a em cren‡as diante da incerteza.	12	Machado de Assis	\N	"A Cartomante", de Machado de Assis, acompanha Camilo e Rita, dois amantes que vivem um relacionamento secreto, enquanto Vilela, marido de Rita e amigo de Camilo, come‡a a despertar preocupa‡Æo no casal. Em meio ao medo de serem descobertos, Rita procura uma cartomante em busca de respostas. A partir da¡, a hist¢ria conduz os personagens por uma sequˆncia de tensÆo e acontecimentos inesperados, marcada por suspense, ironia e uma reviravolta surpreendente.	../img/capas_livros/cartomante-capa.jpeg	2026-08-10 12:42:47.362398	Portugues-BR	publico	interna	todos
+3	A Semana	""A Semana", de Machado de Assis, re£ne uma s‚rie de cr“nicas publicadas originalmente em jornais, nas quais o autor observa acontecimentos cotidianos, pol¡ticos e sociais de seu tempo. Com uma escrita marcada pela ironia, pelo humor e pela reflexÆo, Machado transforma situa‡äes aparentemente simples em oportunidades para analisar o comportamento humano e as contradi‡äes da sociedade. Ao comentar fatos da vida p£blica e do dia a dia, o autor questiona costumes, valores e atitudes presentes na sociedade brasileira. A obra se destaca pela capacidade de unir cr¡tica social e entretenimento, apresentando uma visÆo inteligente e muitas vezes bem-humorada da realidade.	12	Machado de Assis	\N	""A Semana", de Machado de Assis, re£ne cr“nicas em que o autor aborda acontecimentos cotidianos e questäes sociais e pol¡ticas de sua ‚poca. Com ironia, humor e olhar cr¡tico, Machado transforma fatos comuns em reflexäes sobre a sociedade e o comportamento humano. A obra apresenta um retrato interessante e perspicaz do Brasil de seu tempo.	../img/capas_livros/semana-capa.jpeg	2026-08-10 12:53:45.173089	Portugues-BR	publico	interna	todos
+4	Mensagem	Mensagem, de Fernando Pessoa, ‚ uma obra po‚tica que revisita a hist¢ria e os s¡mbolos de Portugal, destacando figuras como reis, navegadores e her¢is nacionais. Dividido em trˆs partes, o livro apresenta a forma‡Æo, a realiza‡Æo e a queda simb¢lica do imp‚rio portuguˆs, relacionando o passado glorioso do pa¡s a um futuro de renova‡Æo. Por meio de poemas marcados pelo nacionalismo, pelo simbolismo e pelo misticismo, Pessoa reflete sobre o destino de Portugal e sobre a importƒncia de sua identidade hist¢rica. A obra tamb‚m aborda o sonho de um novo per¡odo de grandeza, representado pelo retorno simb¢lico de D. SebastiÆo e pelo surgimento de um novo imp‚rio, agora ligado … cultura e ao esp¡rito	10	JoÆo Pessoa	\N	Mensagem, de Fernando Pessoa, re£ne poemas que celebram e reinterpretam a hist¢ria, os her¢is e os mitos de Portugal. A obra percorre momentos fundamentais da trajet¢ria portuguesa e transforma o passado em uma reflexÆo sobre o destino e o futuro do pa¡s. Entre simbolismo, patriotismo e misticismo, Pessoa constr¢i uma visÆo po‚tica de renascimento e de uma nova grandeza portuguesa.	../img/capas_livros/mensagem-capa.jpeg	2026-08-10 13:06:38.938784	Portugues-BR	publico	interna	todos
+1	O Alienista	O Alienista, de Machado de Assis, conta a hist¢ria de SimÆo Bacamarte, um m‚dico que decide estudar a mente humana e compreender os limites entre a razÆo e a loucura. Para realizar suas pesquisas, ele cria a Casa Verde, onde come‡a a internar pessoas consideradas mentalmente desequilibradas. Com o passar do tempo, Bacamarte amplia tanto seus crit‚rios que grande parte da popula‡Æo de Itagua¡ acaba sendo considerada louca. Depois, ele muda sua teoria e passa a acreditar que aqueles que apresentam equil¡brio perfeito sÆo os verdadeiros anormais. No final, conclui que ele pr¢prio possui essa caracter¡stica e decide se internar na Casa Verde. A obra utiliza ironia e humor para criticar o abuso da ciˆncia, do poder e a dificuldade de definir o que ‚ realmente normal.	12	Machado de Assis	\N	O Alienista, de Machado de Assis, acompanha SimÆo Bacamarte, um m‚dico que se dedica a estudar a loucura e cria a Casa Verde, um local destinado … interna‡Æo de pessoas consideradas desequilibradas. Por‚m, sua busca pela defini‡Æo da normalidade faz com que cada vez mais habitantes de Itagua¡ sejam considerados loucos. A obra apresenta, de forma ir“nica e humor¡stica, uma cr¡tica ao excesso de poder, ao cientificismo e … dificuldade de determinar os limites entre a razÆo e a loucura.	../img/capas_livros/alienista-capa.jpeg	2026-08-10 11:37:10.803001	Portugues-BR	publico	interna	todos
+5	Guardador de Rebanhos	Guardador de Rebanhos, de Fernando Pessoa, escrito sob o heter“nimo Alberto Caeiro, ‚ um conjunto de poemas que apresenta uma visÆo simples, direta e profundamente ligada … natureza. O eu l¡rico rejeita interpreta‡äes filos¢ficas e metaf¡sicas do mundo e prefere observar as coisas exatamente como elas sÆo. Para Caeiro, pensar demais sobre a realidade pode afastar o ser humano da experiˆncia verdadeira de simplesmente ver, sentir e existir. A natureza, os animais, as  rvores, as flores, o c‚u e as sensa‡äes cotidianas tornam-se elementos centrais de sua poesia. O poema tamb‚m questiona conceitos tradicionais sobre Deus, espiritualidade e transcendˆncia, defendendo uma esp‚cie de rela‡Æo concreta e imediata com o mundo.	10	JoÆo Pessoa	\N	Guardador de Rebanhos acompanha o olhar de um eu l¡rico que se apresenta como um pastor que guarda rebanhos, embora esses rebanhos sejam, sobretudo, pensamentos e sensa‡äes. Ao observar a natureza, ele desenvolve uma filosofia baseada na simplicidade, recusando explica‡äes abstratas e procurando enxergar o mundo sem atribuir-lhe significados ocultos. Ao longo da obra, a natureza funciona como fonte de conhecimento e verdade, enquanto o pensamento excessivo ‚ visto como algo que complica aquilo que deveria ser simples. A obra constr¢i, assim, uma reflexÆo po‚tica sobre a existˆncia, a percep‡Æo e a rela‡Æo do ser humano com a realidade.	../img/capas_livros/rebanhos-capa.jpg	2026-08-10 13:21:21.325504	Portugues-BR	publico	interna	todos
 \.
 
 
@@ -1050,6 +1088,14 @@ COPY public.meta_leitura (id, id_user, periodo, num_livros, criacao, status, exp
 7	19	mensal	200	2026-08-16 20:34:51.764024	andamento	2026-09-15	Meta de agosto
 8	19	semanal	6	2026-08-16 21:43:51.885478	andamento	2026-08-23	meta de drama
 9	19	semanal	1	2026-08-17 13:32:04.349551	andamento	2026-08-24	Meta do Miguel
+\.
+
+
+--
+-- Data for Name: notificacao; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.notificacao (id_notificacao, id_user_recebido, id_user_origem, tipo, id_referencia, mensagem, lida, criada_em) FROM stdin;
 \.
 
 
@@ -1427,6 +1473,10 @@ COPY public.paragrafo (id_paragrafo, texto_paragrafo, imagem_paragrafo_url, orde
 --
 
 COPY public.paragrafo_resenha (id_paragrafo_resenha, texto_paragrafo_resenha, id_resenha, ordem_paragrafo_resenha) FROM stdin;
+1	O Livro o Alienista escrito por Machado de Assis ‚ uma obra-prima cl ssica da literatura brasileira, mas o que ser  que ele quer dizer?	1	1
+2	Na hist¢ria, o Alienista que inicialmente julgava todos da cidade loucos, at‚ que uma hora ele pensa se na verdade o louco pode ser ele.	1	2
+3	Ele entÆo decide se trancar no hosp¡cio onde colocava os loucos at‚ que pudesse se autotratar.	1	3
+4	A reflexÆo sobre como as denomina‡äes humanas podem ser flu¡das e flex¡veis de acordo com o julgamento de cada um!	1	4
 \.
 
 
@@ -1442,9 +1492,9 @@ COPY public.personagem (id_personagem, nome_personagem, genero, idade, funcao, d
 -- Data for Name: post; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.post (id_post, titulo_post, id_user, url_imagem, conteudo, criado_em, visibilidade, legenda) FROM stdin;
-2	POST MANEIRO	19	\N	Hoje eu acordei e vi o Miguel dando a bunda	2026-08-17 13:54:58.379895	publico	ele tava rebolando lentinho
-3	POST TESTE	19	\N	esse post é um test	2026-08-18 16:59:40.151209	publico	vamos ver se funciona
+COPY public.post (id_post, titulo_post, id_user, url_imagem, conteudo, criado_em, visibilidade, legenda, interacao_de) FROM stdin;
+2	POST MANEIRO	19	\N	Hoje eu acordei e vi o Miguel dando a bunda	2026-08-17 13:54:58.379895	publico	ele tava rebolando lentinho	todos
+3	POST TESTE	19	\N	esse post é um test	2026-08-18 16:59:40.151209	publico	vamos ver se funciona	todos
 \.
 
 
@@ -1558,7 +1608,8 @@ COPY public.rel_worldbuild (id_cena, id_cenario, id_personagem) FROM stdin;
 -- Data for Name: resenha; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.resenha (id_resenha, titulo_resenha, id_user, sinopse, class_ind, data_publi, id_livro, visibilidade) FROM stdin;
+COPY public.resenha (id_resenha, titulo_resenha, id_user, sinopse, class_ind, data_publi, id_livro, visibilidade, interacao_de) FROM stdin;
+1	An lise do Alienista	19	Nesta resenha pretende-se analisar o livro O Alienista	12	2026-08-20 13:41:58.747008	1	publico	todos
 \.
 
 
@@ -1615,8 +1666,8 @@ COPY public.whishbook (id, id_livro, id_user, id_whishlist) FROM stdin;
 -- Data for Name: whishlist; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.whishlist (id, nome_lista, id_user) FROM stdin;
-1	J  li	19
+COPY public.whishlist (id, nome_lista, id_user, descricao, capa) FROM stdin;
+1	J  li	19	\N	\N
 \.
 
 
@@ -1698,6 +1749,13 @@ SELECT pg_catalog.setval('public.meta_leitura_id_seq', 9, true);
 
 
 --
+-- Name: notificacao_id_notificacao_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.notificacao_id_notificacao_seq', 1, false);
+
+
+--
 -- Name: paragrafo_id_paragrafo_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
@@ -1708,7 +1766,7 @@ SELECT pg_catalog.setval('public.paragrafo_id_paragrafo_seq', 362, true);
 -- Name: paragrafo_resenha_id_paragrafo_resenha_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.paragrafo_resenha_id_paragrafo_resenha_seq', 1, false);
+SELECT pg_catalog.setval('public.paragrafo_resenha_id_paragrafo_resenha_seq', 4, true);
 
 
 --
@@ -1764,7 +1822,7 @@ SELECT pg_catalog.setval('public.recuperacao_senha_id_recuperacao_seq', 6, true)
 -- Name: resenha_id_resenha_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.resenha_id_resenha_seq', 1, false);
+SELECT pg_catalog.setval('public.resenha_id_resenha_seq', 1, true);
 
 
 --
@@ -1845,6 +1903,14 @@ ALTER TABLE ONLY public.comentario
 
 
 --
+-- Name: conta conta_id_user_unique; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.conta
+    ADD CONSTRAINT conta_id_user_unique UNIQUE (id_user);
+
+
+--
 -- Name: conversa conversa_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1882,6 +1948,14 @@ ALTER TABLE ONLY public.mensagem
 
 ALTER TABLE ONLY public.meta_leitura
     ADD CONSTRAINT meta_leitura_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: notificacao notificacao_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.notificacao
+    ADD CONSTRAINT notificacao_pkey PRIMARY KEY (id_notificacao);
 
 
 --
@@ -2114,6 +2188,22 @@ ALTER TABLE ONLY public.whishbook
 
 ALTER TABLE ONLY public.preferencia_livro
     ADD CONSTRAINT fk_livro_livro FOREIGN KEY (id_livro) REFERENCES public.livro(id_livro);
+
+
+--
+-- Name: notificacao fk_notificacao_user_final; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.notificacao
+    ADD CONSTRAINT fk_notificacao_user_final FOREIGN KEY (id_user_recebido) REFERENCES public.usuario(id_user) ON DELETE CASCADE;
+
+
+--
+-- Name: notificacao fk_notificacao_user_origem; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.notificacao
+    ADD CONSTRAINT fk_notificacao_user_origem FOREIGN KEY (id_user_origem) REFERENCES public.usuario(id_user) ON DELETE CASCADE;
 
 
 --
@@ -2368,5 +2458,5 @@ ALTER TABLE ONLY public.progresso_leitura
 -- PostgreSQL database dump complete
 --
 
-\unrestrict HmxbDLQN7feiiB1xeC7OkuTODeSFRou4bic3GLtqfzHttMUwksA0T2biZguYFLA
+\unrestrict AZ5qHKv9rBk0uzDr2hPJgL40iZDUo1sgbFiaepsMskwLXhUQm0CtzmNKKoleUb3
 
