@@ -1,0 +1,37 @@
+:root {
+    --bg-primary: #F5F3ED;
+    --bg-cards: #2B1F47;
+    --bg-cards-light: #3A2A5C;
+    --all-white: #FFF;
+    --color-accent: #8B5CF6;
+    --color-accent2: #A855F7;
+    --bg-gradient:linear-gradient(180deg,rgba(123, 106, 168, 1) 0%, rgba(246, 242, 235, 1) 100%);
+
+    --text-primary: #000000;
+    --text-secondary: #252525;
+    --text-on-dark: #FFFFFF;
+    --text-title:#2B1F47;
+
+
+    --warning: #F59E0B;
+    --danger: #EF4444;
+
+
+    /*cores do top livros do usuário*/
+    --rating-one: #E9A617;
+    --rating-two: #C0C0C0;
+    --rating-three: #CD7F32;
+    --rating-empty: #6B5A8D;
+
+
+
+    --font-primary:'Manrope', sans-serif;
+    --font-secundary: 'Lora', sans-serif;
+    --radius-sm: 10px;
+    --radius-md: 15px;
+    --radius-lg: 30px;
+
+
+    --border-primary: #c0c0c0;
+    
+}   
