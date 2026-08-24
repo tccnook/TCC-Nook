@@ -1,7 +1,136 @@
 .step {
     display: none;
 }
-
 .step.active {
-    display: block;
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+    flex-direction: column;
+    width: 100%;
+    gap: 10px;
+}
+body {
+    background: var(--bg-gradient);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Lora', sans-serif;   
+    font-size: (10px, 2vw, 100px); 
+}
+
+main {
+    background-color: var(--all-white);
+    border-radius: var(--radius-lg);
+    width: var(--width-login);
+    padding: 40px;
+    align-items: center;
+    box-shadow: 0 0 15px 2px #2e2e2e;
+    margin: 40px 0;
+    gap: 30px;
+}
+
+.logo-nook {
+    width: 90%;
+}
+
+.logo-nook img {
+    width: 120px;
+}
+
+
+form, main {
+    display: flex;
+    justify-content: space-around;
+    flex-direction: column;
+}
+form {
+    width: 100%;
+    align-items: center;
+}
+
+form input {
+    height: clamp(45px, 3vw, 70px);
+    border-radius: var(--radius-sm);
+    border: none;
+    box-shadow: 0 0 12px 0.1px var(--border-primary);
+}
+form label {
+    text-align: start;
+    margin: 10px;
+}
+.remember-password {
+    text-align: start;
+    margin: 20px 0;
+}
+h1 {
+    color: var(--text-title);
+}
+
+.button-action {
+    all: unset;
+    text-align: center;
+    height: 52px;
+    border-radius: var(--radius-sm);
+    color: var(--all-white);
+}
+.button-next {
+    background-color: var(--color-accent2);
+}
+.button-last {
+    background-color: var(--bg-cards);
+}
+
+form input, form label, .remember-password, h1, .button-action {
+    width: 90%;
+}
+form input {
+    padding: clamp(10px, 1vw, 100px);
+}
+
+.division-google-area {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.division-google-area hr {
+    width: clamp(30px, 15vw, 600px);
+}
+
+.division-google-area span {
+    font-size: 14px;
+    color: #252525;
+}
+
+.next-step {
+    margin-top: clamp(10px, 1vw,20px);
+}
+
+
+
+.progresso {
+    margin: 20px 0;
+    width: 90%;
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+}
+
+.bola {
+    background-color: var(--bg-cards);
+    width: 15px;
+    height: 15px;
+    border-radius: 100px;
+}
+
+.bola-um {
+    background-color: var(--color-accent2);
+    width: 15px;
+    height: 15px;
+    border-radius: 100px;
+
+}
+
+.progresso hr {
+    width: clamp(5px, 7vw, 200px);
 }

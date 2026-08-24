@@ -1,43 +1,46 @@
-const steps = document.querySelectorAll('.step');
+document.addEventListener("DOMContentLoaded", () => {
+    const btnVoltar = document.querySelector(".previous-step");
+    if (btnVoltar) {
+        btnVoltar.addEventListener("click", prevStep);
+    }
+});
 
-const nextButton = document.querySelector('.next-step');
-const previousButton = document.querySelector('.previous-step');
+function nextStep() {
+    const currentStepEl = document.querySelector(".step.active");
+    if (!currentStepEl) return;
 
-let currentStep = 1;
-const totalSteps = steps.length;
+    const currentStep = parseInt(currentStepEl.dataset.step);
+    const nextStep = currentStep + 1;
 
+    const nextStepEl = document.querySelector(`[data-step="${nextStep}"]`);
 
-function showStep(step) {
+    if (nextStepEl) {
+        if (currentStep === 1) {
+            const email = document.getElementById("email").value.trim();
+            const nomeComp = document.getElementById("nome_comp").value.trim();
+            const nomeUser = document.getElementById("nome_user").value.trim();
 
-    steps.forEach((element) => {
-        element.classList.remove('active');
-    });
-
-    const current = document.querySelector(
-        `.step[data-step="${step}"]`
-    );
-
-    current.classList.add('active');
+            if (!email || !nomeComp || !nomeUser) {
+                alert("Por favor, preencha todos os campos desta etapa.");
+                return;
+            }
+        }
+        currentStepEl.classList.remove("active");
+        nextStepEl.classList.add("active");
+    }
 }
 
+function prevStep() {
+    const currentStepEl = document.querySelector(".step.active");
+    if (!currentStepEl) return;
 
-nextButton.addEventListener('click', () => {
+    const currentStep = parseInt(currentStepEl.dataset.step);
+    const prevStep = currentStep - 1;
 
-    if (currentStep < totalSteps) {
-        currentStep++;
+    const prevStepEl = document.querySelector(`[data-step="${prevStep}"]`);
 
-        showStep(currentStep);
+    if (prevStepEl) {
+        currentStepEl.classList.remove("active");
+        prevStepEl.classList.add("active");
     }
-
-});
-
-
-previousButton.addEventListener('click', () => {
-
-    if (currentStep > 1) {
-        currentStep--;
-
-        showStep(currentStep);
-    }
-
-});
+}

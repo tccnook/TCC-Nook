@@ -24,7 +24,6 @@
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <link rel="stylesheet" href="/TCC-Nook/front-end/css/main.css">    
-        <link rel="stylesheet" href="/TCC-Nook/front-end/css/pages/login.css">
         <link rel="stylesheet" href="/TCC-Nook/front-end/css/pages/logup.css">
 
         <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -34,36 +33,51 @@
     
         <link rel="shortcut icon" href="/TCC-Nook/img/icons/ico-nook/ico-nook.ico" type="image/x-icon">
 
-        <script src="/TCC-Nook/front-end/js/pages/cadastro.js" defer></script>
+        <script src="/TCC-Nook/front-end/js/pages/logup.js" defer></script>
+
 
         <title> Nook - Cadastro </title>
     </head>
     <body>
         <main>
+
+        <div class="logo-nook">
+                <img src="/TCC-Nook/img/logos/logo-deitada.png" alt="">
+            </div>
             <h1>Criar conta</h1>
         <form name="cadastro" method="POST" action="">
 
-    <section class="step active" data-step="1">
-
+    <section class="step active  step-one" data-step="1">
         <label for="email">Email</label>
-        <input type="email" name="email" id="email" value="<?php echo htmlspecialchars($email_google ?? ''); ?>">
+        <input type="email" name="email" id="email" value="<?php if(isset($email_google)){ echo $email_google; }  ?>">
 
         <label for="nome_comp">Nome Completo</label>
-        <input type="text" name="nome_comp" id="nome_comp" value="<?php echo htmlspecialchars($nome_completo_google ?? ''); ?>">
+        <input type="text" name="nome_comp" id="nome_comp" value="<?php if(isset($nome_completo_google)){ echo $nome_completo_google; }  ?>">
 
         <label for="nome_user">Nome de Usuário</label>
         <input type="text" name="nome_user" id="nome_user">
+        
+        <p>Já possui uma conta? <a href="login.php">Entre agora! </a></p>
 
-        <button type="button" class="next-step">
+        <section class="progresso">
+            <section class="bola-um"></section>
+            <hr>
+            <section class="bola"></section>
+            <hr>
+            <section class="bola"></section>
+            <hr>
+            <section class="bola"></section>
+        </section>
+
+        <button type="button" class="next-step button-action button-next" onclick="nextStep()">
             Avançar
         </button>
-
     </section>
 
-    <section class="step" data-step="2">
 
+    <section class="step" data-step="2">
         <label for="data_nasc">Data de Nascimento</label>
-        <input type="date" name="data_nasc" id="data_nasc">
+        <input type="date" name="data_nasc" id="data_nasc" value="<?php echo htmlspecialchars($_SESSION['dadosCadastrados']['data_nascimento'] ?? ''); ?>">
 
         <label for="senha">Senha</label>
         <input type="password" name="senha" id="senha">
@@ -71,17 +85,42 @@
         <label for="confirmar_senha">Confirmar Senha</label>
         <input type="password" name="confirmar_senha" id="confirmar_senha">
 
-        <button type="button" class="previous-step button-action">
+        <p>Já possui uma conta? <a href="login.php">Entre agora! </a></p>
+
+        
+        <section class="progresso">
+            <section class="bola-um"></section>
+            <hr>
+            <section class="bola-um"></section>
+            <hr>
+            <section class="bola"></section>
+            <hr>
+            <section class="bola"></section>
+        </section>
+
+        <button type="button" class="previous-step button-action button-last">
             Voltar
         </button>
 
-        <button type="submit" name="proximo" class="button-action">
+        <button type="submit" name="proximo" class="button-action button-next">
             Finalizar cadastro
         </button>
-
     </section>
 
 </form>
+
+ <div class="division-google-area">
+                <hr>
+                <span>OU</span>
+                <hr>
+            </div>
+            
+            <button onclick="window.location.href='google-login.php'" class="google-btn">
+                <img class="ico-google" src="/TCC-Nook/img/icons/plataforms/google-ico.svg" alt="Google">
+                <span>Continuar com o Google</span>
+            </button>
+
+            
 
 </main>
         
