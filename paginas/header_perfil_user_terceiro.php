@@ -1,4 +1,4 @@
-<?php //arrumar e terminar exibição de seguidores e seguindo
+<?php //tem que arrumar essa merda
     session_start();
     require_once('conexao.php');
 
@@ -20,34 +20,58 @@
     }
 
     $select_usuario = "select * from usuario where id_user = :id_user_terceiro;";
-    $stmt = $conn->prepare($select_usuario);
-    $stmt->execute([":id_user_terceiro" => $id_user_terceiro]);
-    $usuario = $stmt->fetch(PDO::FETCH_ASSOC);
+    try{
+        $stmt = $conn->prepare($select_usuario);
+        $stmt->execute([":id_user_terceiro" => $id_user_terceiro]);
+        $usuario = $stmt->fetch(PDO::FETCH_ASSOC);
+    } catch (PDOException $e) {
+        echo "Erro ao buscar: ".$e->getMessage(); 
+    }
 
     $select_conta = "select * from conta where id_user = :id_user_terceiro;";
-    $stmt = $conn->prepare($select_conta);
-    $stmt->execute([":id_user_terceiro" => $id_user_terceiro]);
-    $conta = $stmt->fetch(PDO::FETCH_ASSOC);
+    try{
+        $stmt = $conn->prepare($select_conta);
+        $stmt->execute([":id_user_terceiro" => $id_user_terceiro]);
+        $conta = $stmt->fetch(PDO::FETCH_ASSOC);
+    } catch (PDOException $e) {
+        echo "Erro ao buscar: ".$e->getMessage(); 
+    }
 
     $select_seguidores = "select COUNT(*) from follow where id_following = :id_user_terceiro;;";
-    $stmt = $conn->prepare($select_seguidores);
-    $stmt->execute([":id_user_terceiro" => $id_user_terceiro]);
-    $n_seguidores = $stmt->fetch(PDO::FETCH_ASSOC);
+    try{
+        $stmt = $conn->prepare($select_seguidores);
+        $stmt->execute([":id_user_terceiro" => $id_user_terceiro]);
+        $n_seguidores = $stmt->fetch(PDO::FETCH_ASSOC);
+    } catch (PDOException $e) {
+        echo "Erro ao buscar: ".$e->getMessage(); 
+    }
 
     $select_seguindo = "select COUNT(*) from follow where id_follower = :id_user_terceiro;";
-    $stmt = $conn->prepare($select_seguindo);
-    $stmt->execute([":id_user_terceiro" => $id_user_terceiro]);
-    $n_seguindo = $stmt->fetch(PDO::FETCH_ASSOC);
+    try{
+        $stmt = $conn->prepare($select_seguindo);
+        $stmt->execute([":id_user_terceiro" => $id_user_terceiro]);
+        $n_seguindo = $stmt->fetch(PDO::FETCH_ASSOC);
+    } catch (PDOException $e) {
+        echo "Erro ao buscar: ".$e->getMessage(); 
+    }
 
     $select_resenhas = "select COUNT(*) from resenha where id_user = :id_user_terceiro;";
-    $stmt = $conn->prepare($select_resenhas);
-    $stmt->execute([":id_user_terceiro" => $id_user_terceiro]);
-    $resenhas = $stmt->fetch(PDO::FETCH_ASSOC);
+    try{
+        $stmt = $conn->prepare($select_resenhas);
+        $stmt->execute([":id_user_terceiro" => $id_user_terceiro]);
+        $resenhas = $stmt->fetch(PDO::FETCH_ASSOC);
+    } catch (PDOException $e) {
+        echo "Erro ao buscar: ".$e->getMessage(); 
+    }
 
     $select_lidos = "select COUNT(*) from livros_lidos where id_user = :id_user_terceiro;";
-    $stmt = $conn->prepare($select_lidos);
-    $stmt->execute([":id_user_terceiro" => $id_user_terceiro]);
-    $lidos = $stmt->fetch(PDO::FETCH_ASSOC);
+    try{
+        $stmt = $conn->prepare($select_lidos);
+        $stmt->execute([":id_user_terceiro" => $id_user_terceiro]);
+        $lidos = $stmt->fetch(PDO::FETCH_ASSOC);
+    } catch (PDOException $e) {
+        echo "Erro ao buscar: ".$e->getMessage(); 
+    }
 
     $select_seguidores = "select 
             u.id_user,
@@ -75,12 +99,16 @@
         )
         ORDER BY u.nome_completo";
 
-    $stmt = $conn->prepare($select_seguidores);
-    $stmt->execute([
-        ':id_user_terceiro' => $id_user_terceiro,    
-        'id_user' => $id_user
-        ]);
-    $seguidores = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    try{
+        $stmt = $conn->prepare($select_seguidores);
+        $stmt->execute([
+            ':id_user_terceiro' => $id_user_terceiro,    
+            'id_user' => $id_user
+            ]);
+        $seguidores = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    } catch (PDOException $e) {
+        echo "Erro ao buscar: ".$e->getMessage(); 
+    }
 
     $select_seguindo = "select 
             u.id_user,
@@ -109,12 +137,16 @@
         ORDER BY u.nome_completo
     ";
 
-    $stmt = $conn->prepare($select_seguindo);
-    $stmt->execute([
-        ':id_user' => $id_user, 
-        ':id_user_terceiro' => $id_user_terceiro
-    ]);
-    $seguindos = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    try{
+        $stmt = $conn->prepare($select_seguindo);
+        $stmt->execute([
+            ':id_user' => $id_user, 
+            ':id_user_terceiro' => $id_user_terceiro
+        ]);
+        $seguindos = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    } catch (PDOException $e) {
+        echo "Erro ao buscar: ".$e->getMessage(); 
+    }
 
 ?>
 
@@ -155,18 +187,25 @@
             }
 
             $status_follow = "select status_follow from follow where id_follower = :id_user and id_following = :id_user_terceiro;";
-
-            $stmt = $conn->prepare($status_follow);
-            $stmt->execute([
-                ":id_user" => $id_user,
-                ":id_user_terceiro" => $id_user_terceiro
-            ]);
-
-            $msg = $stmt->fetch(PDO::FETCH_ASSOC);
+            
+            try{
+                $stmt = $conn->prepare($status_follow);
+                $stmt->execute([
+                    ":id_user" => $id_user,
+                    ":id_user_terceiro" => $id_user_terceiro
+                ]);
+                $msg = $stmt->fetch(PDO::FETCH_ASSOC);
+            } catch (PDOException $e) {
+                echo "Erro ao buscar: ".$e->getMessage(); 
+            }
 
             if ($msg == false) {
                 $msg['status_follow'] = 'seguir';
             }
+
+            $perfil_privado = $conta['visibilidade'] === 'privado';
+            $segue_o_perfil = $msg['status_follow'] === 'seguindo';
+            $pode_ver_follows = !$perfil_privado || $segue_o_perfil;
 
             if (isset($_POST['seguir'])) {
 
@@ -208,6 +247,43 @@
                     echo "Erro ao deletar: ".$e->getMessage();
                 }
             }
+
+            //se clicou em bloquear
+            $msg_bloqueio = "Bloquear";
+            if(isset($_POST['bloquear'])){
+
+                $bloquear = "insert into bloqueio (id_bloqueador, id_bloqueado, status_bloqueio) values (:id_bloqueador, :id_bloqueado, :status_bloqueio);";
+
+                try {
+                    $stmt = $conn->prepare($bloquear);
+                    $stmt->execute([
+                        ":id_bloqueador" => $id_user,
+                        ":id_bloqueado" => $id_user_terceiro,
+                        ":status_bloqueio" => 'bloqueado'
+                    ]);
+
+                    $msg_bloqueio = "Bloqueado";
+
+                } catch (PDOException $e) {
+                    echo "Erro ao inserir:". $e->getMessage();
+                }
+
+                $dxr_seguir = "delete from follow where id_follower = :id_user and id_following = :id_user_terceiro";
+
+                try {
+                    $stmt = $conn->prepare($dxr_seguir);
+                    $stmt->execute([
+                        ":id_user" => $id_user,
+                        ":id_user_terceiro" => $id_user_terceiro
+                    ]);
+
+                    header("Location: header_perfil_user_terceiro.php?id_user=".$id_user_terceiro);
+                    exit();
+
+                } catch (PDOException $e) {
+                    echo "Erro ao deletar: ".$e->getMessage();
+                }
+            }
             ?>
 
             <?php if ($msg['status_follow'] === 'seguir') { ?>
@@ -232,11 +308,13 @@
                     X
                 </button><br>
                 <button type='submit' name='dxr_seguir'>Deixar de Seguir</button><br>
-                <button type='submit' name='bloquear'>Bloquear</button>
+                <button type='submit' name='bloquear'><?= $msg_bloqueio ?></button>
             </form>
         </dialog>
 
         <button>Compartilhar</button><br>
+
+        <?php if($pode_ver_follows): ?>
 
         <button type="button" id="btnSeguidores">
             <?=$n_seguidores['count']?> Seguidores
@@ -283,7 +361,8 @@
                                     ":id_following" => $id_seguidor,
                                     ":status_follow" => 'seguindo'
                                 ]);
-
+                                $name_input = "dxr_seguir2";
+                                $msg2 = "deixar de seguir";
                                 header("Location: header_perfil_user_terceiro.php?id_user=".$id_user_terceiro);
                             } catch (PDOException $e) {
                                 echo "Erro ao inserir: ".$e->getMessage();
@@ -298,16 +377,16 @@
                     <?php
                         if($id_seguidor == $id_user){
 
-                        }else{
+                        }else
                     ?>
                     <form action="#" method="POST">
                         <input type="hidden" name="id_seguidor" value="<?= $id_seguidor?>">
-                        <button type='submit' name='seguir2'><?= $msg2 ?></button>
+                        <button type='submit' name='<? $name_input ?>'><?= $msg2 ?></button>
                     </form>
 
             <?php
                     if (isset($_POST['seguir2'])) {
-                        $id_seguindo = $_POST['id_seguindo'];
+                        $id_seguidor = $_POST['id_seguidor'];
                         $seguir = "insert into follow (id_follower, id_following, status_follow) values (:id_follower, :id_following, :status_follow)";
 
                         $stmt = $conn->prepare($seguir);
@@ -321,11 +400,32 @@
                         header("Location: header_perfil_user_terceiro.php?id_user=".$id_user_terceiro);
                         exit();
                     }
+
+                if (isset($_POST['dxr_seguir2'])) {
+
+                    $dxr_seguir2 = "delete from follow where id_follower = :id_user and id_following = :id_seguidor";
+
+                    try {
+                        $stmt = $conn->prepare($dxr_seguir);
+                        $stmt->execute([
+                            ":id_user" => $id_user,
+                            ":id_seguidor" => $id_seguidor
+                        ]);
+
+                        header("Location: header_perfil_user_terceiro.php?id_user=".$id_user_terceiro);
+                        exit();
+
+                    } catch (PDOException $e) {
+                        echo "Erro ao deletar: ".$e->getMessage();
+                    }
                 }
+                
             }
             ?>
         </dialog>
+        <?php endif; ?>
 
+        <?php if($pode_ver_follows): ?>
         <button type="button" id="btnSeguindo">
             <?=$n_seguindo['count']?> Seguindo
         </button><br>
@@ -371,7 +471,8 @@
                                     ":id_following" => $id_seguindo,
                                     ":status_follow" => 'seguindo'
                                 ]);
-
+                                $name_input = "dxr_seguir3";
+                                $msg3 = "deixar de seguir";
                                 header("Location: header_perfil_user_terceiro.php?id_user=".$id_user_terceiro);
                             } catch (PDOException $e) {
                                 echo "Erro ao inserir: ".$e->getMessage();
@@ -413,26 +514,30 @@
                         }
                     }
                 }
-            }
+                if (isset($_POST['dxr_seguir3'])) {
 
-            if(isset($_POST['bloquear'])){
+                    $dxr_seguir = "delete from follow where id_follower = :id_user and id_following = :id_seguindo";
 
-                $bloquear = "insert into bloqueio (id_bloqueador, id_bloqueado, status_bloqueio) values (:id_bloqueador, :id_bloqueado, :status_bloqueio);";
+                    try {
+                        $stmt = $conn->prepare($dxr_seguir);
+                        $stmt->execute([
+                            ":id_user" => $id_user,
+                            ":id_seguindo" => $id_seguindo
+                        ]);
 
-                try {
-                    $stmt = $conn->prepare($bloquear);
-                    $stmt->execute([
-                        ":id_bloqueador" => $id_user,
-                        ":id_bloqueado" => $id_user_terceiro,
-                        ":status_bloqueio" => 'bloqueado'
-                    ]);
+                        header("Location: header_perfil_user_terceiro.php?id_user=".$id_user_terceiro);
+                        exit();
 
-                } catch (PDOException $e) {
-                    echo "Erro ao inserir:". $e->getMessage();
+                    } catch (PDOException $e) {
+                        echo "Erro ao deletar: ".$e->getMessage();
+                    }
                 }
             }
+
+
             ?>
         </dialog>
+        <?php endif; ?>
 
         <p><?=$resenhas['count']?> Resenhas</p>
         <p><?=$lidos['count']?> Livros lidos</p>
@@ -443,13 +548,20 @@
         const modalSeguindo = document.getElementById("modal_seguindo");
         const modalSeguir = document.getElementById("modal_seguir");
 
-        document.getElementById("btnSeguidores").addEventListener("click", () => {
-            modalSeguidores.showModal();
-        });
+        const btnSeguidores = document.getElementById("btnSeguidores");
+        const btnSeguindo = document.getElementById("btnSeguindo");
 
-        document.getElementById("btnSeguindo").addEventListener("click", () => {
-            modalSeguindo.showModal();
-        });
+        if (btnSeguidores) {
+            btnSeguidores.addEventListener("click", () => {
+                modalSeguidores.showModal();
+            });
+        }
+
+        if (btnSeguindo) {
+            btnSeguindo.addEventListener("click", () => {
+                modalSeguindo.showModal();
+            });
+        }
 
         document.getElementById("fechar_seguidores").addEventListener("click", () => {
             modalSeguidores.close();
