@@ -3,7 +3,7 @@
 
     require_once('conexao.php');
 
-    require_once('header_perfil_user_terceiro.php');
+    require_once('teste_header_terceiro.php');
 
     $db = new Database();
     $conn = $db->conectar();
@@ -22,6 +22,7 @@
         exit();
     }
 
+    
     $select_visibilidade = "select visibilidade from conta where id_user = :id_user_terceiro;";
 
     try {
