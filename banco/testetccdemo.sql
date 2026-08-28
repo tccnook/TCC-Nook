@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict bc8ovSui1CIXmB6h62ICD60F2ndLC0kBdGNBGdtz2yseA4ue4hLcmCxDqXbPkf9
+\restrict cqu6CI56MuZGYq6l1Ey5buZiMRr2VaetLL9fCNBO66s7cXerYlOK2ac4v8GgHLA
 
 -- Dumped from database version 18.4
 -- Dumped by pg_dump version 18.4
@@ -928,6 +928,11 @@ COPY public.autor_user (id_user, id_autor, id) FROM stdin;
 29	4	20
 29	6	21
 29	8	22
+30	1	23
+30	2	24
+30	4	25
+30	5	26
+30	6	27
 \.
 
 
@@ -996,6 +1001,12 @@ COPY public.comentario (id_comentario, id_user, categoria_curtida, id_coisocurti
 11	19	post	3	\N	Agora ele subiu dnv	2026-08-18 17:07:11.280932
 12	19	post	3	\N	continua subindo	2026-08-18 17:07:29.271428
 13	19	post	3	\N	Olá Mundo	2026-08-18 17:12:44.883935
+14	19	livro	2	\N	Livro Foda	2026-08-24 13:18:15.826824
+15	19	livro	2	\N	Livro Maneirasso	2026-08-24 13:18:39.532703
+16	19	livro	2	\N	Livro Super Bomb stico	2026-08-24 13:18:46.868897
+17	19	livro	2	\N	Livro Super Super Hiper Mega Blaster Ultra Stonks	2026-08-24 13:18:57.083883
+18	19	livro	2	\N	sdgdfgd	2026-08-24 14:00:46.299182
+19	19	livro	2	\N	fsdfsdfsad	2026-08-24 14:10:37.887971
 \.
 
 
@@ -1008,6 +1019,7 @@ COPY public.conta (id_user, foto_perfil_url, bio, visibilidade, banner_url) FROM
 28	\N	\N	publico	\N
 29	\N	\N	publico	\N
 19	img/foto_perfil/4f3a97f338ba0c7c65039d97f02cc401.webp	Apenas um cara tranquilo que gosta do palmeiras	publico	img/banner_perfil/25cfe8fb7c9a8d15943d86263f962fda.webp
+30	\N	\N	publico	\N
 \.
 
 
@@ -1016,6 +1028,8 @@ COPY public.conta (id_user, foto_perfil_url, bio, visibilidade, banner_url) FROM
 --
 
 COPY public.conversa (id_conversa, tipo, nome_conversa, foto_conversa_url, id_dono, criacao) FROM stdin;
+1	direct	user1-user2	\N	\N	2026-08-27 20:08:10.699724
+2	grupo	clube do livro 67	\N	19	2026-08-27 20:45:26.346048
 \.
 
 
@@ -1024,6 +1038,10 @@ COPY public.conversa (id_conversa, tipo, nome_conversa, foto_conversa_url, id_do
 --
 
 COPY public.conversa_participante (id_conversa, id_user, cargo, joinet_at, last_read_message) FROM stdin;
+1	30	comum	2026-08-27 20:09:02.562336	2026-08-27 20:09:02.562336
+1	19	comum	2026-08-27 20:09:08.602164	2026-08-27 20:09:08.602164
+2	30	comum	2026-08-27 20:46:33.427347	\N
+2	19	dono	2026-08-27 20:46:25.330473	2026-08-27 20:50:47.871535
 \.
 
 
@@ -1069,6 +1087,11 @@ COPY public.livros_lidos (id_user, id_livro, atualizado_em) FROM stdin;
 19	3	2026-08-10 13:49:23.684314
 19	4	2026-08-10 13:49:26.221843
 19	5	2026-08-10 13:49:28.566783
+30	5	2026-08-25 22:12:47.098388
+30	2	2026-08-25 22:15:17.079871
+30	3	2026-08-27 19:29:31.765005
+30	1	2026-08-27 19:31:47.177067
+30	4	2026-08-27 19:32:46.433212
 \.
 
 
@@ -1077,6 +1100,18 @@ COPY public.livros_lidos (id_user, id_livro, atualizado_em) FROM stdin;
 --
 
 COPY public.mensagem (id_mensagem, id_conversa, id_envio, tipo, conteudo, criacao, editado_em, delatado_em) FROM stdin;
+9	1	30	texto	Ol  Mundo	2026-08-27 20:33:20.541968	\N	\N
+10	1	19	texto	Salve Tropinha	2026-08-27 20:33:46.213105	\N	\N
+11	1	19	texto	Como voce esta?	2026-08-27 20:33:55.894076	\N	\N
+12	1	30	texto	Bem, e voce?	2026-08-27 20:34:05.637821	\N	\N
+14	1	30	texto	Nicee	2026-08-27 20:34:23.675835	\N	\N
+13	1	19	texto	Bem tamb‚m	2026-08-27 20:34:14.524381	2026-08-27 20:38:31.690605	\N
+15	1	19	texto	SIX SEVEEN	2026-08-27 20:34:32.317812	\N	2026-08-27 20:39:35.939614
+16	2	19	texto	Salve Tropinha	2026-08-27 20:48:00.545473	\N	\N
+17	2	30	texto	Sauda‡äes Geogr ficas	2026-08-27 20:48:16.248576	\N	\N
+18	2	19	texto	Esses cara mano	2026-08-27 20:48:27.328694	\N	\N
+19	2	30	texto	SIX SEVEENN	2026-08-27 20:48:41.273687	\N	\N
+20	2	30	texto	Teste 1	2026-08-27 20:51:03.703862	\N	\N
 \.
 
 
@@ -1578,6 +1613,11 @@ COPY public.preferencia_user (id_user, id_preferencia, id) FROM stdin;
 29	12	20
 29	17	21
 29	26	22
+30	1	23
+30	2	24
+30	3	25
+30	6	26
+30	7	27
 \.
 
 
@@ -1591,6 +1631,11 @@ COPY public.progresso_leitura (id_progresso, id_user, id_livro, capitulo_atual, 
 3	19	3	4	100.00	2026-08-24 08:27:51.692601
 4	19	5	3	100.00	2026-08-24 08:28:28.659305
 5	19	4	2	100.00	2026-08-24 08:28:57.71822
+7	30	5	3	100.00	2026-08-25 22:12:47.091858
+8	30	2	1	100.00	2026-08-25 22:15:17.070437
+10	30	3	4	100.00	2026-08-27 19:29:31.757391
+6	30	1	5	100.00	2026-08-27 19:31:47.168934
+9	30	4	2	100.00	2026-08-27 19:32:46.431264
 \.
 
 
@@ -1629,11 +1674,11 @@ COPY public.resenha (id_resenha, titulo_resenha, id_user, sinopse, class_ind, da
 --
 
 COPY public.top5_livros (id_user, id_livro, posicao, atualizado_em) FROM stdin;
-19	1	2	2026-08-11 21:18:28.213477
-19	5	3	2026-08-12 10:51:44.127281
 19	4	5	2026-08-17 13:30:48.192147
 19	2	4	2026-08-16 20:33:08.892341
 19	3	1	2026-08-10 14:02:13.520825
+19	5	2	2026-08-11 21:18:28.213477
+19	1	3	2026-08-12 10:51:44.127281
 \.
 
 
@@ -1657,6 +1702,7 @@ COPY public.usuario (id_user, nome_completo, username, data_nascimento, email, s
 28	lucas passoli	Lucas P	2004-09-13	lucaspassoli1309@gmail.com	$2y$10$NOvNUh.2gtHJXV95U3uU/.B7tp3ETcQkNJzy0L0VVpik3MqUwwq8i	2026-08-16 20:20:39.23169	\N
 19	Caio Passoli	caico	2008-09-16	passolicaio@gmail.com	$2y$10$lKNJFtjCN0UedXL6R3mB9OrVqI.F7Zj0LnReH0YurYd5h71xAoTmK	2026-08-06 11:19:29.329523	114771290742095317837
 29	Anselmo Paulo Florentino	selmao	1980-06-09	anselmo@gmail.com	$2y$10$6f.Fv3fslTq5ss5iC91TkuFE16FAWKOIOWyHeH9J7V77vLk2aElfS	2026-08-17 13:28:22.52121	\N
+30	Usuario Teste 1	userteste1	2026-08-25	userteste1@gmail.com	$2y$10$UlhPwFP2adrKH4iBG/8aPONB4xLrul4U1KD7puPbwe5RFw0Cx98YK	2026-08-25 21:48:06.885524	\N
 \.
 
 
@@ -1693,7 +1739,7 @@ SELECT pg_catalog.setval('public.autor_id_autor_seq', 9, true);
 -- Name: autor_user_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.autor_user_id_seq', 22, true);
+SELECT pg_catalog.setval('public.autor_user_id_seq', 27, true);
 
 
 --
@@ -1721,14 +1767,14 @@ SELECT pg_catalog.setval('public.cenario_id_cenario_seq', 1, false);
 -- Name: comentario_id_comentario_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.comentario_id_comentario_seq', 13, true);
+SELECT pg_catalog.setval('public.comentario_id_comentario_seq', 19, true);
 
 
 --
 -- Name: conversa_id_conversa_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.conversa_id_conversa_seq', 1, false);
+SELECT pg_catalog.setval('public.conversa_id_conversa_seq', 2, true);
 
 
 --
@@ -1749,7 +1795,7 @@ SELECT pg_catalog.setval('public.livro_id_seq', 5, true);
 -- Name: mensagem_id_mensagem_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.mensagem_id_mensagem_seq', 1, false);
+SELECT pg_catalog.setval('public.mensagem_id_mensagem_seq', 20, true);
 
 
 --
@@ -1812,14 +1858,14 @@ SELECT pg_catalog.setval('public.preferencia_livro_id_seq', 10, true);
 -- Name: preferencia_user_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.preferencia_user_id_seq', 22, true);
+SELECT pg_catalog.setval('public.preferencia_user_id_seq', 27, true);
 
 
 --
 -- Name: progresso_leitura_id_progresso_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.progresso_leitura_id_progresso_seq', 5, true);
+SELECT pg_catalog.setval('public.progresso_leitura_id_progresso_seq', 10, true);
 
 
 --
@@ -1840,7 +1886,7 @@ SELECT pg_catalog.setval('public.resenha_id_resenha_seq', 2, true);
 -- Name: usuario_id_user_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.usuario_id_user_seq', 29, true);
+SELECT pg_catalog.setval('public.usuario_id_user_seq', 30, true);
 
 
 --
@@ -2055,6 +2101,14 @@ ALTER TABLE ONLY public.recuperacao_senha
 
 ALTER TABLE ONLY public.resenha
     ADD CONSTRAINT resenha_pkey PRIMARY KEY (id_resenha);
+
+
+--
+-- Name: livros_lidos user_livro_lido; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.livros_lidos
+    ADD CONSTRAINT user_livro_lido UNIQUE (id_user, id_livro);
 
 
 --
@@ -2477,5 +2531,5 @@ ALTER TABLE ONLY public.autor
 -- PostgreSQL database dump complete
 --
 
-\unrestrict bc8ovSui1CIXmB6h62ICD60F2ndLC0kBdGNBGdtz2yseA4ue4hLcmCxDqXbPkf9
+\unrestrict cqu6CI56MuZGYq6l1Ey5buZiMRr2VaetLL9fCNBO66s7cXerYlOK2ac4v8GgHLA
 

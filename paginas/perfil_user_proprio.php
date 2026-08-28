@@ -132,12 +132,12 @@ echo '<h2> Top 5 Livros </h2><br><br>';
 //            EXIBIÇÃO DO TOP5 LIVROS
 
 $sql = "select 
-t.posicao, l.id_livro, l.titulo_livro, l.capa_url, AVG(c.nota_avaliacao) as nota_avaliacao
+t.posicao, l.id_livro, l.titulo_livro, l.capa_url, c.nota_avaliacao
 from top5_livros t 
 inner join livro l on l.id_livro = t.id_livro 
-left join comentario c on c.id_coisocurtido = l.id_livro
-where t.id_user = :id_user and c.categoria_curtida = 'livro'
-group by t.posicao, l.id_livro, l.titulo_livro, l.capa_url 
+left join comentario c on c.id_coisocurtido = l.id_livro and c.id_user = t.id_user and c.categoria_curtida = 'livro'
+where t.id_user = :id_user
+group by t.posicao, l.id_livro, l.titulo_livro, l.capa_url, c.nota_avaliacao 
 order by t.posicao;";
 
 $stmt = $conn->prepare($sql);
