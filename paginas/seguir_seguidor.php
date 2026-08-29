@@ -89,7 +89,7 @@
                                     ":status_follow" => 'seguindo'
                                 ]);
                         
-                                header("Location: teste_header_terceiro.php?id_user=".$id_user_terceiro);
+                                header("Location: header_perfil_terceiro.php?id_user=".$id_user_terceiro);
                             } catch (PDOException $e) {
                                 echo "Erro ao inserir: ".$e->getMessage();
                             }
@@ -106,7 +106,7 @@
                                 ":id_user" => $id_user,
                                 ":id_seguidor" => $id_seguidor
                             ]);
-                            header("Location: teste_header_terceiro.php?id_user=".$id_user_terceiro);
+                            header("Location: header_perfil_terceiro.php?id_user=".$id_user_terceiro);
                             exit();
                         } catch (PDOException $e) {
                             echo "Erro ao deletar: ".$e->getMessage();

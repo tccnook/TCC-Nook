@@ -1,6 +1,11 @@
 <?php
     session_start();
 
+    if(isset($_POST['pular'])){
+        header('location:login.php');
+        exit();
+    }
+
     if (!isset($_SESSION['cadastro_concluido'])) {
         header("Location: cadastro.php");
         exit();
@@ -18,6 +23,10 @@
 
     $id_user = $_SESSION['id_user'];
 
+    if (!isset($_SESSION['origem_config'])) {
+        $_SESSION['origem_config'] = false;
+    }
+
     require_once("conexao.php");
     $db = new Database;
     $conn = $db->conectar();
@@ -27,6 +36,13 @@
     $stmt->execute();
 
     $autores = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+    $pref_autor = "select id_autor from autor_user where id_user = :id_user";
+    $stmt = $conn->prepare($pref_autor);
+    $stmt->execute([
+        ':id_user' => $id_user
+    ]);
+    $autores_usuario = $stmt->fetchAll(PDO::FETCH_COLUMN);
 ?>
 
 <!DOCTYPE html>
@@ -44,7 +60,7 @@
                     $contador=0;
                     foreach ($autores as $autor) {
                 ?>
-                <input type="checkbox" name="autores[]" value="<?= $autor['id_autor'];?>"> <?php echo $autor['nome_autor'];?><br>
+                <input type="checkbox" name="autores[]" value="<?= $autor['id_autor'];?>" <?= in_array($autor['id_autor'], $autores_usuario) ? 'checked' : '' ?> > <?php echo $autor['nome_autor'];?><br>
                 <?php
                 
                     $contador++;
@@ -57,7 +73,13 @@
                 ?>
             <?php }?>
             <input type="submit" name="continuar" value="continuar">
-            <input type="submit" name="pular" value="pular">
+
+            <?php if($_SESSION['origem_config'] == false){?>
+                <input type="submit" name="pular" value="pular">
+            <?php
+            }
+            ?>
+
         </form>
     </main>
     <section>
@@ -69,8 +91,16 @@
                     echo "<script>alert('Escolha exatamente 5 autores!')</script>";
                     exit();
                 }
+                
+                if ($_SESSION['origem_config']) {
+                    $del_autor = "delete from autor_user where id_user = :id_user;";
+                    $stmt = $conn->prepare($del_autor);
+                    $stmt->execute([":id_user" => $id_user]);
+                }
 
-                foreach ($_POST["autores"] as $idAutor) {
+                $auts = $_POST['autores'];   
+                
+                foreach ($auts as $idAutor) {
                     $insert = "INSERT INTO autor_user (id_user, id_autor) VALUES (:id_user, :id_pref_autor);";
 
                     try {
@@ -90,8 +120,13 @@
                 unset($_SESSION['id_user']);
                 unset($_SESSION['erro']);
 
-                header('location:reset.php');
-                exit();
+                if($_SESSION['origem_config']){
+                    header('location:config_user.php');
+                    exit();
+                } else{
+                    header('location:reset.php');
+                    exit();
+                }
             }
         ?>
     </section>

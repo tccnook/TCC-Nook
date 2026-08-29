@@ -147,7 +147,7 @@
                         ":status_follow" => 'seguindo'
                     ]);
 
-                    header("Location: teste_header_terceiro.php?id_user=".$id_user_terceiro);
+                    header("Location: header_perfil_terceiro.php?id_user=".$id_user_terceiro);
                     exit();
 
                 } catch (PDOException $e) {
@@ -168,7 +168,7 @@
                         ":id_user_terceiro" => $id_user_terceiro
                     ]);
 
-                    header("Location: teste_header_terceiro.php?id_user=".$id_user_terceiro);
+                    header("Location: header_perfil_terceiro.php?id_user=".$id_user_terceiro);
                     exit();
 
                 } catch (PDOException $e) {
@@ -205,7 +205,7 @@
                         ":id_user_terceiro" => $id_user_terceiro
                     ]);
 
-                    header("Location: teste_header_terceiro.php?id_user=".$id_user_terceiro);
+                    header("Location: header_perfil_terceiro.php?id_user=".$id_user_terceiro);
                     exit();
 
                 } catch (PDOException $e) {

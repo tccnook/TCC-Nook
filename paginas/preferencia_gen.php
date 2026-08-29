@@ -23,6 +23,10 @@
         exit();
     }
 
+    if (!isset($_SESSION['origem_config'])) {
+        $_SESSION['origem_config'] = false;
+    }
+
     require_once("conexao.php");
     $db = new Database;
     $conn = $db->conectar();
@@ -32,6 +36,13 @@
     $stmt->execute();
 
     $generos = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+    $pref_user = "select id_preferencia from preferencia_user where id_user = :id_user";
+    $stmt = $conn->prepare($pref_user);
+    $stmt->execute([
+        ':id_user' => $id_user
+    ]);
+    $generos_usuario = $stmt->fetchAll(PDO::FETCH_COLUMN);
 
 ?>
 
@@ -50,7 +61,7 @@
                     $contador=0;
                     foreach ($generos as $genero) {
                 ?>
-                <input type="checkbox" name="generos[]" value="<?= $genero['id_preferencia'];?>"> <?php echo $genero['nome_preferencia'];?><br>
+                <input type="checkbox" name="generos[]" value="<?= $genero['id_preferencia'];?>" <?= in_array($genero['id_preferencia'], $generos_usuario) ? 'checked' : '' ?> > <?php echo $genero['nome_preferencia'];?><br>
                 <?php
                 
                     $contador++;
@@ -63,7 +74,12 @@
                 ?>
             <?php }?>
             <input type="submit" name="continuar" value="continuar">
-            <input type="submit" name="pular" value="pular">
+
+            <?php if($_SESSION['origem_config'] == false){?>
+                <input type="submit" name="pular" value="pular">
+            <?php
+            }
+            ?>
 
         </form>
     </main>
@@ -75,9 +91,17 @@
                     $_SESSION['erro'] = "Escolha exatamente 5 gêneros!";
                     echo "<script>alert('Escolha exatamente 5 gêneros!')</script>";
                     exit();
-                } 
+                }
 
-                foreach ($_POST["generos"] as $idGenero) {
+                if ($_SESSION['origem_config']) {
+                    $del_pref = "delete from preferencia_user where id_user = :id_user;";
+                    $stmt = $conn->prepare($del_pref);
+                    $stmt->execute([":id_user" => $id_user]);
+                }                
+
+                $gens = $_POST['generos'] ?? [];
+
+                foreach ($gens as $idGenero) {
                     $insert = "INSERT INTO preferencia_user (id_user, id_preferencia) VALUES (:id_user, :id_preferencia);";
 
                     try {

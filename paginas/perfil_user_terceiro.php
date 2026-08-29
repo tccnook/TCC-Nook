@@ -3,7 +3,7 @@
 
     require_once('conexao.php');
 
-    require_once('teste_header_terceiro.php');
+    require_once('header_perfil_terceiro.php');
 
     $db = new Database();
     $conn = $db->conectar();
