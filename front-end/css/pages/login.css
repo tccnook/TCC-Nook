@@ -66,19 +66,3 @@ h1 {
 form input, form label, .remember-password, h1, .button-action {
     width: 90%;
 }
-
-
-.division-google-area {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-}
-
-.division-google-area hr {
-    width: clamp(30px, 15vw, 600px);
-}
-
-.division-google-area span {
-    font-size: 14px;
-    color: #252525;
-}

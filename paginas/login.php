@@ -108,7 +108,7 @@ session_start();
                 <span>OU</span>
                 <hr>
             </div>
-            
+                        
             <button onclick="window.location.href='google-login.php'" class="google-btn">
                 <img class="ico-google" src="/TCC-Nook/img/icons/plataforms/google-ico.svg" alt="Google">
                 <span>Continuar com o Google</span>

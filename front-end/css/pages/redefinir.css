@@ -1,0 +1,89 @@
+body {
+    background: var(--bg-gradient);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Lora', sans-serif;    
+}
+
+main {
+    background-color: var(--all-white);
+    border-radius: var(--radius-lg);
+    width:  var(--width-login);
+    padding: 40px;
+    align-items: center;
+    box-shadow: 0 0 15px 2px #2e2e2e;
+    margin: 40px 0;
+    gap: clamp(20px, 2vw,40px);
+}
+
+.title-card{
+    width: 90%;
+    margin: 20px;
+    display: flex;
+    align-items: start;
+    justify-content: space-around;
+    flex-direction: column;
+    gap: 20px;
+    
+    h1 {
+    color: var(--text-title);
+    font-size: clamp(20px, 3vw, 30px);
+    }
+    p {
+        font-size: clamp(5px, 2vw, 18px);
+    }
+}
+
+.logo-nook {
+    width: 90%;
+
+    img {
+        width: clamp(100px, 8vw, 220px);
+    }
+
+}
+
+form, main {
+    display: flex;
+    justify-content: space-around;
+    flex-direction: column;
+}
+
+form {
+    width: 100%;
+    align-items: center;
+
+    input {
+        height: clamp(35px, 3vw, 70px);
+        border-radius: var(--radius-sm);
+        border: none;
+        box-shadow: 0 0 12px 0.1px var(--border-primary);
+        margin-bottom: 35px;
+    }
+    
+    label {
+    text-align: start;
+    margin: 10px;
+    }
+
+    input[type="submit"] {
+        background-color: var(--color-accent2);
+        margin: 20px;
+    }
+}
+
+
+.button-action {
+    all: unset;
+    text-align: center;
+    height: 52px;
+    border-radius: var(--radius-sm);
+    color: var(--all-white);
+    background-color: var(--bg-cards);
+    box-shadow: 0 0 10px var(--bg-cards);
+}
+
+form input, form label, h1, .button-action {
+    width: 90%;
+}

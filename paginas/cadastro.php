@@ -102,7 +102,7 @@
             Voltar
         </button>
 
-        <button type="submit" name="proximo" class="button-action button-next">
+        <button type="submit" name="proximo" class="button-action button-next" onclick="window.location.href='preferencia_gen.php'">
             Finalizar cadastro
         </button>
     </section>
