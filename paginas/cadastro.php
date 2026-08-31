@@ -107,13 +107,13 @@
         </button>
     </section>
 
-</form>
+    </form>
 
- <div class="division-google-area">
+ <section class="division-google-area">
                 <hr>
                 <span>OU</span>
                 <hr>
-            </div>
+</section>
             
             <button onclick="window.location.href='google-login.php'" class="google-btn">
                 <img class="ico-google" src="/TCC-Nook/img/icons/plataforms/google-ico.svg" alt="Google">

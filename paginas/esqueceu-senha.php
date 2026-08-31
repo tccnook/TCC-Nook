@@ -34,8 +34,9 @@ session_start();
 
         <label for="email"> Email </label>
         <input type="text" name="email" id="email">
+
         
-        <button class="button-action" onclick="window.location.href='login.php'">Voltar</button>
+        <button class="button-action" type="button" onclick="window.location.href='login.php'">Voltar</button>
         <input class="button-action" type="submit" name="enviar" value="Enviar">
 
         
@@ -52,7 +53,12 @@ session_start();
             $stmt = $db->conectar()->prepare($sql);
             $stmt->execute([$email]);
             if($stmt->rowCount()===0){
+
+
                 echo 'Email incorreto';
+
+
+
             } else{
                     $resultado = $stmt->fetch(\PDO::FETCH_ASSOC);
                     $token = bin2hex(random_bytes(32));

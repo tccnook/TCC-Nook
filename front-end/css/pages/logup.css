@@ -105,32 +105,3 @@ form input {
 .next-step {
     margin-top: clamp(10px, 1vw,20px);
 }
-
-
-
-.progresso {
-    margin: 20px 0;
-    width: 90%;
-    display: flex;
-    justify-content: space-around;
-    align-items: center;
-}
-
-.bola {
-    background-color: var(--bg-cards);
-    width: 15px;
-    height: 15px;
-    border-radius: 100px;
-}
-
-.bola-um {
-    background-color: var(--color-accent2);
-    width: 15px;
-    height: 15px;
-    border-radius: 100px;
-
-}
-
-.progresso hr {
-    width: clamp(5px, 7vw, 200px);
-}

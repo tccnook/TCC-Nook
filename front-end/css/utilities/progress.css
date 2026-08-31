@@ -1,0 +1,24 @@
+.progresso{
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: .75rem;
+    margin-bottom: 2rem;
+
+    hr {
+    width: 70px;
+    border: none;
+    border-top: 2px solid #D5CEDF;  
+    }
+}
+
+.bola {
+    width: var(--ball-width);
+    height: var(--ball-width);
+    border-radius: 50%;
+    background: var(--bg-cards);
+}
+
+.bola-um {
+    background: var(--color-accent);
+}
