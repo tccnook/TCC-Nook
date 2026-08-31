@@ -3,7 +3,7 @@
     align-items: center;
     justify-content: center;
     gap: .75rem;
-    margin-bottom: 2rem;
+    margin: 2rem 0;
 
     hr {
     width: 70px;
@@ -20,5 +20,8 @@
 }
 
 .bola-um {
+    width: var(--ball-width);
+    height: var(--ball-width);
+    border-radius: 50%;
     background: var(--color-accent);
 }

@@ -12,7 +12,7 @@
             $this->host = "localhost";
             $this->dbname = "testetccdemo";
             $this->user = "postgres";
-            $this->pwd = "123";
+            $this->pwd = "1";
             $this->port = "5432";
         }
 

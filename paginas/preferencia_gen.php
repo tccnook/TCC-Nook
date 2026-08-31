@@ -1,5 +1,4 @@
 <?php
-/*
     session_start();
 
     if(isset($_POST['pular'])){
@@ -10,12 +9,10 @@
     if(!isset($_SESSION['id_user'])){
         header('location:cadastro.php');
         exit();
-    }*/
+    }
 
-    //$id_user = $_SESSION['id_user'];
-    $id_user = 30;
+    $id_user = $_SESSION['id_user'];
 
-    /*
 
     if (!isset($_SESSION['cadastro_concluido'])) {
         header("location:cadastro.php");
@@ -26,7 +23,6 @@
         header("location:preferencia_autor.php");
         exit();
     }
-        */
 
     require_once("conexao.php");
     $db = new Database;
@@ -46,6 +42,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="/TCC-Nook/front-end/css/main.css">    
     <link rel="stylesheet" href="/TCC-Nook/front-end/css/pages/prefe_gen.css">
+    <link rel="stylesheet" href="/TCC-Nook/front-end/css/utilities/progress.css">
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -59,24 +56,17 @@
     <header>
 
         <img src="/TCC-Nook/img/logos/logo-empe.png" alt="Logo Nook" class="logo">
-
         <section class="progresso">
-
             <section class="bola-um"></section>
-
             <hr>
-
             <section class="bola-um"></section>
-
             <hr>
-
             <section class="bola-um"></section>
-
             <hr>
-
             <section class="bola"></section>
 
         </section>
+        <div></div>
     </header>
 
     <section class="page-header">
@@ -101,11 +91,7 @@
                     <label class="genre-card">
 
                         <input
-                            type="checkbox"
-                            name="generos[]"
-                            value="<?= $genero['id_preferencia'];?>"
-                            class="genre-checkbox"
-                        >
+                            type="checkbox" name="generos[]" value="<?= $genero['id_preferencia'];?>" class="genre-checkbox">
 
                         <span class="genre-name">
                             <?= $genero['nome_preferencia'];?>
