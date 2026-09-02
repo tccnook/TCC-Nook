@@ -546,6 +546,7 @@ echo $maior_livro_lido['titulo_livro'].' - '.$maior_livro_lido['quantidade_capit
 
 echo '<a href="paginaprincipal.php"> Home </a>';
 echo '<a href="catalogo.php"> Catálogo </a>';
+echo '<a href="conversas.php"> Chat </a>';
 
 
 ?>

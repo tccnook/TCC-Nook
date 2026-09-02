@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict cqu6CI56MuZGYq6l1Ey5buZiMRr2VaetLL9fCNBO66s7cXerYlOK2ac4v8GgHLA
+\restrict 7NsKNw4Ih2MrPoqcBUiR1hhAk2pPnwzVHJo1F60uwE8ZGPOEjcsStAkQ7fw25Hx
 
 -- Dumped from database version 18.4
 -- Dumped by pg_dump version 18.4
@@ -933,6 +933,11 @@ COPY public.autor_user (id_user, id_autor, id) FROM stdin;
 30	4	25
 30	5	26
 30	6	27
+31	2	28
+31	7	29
+31	8	30
+31	9	31
+31	3	32
 \.
 
 
@@ -1007,6 +1012,7 @@ COPY public.comentario (id_comentario, id_user, categoria_curtida, id_coisocurti
 17	19	livro	2	\N	Livro Super Super Hiper Mega Blaster Ultra Stonks	2026-08-24 13:18:57.083883
 18	19	livro	2	\N	sdgdfgd	2026-08-24 14:00:46.299182
 19	19	livro	2	\N	fsdfsdfsad	2026-08-24 14:10:37.887971
+20	31	livro	2	\N	vou ler	2026-08-30 14:20:43.823762
 \.
 
 
@@ -1020,6 +1026,7 @@ COPY public.conta (id_user, foto_perfil_url, bio, visibilidade, banner_url) FROM
 29	\N	\N	publico	\N
 19	img/foto_perfil/4f3a97f338ba0c7c65039d97f02cc401.webp	Apenas um cara tranquilo que gosta do palmeiras	publico	img/banner_perfil/25cfe8fb7c9a8d15943d86263f962fda.webp
 30	\N	\N	publico	\N
+31	\N	\N	publico	\N
 \.
 
 
@@ -1092,6 +1099,7 @@ COPY public.livros_lidos (id_user, id_livro, atualizado_em) FROM stdin;
 30	3	2026-08-27 19:29:31.765005
 30	1	2026-08-27 19:31:47.177067
 30	4	2026-08-27 19:32:46.433212
+31	2	2026-08-30 14:21:22.934148
 \.
 
 
@@ -1112,6 +1120,23 @@ COPY public.mensagem (id_mensagem, id_conversa, id_envio, tipo, conteudo, criaca
 18	2	19	texto	Esses cara mano	2026-08-27 20:48:27.328694	\N	\N
 19	2	30	texto	SIX SEVEENN	2026-08-27 20:48:41.273687	\N	\N
 20	2	30	texto	Teste 1	2026-08-27 20:51:03.703862	\N	\N
+23	2	19	texto	teste front end 1	2026-09-01 21:20:58.045978	2026-09-01 21:21:21.631498	\N
+25	2	30	texto	teste síncrono	2026-09-01 21:26:00.611395	\N	\N
+26	2	30	texto	olá mundo, teste síncrono	2026-09-01 21:28:13.19032	\N	\N
+27	2	30	texto	teste síncrono 2	2026-09-01 21:30:08.766183	\N	\N
+28	2	30	texto	teste síncrono 3	2026-09-01 21:30:18.198854	\N	\N
+29	2	30	texto	ta funcionando poha	2026-09-01 21:30:29.788734	\N	\N
+30	2	30	texto	mensagem 1	2026-09-01 21:31:28.144485	\N	\N
+31	2	30	texto	menagem 2	2026-09-01 21:31:56.075382	\N	\N
+32	2	19	texto	Eu sou o Caico	2026-09-01 21:37:25.954768	\N	\N
+33	2	30	texto	eu sou o userteste1	2026-09-01 21:38:08.583555	\N	\N
+34	2	30	texto	e eu continuo sendo o caico	2026-09-01 21:38:18.871322	\N	\N
+35	2	19	texto	eu sou o caico	2026-09-01 21:41:45.973748	\N	\N
+36	2	30	texto	e eu sou o userteste1	2026-09-01 21:41:57.645729	\N	\N
+37	2	19	texto	abrindo em navegadores separados os IDs são preservados	2026-09-01 21:42:12.220211	\N	\N
+38	2	30	texto	mas quando abre no mesmo navegador o último ID aberto predomina	2026-09-01 21:42:32.943205	\N	\N
+41	2	19	texto	123	2026-09-01 21:49:30.551136	\N	\N
+42	2	30	texto	123456	2026-09-01 21:49:45.498302	\N	\N
 \.
 
 
@@ -1122,9 +1147,9 @@ COPY public.mensagem (id_mensagem, id_conversa, id_envio, tipo, conteudo, criaca
 COPY public.meta_leitura (id, id_user, periodo, num_livros, criacao, status, expiracao, nome_meta) FROM stdin;
 8	19	semanal	6	2026-08-16 21:43:51.885478	expirado	2026-08-23	meta de drama
 9	19	semanal	1	2026-08-17 13:32:04.349551	concluida	2026-08-24	Meta do Miguel
-10	19	semanal	20	2026-08-24 09:10:52.388167	andamento	2026-08-31	meta xxxx
 6	19	semanal	50	2026-08-13 18:36:50.420783	andamento	2027-08-13	meta do ano
 7	19	anual	5000	2026-08-16 20:34:51.764024	andamento	2027-08-16	Meta de agosto
+10	19	semanal	20	2026-08-24 09:10:52.388167	expirado	2026-08-31	meta xxxx
 \.
 
 
@@ -1618,6 +1643,11 @@ COPY public.preferencia_user (id_user, id_preferencia, id) FROM stdin;
 30	3	25
 30	6	26
 30	7	27
+31	7	28
+31	8	29
+31	10	30
+31	11	31
+31	29	32
 \.
 
 
@@ -1636,6 +1666,8 @@ COPY public.progresso_leitura (id_progresso, id_user, id_livro, capitulo_atual, 
 10	30	3	4	100.00	2026-08-27 19:29:31.757391
 6	30	1	5	100.00	2026-08-27 19:31:47.168934
 9	30	4	2	100.00	2026-08-27 19:32:46.431264
+11	31	2	1	100.00	2026-08-30 14:21:22.9296
+12	31	1	1	0.00	2026-08-30 14:22:18.99065
 \.
 
 
@@ -1703,6 +1735,7 @@ COPY public.usuario (id_user, nome_completo, username, data_nascimento, email, s
 19	Caio Passoli	caico	2008-09-16	passolicaio@gmail.com	$2y$10$lKNJFtjCN0UedXL6R3mB9OrVqI.F7Zj0LnReH0YurYd5h71xAoTmK	2026-08-06 11:19:29.329523	114771290742095317837
 29	Anselmo Paulo Florentino	selmao	1980-06-09	anselmo@gmail.com	$2y$10$6f.Fv3fslTq5ss5iC91TkuFE16FAWKOIOWyHeH9J7V77vLk2aElfS	2026-08-17 13:28:22.52121	\N
 30	Usuario Teste 1	userteste1	2026-08-25	userteste1@gmail.com	$2y$10$UlhPwFP2adrKH4iBG/8aPONB4xLrul4U1KD7puPbwe5RFw0Cx98YK	2026-08-25 21:48:06.885524	\N
+31	Solanjo	Solanjo_Pinho	1994-09-16	solanjo@gmail.com	$2y$10$q9PyG2wMDsljntArZ0Q7DuhskuW/dYY9G/Vp4kTh2ODQX7Eqik4OW	2026-08-30 14:18:33.65179	\N
 \.
 
 
@@ -1739,7 +1772,7 @@ SELECT pg_catalog.setval('public.autor_id_autor_seq', 9, true);
 -- Name: autor_user_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.autor_user_id_seq', 27, true);
+SELECT pg_catalog.setval('public.autor_user_id_seq', 32, true);
 
 
 --
@@ -1767,7 +1800,7 @@ SELECT pg_catalog.setval('public.cenario_id_cenario_seq', 1, false);
 -- Name: comentario_id_comentario_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.comentario_id_comentario_seq', 19, true);
+SELECT pg_catalog.setval('public.comentario_id_comentario_seq', 20, true);
 
 
 --
@@ -1795,7 +1828,7 @@ SELECT pg_catalog.setval('public.livro_id_seq', 5, true);
 -- Name: mensagem_id_mensagem_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.mensagem_id_mensagem_seq', 20, true);
+SELECT pg_catalog.setval('public.mensagem_id_mensagem_seq', 42, true);
 
 
 --
@@ -1858,14 +1891,14 @@ SELECT pg_catalog.setval('public.preferencia_livro_id_seq', 10, true);
 -- Name: preferencia_user_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.preferencia_user_id_seq', 27, true);
+SELECT pg_catalog.setval('public.preferencia_user_id_seq', 32, true);
 
 
 --
 -- Name: progresso_leitura_id_progresso_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.progresso_leitura_id_progresso_seq', 10, true);
+SELECT pg_catalog.setval('public.progresso_leitura_id_progresso_seq', 12, true);
 
 
 --
@@ -1886,7 +1919,7 @@ SELECT pg_catalog.setval('public.resenha_id_resenha_seq', 2, true);
 -- Name: usuario_id_user_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.usuario_id_user_seq', 30, true);
+SELECT pg_catalog.setval('public.usuario_id_user_seq', 31, true);
 
 
 --
@@ -2531,5 +2564,5 @@ ALTER TABLE ONLY public.autor
 -- PostgreSQL database dump complete
 --
 
-\unrestrict cqu6CI56MuZGYq6l1Ey5buZiMRr2VaetLL9fCNBO66s7cXerYlOK2ac4v8GgHLA
+\unrestrict 7NsKNw4Ih2MrPoqcBUiR1hhAk2pPnwzVHJo1F60uwE8ZGPOEjcsStAkQ7fw25Hx
 
