@@ -47,12 +47,7 @@ foreach($livros as $livro){
             </form>';
 }
 
-if (isset($_POST['adicionar'])) {
-    $id_livro = $_POST['id_livro'];
-    if (!in_array($id_livro, $_SESSION['livros_lista'])) {
-        $_SESSION['livros_lista'][] = $id_livro;
-    }
-}
+
 
 
 
