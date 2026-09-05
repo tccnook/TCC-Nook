@@ -53,12 +53,13 @@ function gerarCapaLista($capas, $id_whishlist)
 
     $nome_arquivo = 'capa_auto_lista_' . $id_whishlist . '.jpg';
 
-    $caminho = $pasta . $nome_arquivo;
+    $caminho_fisico = __DIR__ . '/../img/capas_listas/' . $nome_arquivo;
+    $caminho_banco = 'img/capas_listas/' . $nome_arquivo;
 
-    imagejpeg($imagem_final, $caminho, 90); //salva a imagem como png e qualidade = 90
+    imagejpeg($imagem_final, $caminho_fisico, 90);
 
     imagedestroy($imagem_final);
 
-    return $caminho;
+    return $caminho_banco;
 }
 ?>

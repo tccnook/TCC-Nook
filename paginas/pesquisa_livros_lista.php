@@ -8,6 +8,10 @@ $conn = $db->conectar();
 $nome = $_GET['nome'] ?? '';
 $genero = $_GET['genero'] ?? '';
 
+if ($nome === '' && $genero === '') {
+    exit;
+}
+
 $select_livro = "
 select distinct 
 l.id_livro, l.titulo_livro, l.capa_url
@@ -39,12 +43,11 @@ if(count($livros) === 0 ){
 }
 
 foreach($livros as $livro){
+    echo '<section>';
     echo '<img src="'.$livro['capa_url'].'">';
     echo '<h3>'.htmlspecialchars($livro['titulo_livro']).'</h3>';
-    echo '<form action="#" method="POST">
-                <input type="hidden" name="id_livro" value="'.$livro['id_livro'].'">
-                <input type="submit" name="Adicionar" value="adicionar">
-            </form>';
+    echo '<button type="button" class="btn-adicionar" data-id="'.$livro['id_livro'].'">Adicionar</button>';
+    echo '</section>';
 }
 
 
