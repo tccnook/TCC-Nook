@@ -1,4 +1,4 @@
-<?php //tem que arrumar essa merda
+<?php
     if (session_status() === PHP_SESSION_NONE) {
         session_start();
     }

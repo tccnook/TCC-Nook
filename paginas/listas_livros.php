@@ -1,4 +1,4 @@
-<?php
+<?php //as vezes quando vai criar a lista, o primeiro livro da consulta add todos os outros
     session_start();
     require_once('conexao.php');
 
@@ -12,132 +12,8 @@
 
     $id_user = $_SESSION['id_user'];
 
-    if (!isset($_SESSION['livros_lista'])) {
-        $_SESSION['livros_lista'] = [];
-    }
-
-    if(isset($_POST['criar_lista'])){
-        $nome_lista = $_POST['nome_lista'];
-        $descricao = $_POST['descricao'];
-        $visibilidade = $_POST['visibilidade'] ?? 'publica';
-        $tipo_capa = $_POST['tipo_capa'];
-
-        if(empty($nome_lista)){
-            echo '<script>alert("Dê um nome para sua lista!")</script>';
-        }
-
-        $criar_lista = "insert into whishlist (nome_lista, id_user, descricao, visibilidade)
-        values (:nome_lista, :id_user, :descricao, :visibilidade) returning id;";
-
-        try{
-            $stmt = $conn->prepare($criar_lista);
-            $stmt->execute([
-                ':nome_lista' => $nome_lista,
-                ':id_user' => $id_user,
-                ':descricao' => $descricao,
-                ':visibilidade' => $visibilidade
-            ]);
-
-            $id_whishlist = $stmt->fetchColumn();
-
-        } catch (PDOException $e){
-            echo "Erro ao inserir dados: ". $e->getMessage();
-        }
-
-        //relacao entre lista e livros
-        $livros_lista = $_SESSION['livros_lista'];
-        foreach ($livros_lista as $id_livro){
-            $insert_livros = "insert into whishbook (id_livro, id_user, id_whishlist) values (:id_livro, :id_user, :id_whishlist);";
-            $stmt = $conn->prepare($insert_livros);
-            $stmt->execute([
-                ':id_livro' => $id_livro,
-                ':id_user' => $id_user,
-                ':id_whishlist' => $id_whishlist
-            ]);
-        }
-
-        //parte da capa
-        if($tipo_capa === 'automatico'){
-            if (count($_SESSION['livros_lista']) > 0) {
-               $id_primeiro_livro = $_SESSION['livros_lista'][0];
-
-                if(count($livros_lista) <= 3){
-                    
-                    $select_capa = "select capa_url from livro where id_livro = :id_livro;";
-                    $stmt = $conn->prepare($select_capa);
-                    $stmt->execute([":id_livro" => $id_primeiro_livro]);
-                    $capa = $stmt->fetch(PDO::FETCH_ASSOC);
-
-                    $capa_url = $capa['capa_url'];
-
-                    $update_capa = "update whishlist set capa_url = :capa_url where id = :id_whishlist;";
-                    $stmt = $conn->prepare($update_capa);
-                    $stmt->execute([
-                        ':capa_url' => $capa_url,
-                        ':id_whishlist' => $id_whishlist
-                    ]);
-                    header("Location: " . $_SERVER['PHP_SELF']);
-                } else {
-                    //capa_lista = capa 4 primeiros livros
-                    $capa_livros = array_slice($livros_lista, 0, 4);
-                    require_once('gerar_capa_lista.php');
-
-                    if(count($capa_livros) > 0){
-                        $placeholders = implode(',', array_fill(0, count($capa_livros), '?')); //atribui ? para o id dos livros para evitar o sql injection
-
-                        $select_livros = "select id_livro, capa_url from livro where id_livro in ($placeholders);";
-                        $stmt = $conn->prepare($select_livros);
-                        $stmt->execute($capa_livros); // o id dos livros entram no lugar dos ? do placeholder
-
-                        $capas = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-                        $capa_auto_url = gerarCapaLista($capas, $id_whishlist);
-
-                        $insert_capa_auto = "update whishlist set capa_url = :capa_url where id = :id_whishlist;";
-                        try{
-                            $stmt = $conn->prepare($insert_capa_auto);
-                            $stmt->execute([
-                                ':capa_url' => $capa_auto_url,
-                                ':id_whishlist' => $id_whishlist
-                            ]);
-                            header("Location: " . $_SERVER['PHP_SELF']);
-                        } catch (PDOException $e){
-                            echo 'Erro ao atualizar capa: '. $e->getMessage();
-                        }
-                    }
-                }
-            } else {
-                //capa padrao, tem q ver isso aq
-            }
-
-        } else {
-            //inserir capa anexada
-            if(isset($_FILES['capa_manual']) && $_FILES['capa_manual']['error'] === UPLOAD_ERR_OK){//verifica se há arquivo e se n houve erro no upload
-                $capa_manual = $_FILES['capa_manual'];
-
-                $extensao_capa_manual = strtolower(pathinfo($capa_manual['name'], PATHINFO_EXTENSION));
-                $nome_capa_manual = "capa_manual_lista_". $id_whishlist. "." . $extensao_capa_manual;
-                $pasta_capa = __DIR__ . '/../img/capas_listas/';
-                $caminho_banco_capa = 'img/capas_listas/' . $nome_capa_manual;
-                $capa_manual_url = $caminho_banco_capa;
-                $caminho_completo_capa = $pasta_capa . $nome_capa_manual;
-
-                move_uploaded_file($capa_manual['tmp_name'], $caminho_completo_capa);
-
-                $insert_capa_manual = "update whishlist set capa_url = :capa_url where id = :id_whishlist;";
-                try{
-                    $stmt = $conn->prepare($insert_capa_manual);
-                    $stmt->execute([
-                        ':capa_url' => $capa_manual_url,
-                        ':id_whishlist' => $id_whishlist
-                    ]);
-                    header("Location: " . $_SERVER['PHP_SELF']);
-                } catch (PDOException $e){
-                    echo 'Erro ao atualizar capa: '. $e->getMessage();
-                }
-            }
-        }
-    }
+    require_once('criar_lista_livros.php');
+    require_once('dados_listas_livros.php');
 
 ?>
 <!DOCTYPE html>
@@ -148,10 +24,39 @@
     <title>Lista de Livros</title>
 </head>
 <body>
-    <button type="button" id="btnLista">
-        Criar Lista
-    </button>
+    <section>
+        <button type="button" id="btnLista">
+            Criar Lista
+        </button>
 
+        <div><?= $qntd_listas ?> Listas adicionadas</div>
+    </section>
+
+    <!--listagem da lista de livros-->
+    <section>
+        <?php
+            foreach($listas as $lista):
+                $capas = json_decode($lista['capas'], true);    
+            ?>
+                <a href="ver_lista.php?id=<?= $lista['id']?>" style="text-decoration:none">
+                    <h3><?= $lista['nome_lista']?></h3>
+                    <p><?= $lista['descricao']?></p>
+
+                    <div class="capas">
+                        <?php foreach ($capas as $capa) { ?>
+                            <img src="<?= $capa ?>" alt="Capa do livro">
+                        <?php } ?>
+                    </div>
+
+                    <span><?= $lista['quantidade_livros']?> Livros</span>
+                    <span><?= $lista['curtidas']?> Curtidas</span>
+                    <span>Salvar</span>
+                    <span><?= $lista['visibilidade']?></span>
+                </a>
+        <?php endforeach ?>
+    </section>
+
+    <!--modal para criar lista-->
     <dialog id="modal_lista">
         <button type="button" id="fechar_lista">
                 X
@@ -173,7 +78,7 @@
                 OU
 
                 <label for="capa_lista">
-                    <input type="radio" name="tipo_capa" value="automatico" checked>Capa Automática
+                    <input type="radio" name="tipo_capa" value="automatica" checked>Capa Automática
                 </label>
             </section><br>
 
@@ -222,18 +127,13 @@
             modal.close();
         });
 
-
-        // ==========================================
-        // PESQUISA DE LIVROS
-        // ==========================================
+        //pesquisa de livros
 
         const formPesquisa = document.getElementById("form-pesquisa-livros");
         const resultadosLivros = document.getElementById("resultados-livros");
 
         formPesquisa.addEventListener("submit", function (event) {
-
-            // Impede o formulário de recarregar a página
-            // e fechar o modal
+            //impede o formulário de recarregar a página e fechar o modal
             event.preventDefault();
 
             const nome = document.getElementById("nome-livro").value;
@@ -246,8 +146,7 @@
             )
             .then(response => response.text())
             .then(html => {
-
-                // Coloca os resultados da pesquisa na tela
+                // coloca os resultados da pesquisa na tela
                 resultadosLivros.innerHTML = html;
 
             })
@@ -262,16 +161,11 @@
 
         });
 
-
-        // ==========================================
-        // FUNÇÃO QUE MOSTRA LIVROS SELECIONADOS
-        // ==========================================
+        // função para mostrar livros escolhidos
 
         function mostrarLivros(livros) {
 
-            const container =
-                document.getElementById("lista-selecionados");
-
+            const container = document.getElementById("lista-selecionados");
             container.innerHTML = "";
 
             livros.forEach(function (livro) {
@@ -279,10 +173,7 @@
                 container.innerHTML += `
                     <div class="livro-selecionado">
 
-                        <img
-                            src="${livro.capa_url}"
-                            width="100"
-                        >
+                        <img src="${livro.capa_url}" width="100">
 
                         <strong>
                             ${livro.titulo_livro}
@@ -292,11 +183,7 @@
                             ${livro.nome_autor}
                         </span>
 
-                        <button
-                            type="button"
-                            class="btn-remover"
-                            data-id="${livro.id_livro}"
-                        >
+                        <button type="button" class="btn-remover" data-id="${livro.id_livro}">
                             X
                         </button>
 
@@ -305,10 +192,7 @@
 
             });
 
-
-            // ==========================================
-            // REMOVER LIVRO
-            // ==========================================
+            // remove livros
 
             document
                 .querySelectorAll(".btn-remover")
@@ -359,18 +243,7 @@
 
         }
 
-
-        // ==========================================
-        // ADICIONAR LIVRO
-        // ==========================================
-
-        /*
-        Aqui usamos o container #resultados-livros
-        em vez de querySelectorAll.
-
-        Isso é importante porque os botões "Adicionar"
-        são criados depois que a pesquisa termina.
-        */
+        // adiciona livros
 
         resultadosLivros.addEventListener("click", function (event) {
 
