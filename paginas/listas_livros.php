@@ -48,8 +48,8 @@
                         <?php } ?>
                     </div>
 
-                    <span><?= $lista['quantidade_livros']?> Livros</span>
-                    <span><?= $lista['curtidas']?> Curtidas</span>
+                    <span><?= htmlspecialchars($lista['quantidade_livros']) ?> Livros</span>
+                    <span><?= htmlspecialchars($lista['curtidas']) ?> Curtidas</span>
                     <span>Salvar</span>
                     <span><?= $lista['visibilidade']?></span>
                 </a>
@@ -88,8 +88,8 @@
             <label for="descricao">Descrição(opcional)</label><br>
             <textarea name="descricao"></textarea><br><br>
 
-            <input type="radio" name="visibilidade" value="publica" checked>Público<br>
-            <input type="radio" name="visibilidade" value="privada">Privado<br>
+            <input type="radio" name="visibilidade" value="publica" checked>Pública<br>
+            <input type="radio" name="visibilidade" value="privada">Privada<br>
         </form>
 
             <section>
