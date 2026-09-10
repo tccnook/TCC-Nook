@@ -61,10 +61,37 @@
         $lista = $stmt->fetch(PDO::FETCH_ASSOC);
 
         $livros = json_decode($lista['livros'], true);
-        //$_SESSION['livros_lista'] = array_column($livros, 'id_livro');
+
+        if (!isset($_SESSION['livros_lista'])) {
+            $select_livros_lista = "
+                SELECT id_livro
+                FROM whishbook
+                WHERE id_whishlist = :id_lista
+                AND id_user = :id_user
+                ORDER BY ordem;
+            ";
+
+            $stmt = $conn->prepare($select_livros_lista);
+            $stmt->execute([
+                ':id_lista' => $id_lista,
+                ':id_user' => $id_user
+            ]);
+
+            $_SESSION['livros_lista'] = $stmt->fetchAll(PDO::FETCH_COLUMN);
+        }
 
         $visibilidade = $lista['visibilidade'];
         $tipo_capa = $lista['tipo_capa'];
+
+        $qntd_livros = $lista['quantidade_livros'];
+
+        $capa_url = $lista['capa_url'];
+
+        if (strpos($capa_url, 'img/capas_listas/') === 0) {
+            $caminho_capa = '../' . $capa_url;
+        } else {
+            $caminho_capa = $capa_url;
+        }
 
         require_once('editar_lista_livros.php');
 ?>
@@ -78,7 +105,7 @@
 <body>
     <section>
         <figure>
-            <img src="../<?= htmlspecialchars($lista['capa_url']) ?>" alt="Capa da lista">
+            <img src="<?= htmlspecialchars($caminho_capa)?>" alt="Capa da lista">           
         </figure>
 
         <h3><?= htmlspecialchars($lista['nome_lista']) ?></h3>
@@ -131,7 +158,7 @@
             <section>
                 <h3>Capa da Lista</h3>
                 <figure>
-                    <img src="../<?= $lista['capa_url']?>" alt="Capa da lista <?= $lista['nome_lista']?>">
+                    <img src="<?= htmlspecialchars($caminho_capa)?>" alt="Capa da lista <?= $lista['nome_lista']?>">
                 </figure>
                 
                 <p>Altere a capa de sua lista</p>

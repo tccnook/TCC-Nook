@@ -61,12 +61,9 @@
             ]);
 
             //relacao entre lista e livros
-            $delete_livros = "DELETE FROM whishbook
-                  WHERE id_whishlist = :id_whishlist
-                  AND id_user = :id_user";
-
+            $delete_livros = "delete from whishbook where id_whishlist = :id_whishlist and id_user = :id_user";
             $stmt = $conn->prepare($delete_livros);
-
+            
             $stmt->execute([
                 ':id_whishlist' => $id_whishlist,
                 ':id_user' => $id_user
@@ -165,6 +162,7 @@
             header('Location: ver_lista.php?id=' .$id_lista);
         }
         $conn->commit();
+        
 
     } catch (PDOException $e) {
     if ($conn->inTransaction()) {
