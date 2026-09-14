@@ -1,6 +1,5 @@
 <?php
 session_start();
-
 if(isset($_POST['pular'])){
     header('location:login.php');
     exit();

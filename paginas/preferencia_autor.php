@@ -1,4 +1,5 @@
 <?php
+
 session_start();
 
 if (!isset($_SESSION['cadastro_concluido'])) {
@@ -12,13 +13,14 @@ if (!isset($_SESSION['generos_concluido'])) {
 }
 
 if (!isset($_SESSION['id_user'])) {
-    header('location:cadastro.php');
+    header('Location: cadastro.php');
     exit();
 }
 
 $id_user = $_SESSION['id_user'];
 
 require_once("conexao.php");
+
 $db = new Database;
 $conn = $db->conectar();
 
@@ -30,15 +32,21 @@ $autores = $stmt->fetchAll(PDO::FETCH_ASSOC);
 if (isset($_POST['continuar'])) {
 
     if (!isset($_POST["autores"]) || count($_POST["autores"]) != 5) {
-        $_SESSION['erro'] = "Escolha 5 gêneros!";
-        echo "<script>alert('Escolha 5 gêneros!')</script>";
+
+        $_SESSION['erro'] = "Escolha exatamente 5 autores!";
+
+        echo "<script>
+                alert('Escolha exatamente 5 autores!');
+                window.location.href='preferencia_autor.php';
+              </script>";
         exit();
     }
 
     foreach ($_POST["autores"] as $idAutor) {
 
-        $insert = "INSERT INTO preferencia_user (id_user, id_preferencia)
-                   VALUES (:id_user, :id_preferencia);";
+        $insert = "INSERT INTO autor_user
+                   (id_user, id_autor)
+                   VALUES (:id_user, :id_autor);";
 
         try {
 
@@ -46,16 +54,23 @@ if (isset($_POST['continuar'])) {
 
             $stmt->execute([
                 ":id_user" => $id_user,
-                ":id_preferencia" => $idAutor
+                ":id_autor" => $idAutor
             ]);
 
         } catch (PDOException $e) {
 
             echo "Erro: " . $e->getMessage();
-
+            exit();
         }
-
     }
+
+    unset($_SESSION['cadastro_concluido']);
+    unset($_SESSION['generos_concluido']);
+    unset($_SESSION['id_user']);
+    unset($_SESSION['erro']);
+
+    header('Location: reset.php');
+    exit();
 }
 ?>
 
@@ -74,8 +89,9 @@ if (isset($_POST['continuar'])) {
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 
     <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600;1,700&display=swap" rel="stylesheet">
-
     <link rel="shortcut icon" href="/TCC-Nook/img/icons/ico-nook/ico-nook.ico" type="image/x-icon">
+
+    <script src="/TCC-Nook/front-end/js/pages/preferencia_autor.js" defer></script>
 
     <title>Preferencia de Autores</title>
 </head>
@@ -123,9 +139,9 @@ if (isset($_POST['continuar'])) {
 
                         <input type="checkbox" name="autores[]" value="<?= htmlspecialchars($autor['id_autor']) ?>" class="aut-checkbox">
 
-                        <span class="aut-badge">✓</span>
+                        <span class="aut-badge"></span>
 
-                        <img src="/TCC-Nook/img/autores/<?= htmlspecialchars($autor['nome_autor']) ?>">
+                        <img src="/TCC-Nook/img/autores/<?= htmlspecialchars($autor['autor']) ?>.jpg">
 
                         <span class="aut-name">
                             <?= htmlspecialchars($autor['nome_autor']) ?>
@@ -166,73 +182,6 @@ if (isset($_POST['continuar'])) {
         </form>
 
     </main>
-
-    <section>
-        <?php
-        if (isset($_POST['continuar'])) {
-
-            if (!isset($_POST["autores"]) || count($_POST["autores"]) != 3) { // mudar para 5 dps
-
-                $_SESSION['erro'] = "Escolha exatamente 3 autores!";
-                echo "<script>alert('Escolha exatamente 3 autores!')</script>";
-                exit();
-            }
-
-            foreach ($_POST["autores"] as $idAutor) {
-                $insert = "INSERT INTO autor_user (id_user, id_autor) VALUES (:id_user, :id_pref_autor);";
-
-                try {
-                    $stmt = $conn->prepare($insert);
-                    $stmt->execute([
-                        ":id_user" => $id_user,
-                        ":id_pref_autor" => $idAutor
-                    ]);
-
-                } catch (PDOException $e) {
-                    echo "Erro: " . $e->getMessage();
-                }
-            }
-
-            unset($_SESSION['cadastro_concluido']);
-            unset($_SESSION['generos_concluido']);
-            unset($_SESSION['id_user']);
-            unset($_SESSION['erro']);
-
-            header('location:reset.php');
-            exit();
-        }
-        ?>
-    </section>
-
-    <script>
-
-        const checkboxes = document.querySelectorAll('.aut-checkbox');
-        const counter = document.getElementById('selected-counter');
-
-        checkboxes.forEach(checkbox => {
-
-            checkbox.addEventListener('change', () => {
-
-                const total = document.querySelectorAll('.aut-checkbox:checked').length;
-
-                if (total > 5) {
-
-                    checkbox.checked = false;
-
-                    alert('Você só pode selecionar 5 artistas.');
-
-                    return;
-
-                }
-
-                counter.textContent = `${total} de 5 selecionados`;
-
-            });
-
-        });
-
-    </script>
-
 </body>
 
 </html>

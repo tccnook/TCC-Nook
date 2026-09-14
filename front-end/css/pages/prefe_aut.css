@@ -1,39 +1,35 @@
-body{
-    background: var(--bg-primary);
-    font-family: var(--font-secundary);
-    padding: 20px 20px 120px;
+body {
+    background: var(--all-white);
+    font-family: 'Lora', sans-serif;
+    padding: 20px;
 }
 
-header{
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    width: min(1400px, 95%);
-    margin: 0 auto;
-    padding: 1rem 0;
+header {
+    width: 100%;
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
 }
 
-header .logo{
-    height: 40px;
+.logo{
+    width: 90px;
+    margin-bottom: 1rem;
 }
 
 .page-header{
     text-align: center;
-    width: min(700px, 95%);
-    margin: 1.5rem auto 2rem;
+    margin-bottom: 2rem;
 }
 
 .page-header h1{
-    color: var(--text-title);
     font-family: var(--font-secundary);
-    font-size: 2.2rem;
-    font-weight: 600;
-    margin-bottom: .5rem;
+    color: var(--text-title);
+    font-size: 3rem;
+    font-weight: 500;
 }
 
 .page-header p{
     color: var(--text-secondary);
-    font-size: 1rem;
+    margin-top: .5rem;
 }
 
 .page-header .highlight{
@@ -41,7 +37,6 @@ header .logo{
     font-weight: 600;
 }
 
-/* Container do form */
 .aut-form{
     width: min(1400px, 95%);
     margin: 0 auto;
@@ -49,27 +44,22 @@ header .logo{
 
 .genre-grid{
     display: grid;
-    grid-template-columns: repeat(5, 1fr);
-    gap: 1.5rem;
+    grid-template-columns: repeat(5,1fr);
+    gap: 1rem;
 }
 
-/* Card do autor */
 .aut-card{
+    background-color: var(--text-on-dark);
     position: relative;
     border-radius: var(--radius-md);
-    background: var(--all-white);
-    border: 1px solid var(--border-primary);
     cursor: pointer;
-    overflow: hidden;
-
     display: flex;
     flex-direction: column;
     align-items: center;
     text-align: center;
-
     padding: 1.5rem 1rem;
-
     transition: .2s ease;
+    box-shadow: 10px var(--text-title);
 }
 
 .aut-card:hover{
@@ -77,15 +67,12 @@ header .logo{
 }
 
 .aut-checkbox{
-    position: absolute;
-    opacity: 0;
-    pointer-events: none;
+    display: none;
 }
 
-/* Foto circular do autor */
 .aut-card img{
-    width: 110px;
-    height: 110px;
+    width: 200px;
+    height: 200px;
     border-radius: 50%;
     object-fit: cover;
     margin-bottom: 1rem;
@@ -94,72 +81,60 @@ header .logo{
 .aut-name{
     color: var(--text-title);
     font-family: var(--font-secundary);
-    font-size: 1.2rem;
+    font-size: 1.1rem;
     font-weight: 600;
     line-height: 1.2;
 }
 
-/* Categoria/gênero do autor, abaixo do nome */
 .aut-genre{
     color: var(--color-accent);
     font-family: var(--font-secundary);
-    font-size: .9rem;
+    font-size: .85rem;
     margin-top: .25rem;
 }
 
-/* Badge de check no canto superior direito */
 .aut-badge{
     position: absolute;
-    top: 12px;
-    right: 12px;
-
-    width: 24px;
-    height: 24px;
+    top: 10px;
+    right: 10px;
+    width: 22px;
+    height: 22px;
     border-radius: 50%;
-
-    background: var(--all-white);
-    border: 2px solid var(--border-primary);
     color: transparent;
-
     display: flex;
     justify-content: center;
     align-items: center;
-    font-size: .8rem;
+    font-size: .75rem;
     line-height: 1;
-
+    z-index: 3;
     transition: .2s ease;
 }
 
-.aut-card:has(.aut-checkbox:checked){
-    border-color: var(--color-accent);
-    box-shadow: 0 0 0 3px rgba(139,92,246,.20);
+.aut-card.selected{
+    border: 2px solid var(--color-accent);
+    box-shadow: 0 0 0 4px rgba(139,92,246,.20);
+    background: var(--all-white);
 }
 
-.aut-card:has(.aut-checkbox:checked) .aut-badge{
+.aut-card.selected .aut-badge{
     background: var(--color-accent);
     border-color: var(--color-accent);
     color: var(--all-white);
 }
 
-/* Barra fixa inferior */
 .actions{
     position: fixed;
     bottom: 20px;
     left: 50%;
     transform: translateX(-50%);
-
     width: min(1400px, 95%);
-
     background: rgba(228,221,241,.95);
     backdrop-filter: blur(12px);
-
     padding: 1rem 1.5rem;
     border-radius: var(--radius-md);
-
     display: flex;
     justify-content: space-between;
     align-items: center;
-
     z-index: 1000;
 }
 
@@ -167,22 +142,18 @@ header .logo{
     display: flex;
     align-items: center;
     gap: .75rem;
-
     color: var(--text-title);
     font-family: var(--font-secundary);
-    font-size: 1.1rem;
+    font-size: 1.4rem;
 }
 
 .check-icon{
     width: 24px;
     height: 24px;
-
     border-radius: 6px;
-
     background: white;
     border: 2px solid var(--color-accent);
     color: var(--color-accent);
-
     display: flex;
     justify-content: center;
     align-items: center;
@@ -197,50 +168,40 @@ header .logo{
     border: none;
     cursor: pointer;
     transition: .2s ease;
-    background: transparent;
-    font-family: var(--font-secundary);
 }
 
 .btn-secondary{
+    background: transparent;
     color: var(--text-title);
     padding: 1rem 2rem;
 }
 
-.button-action{
+.button-action {
     all: unset;
-
+    text-align: center;
     height: 52px;
     padding: 0 30px;
-
     border-radius: var(--radius-sm);
-
-    background: var(--text-title);
     color: var(--all-white);
-
-    font-family: var(--font-secundary);
-    text-align: center;
+    background-color: var(--color-accent);
     cursor: pointer;
-
-    display: flex;
-    align-items: center;
-    justify-content: center;
 }
 
 @media(max-width:1200px){
     .genre-grid{
-        grid-template-columns: repeat(4, 1fr);
+        grid-template-columns: repeat(4,1fr);
     }
 }
 
 @media(max-width:900px){
     .genre-grid{
-        grid-template-columns: repeat(3, 1fr);
+        grid-template-columns: repeat(3,1fr);
     }
 }
 
 @media(max-width:700px){
     .genre-grid{
-        grid-template-columns: repeat(2, 1fr);
+        grid-template-columns: repeat(2,1fr);
     }
 
     .actions{
@@ -248,3 +209,9 @@ header .logo{
         gap: 1rem;
     }
 }
+
+
+
+
+
+
