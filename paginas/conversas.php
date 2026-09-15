@@ -31,7 +31,10 @@ $con = $db->conectar();
         </form>
         <section id="resultados" class="resultados">
 
-        </section>    
+        </section>
+        <section class="nova_conversa">
+            <a href="criar_conversa.php"> Criar Conversa </a>
+        </section>  
 
     <script>
         let idUser = <?= $id_user ?>;
@@ -59,6 +62,7 @@ $con = $db->conectar();
                 <div class="conversa">
                 <img src="${conversa.foto_conversa_url}" width="130px" height="auto">
                 <span>${conversa.nome_conversa}</span>
+                <span>${conversa.username}: ${conversa.conteudo}</span>
                 </div>
                 </a>
                 `;

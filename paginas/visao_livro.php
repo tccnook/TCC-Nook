@@ -143,6 +143,44 @@ echo '</form>';
 echo '</div>';
 
 echo '</section>';
+echo '<section class="resenhas">';
+$select_resenhas = "
+select r.id_resenha, r.titulo_resenha, r.sinopse, r.class_ind, r.data_publi, l.titulo_livro, l.capa_url, u.username
+from resenha r
+inner join livro l on l.id_livro = r.id_livro
+inner join usuario u on u.id_user = r.id_user
+where r.id_livro = :id_livro
+order by random()
+";
+$stmt_resenhas = $conn->prepare($select_resenhas);
+$stmt_resenhas->execute([
+    ":id_livro" => $id_livro
+]);
+$resenhas = $stmt_resenhas->fetchAll(PDO::FETCH_ASSOC);
+
+foreach($resenhas as $resenha){
+    echo '<h3>'.$resenha['titulo_resenha'].'</h3>';
+    echo '<img src="'.$resenha['capa_url'].'" width="50px" height="auto"> <br>';
+    echo '<p>'.$resenha['sinopse'].'</p>';
+    echo $resenha['class_ind'];
+    echo $resenha['data_publi'];
+    echo '<br';
+    echo 'Autor: '.$resenha['username'];
+    $select_paragrafos = "
+    select id_paragrafo_resenha, texto_paragrafo_resenha from paragrafo_resenha
+    where id_resenha = :id_resenha
+    order by ordem_paragrafo_resenha desc
+    ";
+    $stmt_paragrafos = $conn->prepare($select_paragrafos);
+    $stmt_paragrafos->execute([
+        ":id_resenha" => $resenha['id_resenha']
+    ]);
+    $paragrafos = $stmt_paragrafos->fetchAll(PDO::FETCH_ASSOC);
+    foreach($paragrafos as $paragrafo){
+        echo '<p>'.$paragrafo['texto_paragrafo_resenha'].'</p>';
+    }
+}
+echo '</section>';
 
 ?>
 <script>

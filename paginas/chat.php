@@ -26,6 +26,29 @@ if(!isset($_GET['id_conversa'])){
 
 $id_conversa = $_GET['id_conversa'];
 
+$buscar_informacoes_grupo = "select 
+id_conversa, tipo, nome_conversa, foto_conversa_url, id_dono
+from conversa 
+where id_conversa = :id_conversa";
+
+$stmt_grupo = $conn->prepare($buscar_informacoes_grupo);
+$stmt_grupo->execute([
+    ":id_conversa" => $id_conversa
+]);
+$informacoes_grupo = $stmt_grupo->fetch(PDO::FETCH_ASSOC);
+
+$select_participantes_grupo = "
+select p.id_user, p.cargo, p.joinet_at, u.username, cu.foto_perfil_url
+from conversa_participante p
+inner join usuario u on u.id_user = p.id_user
+inner join conta cu on cu.id_user = u.id_user
+where p.id_conversa = :id_conversa
+";
+$stmt_participantes = $conn->prepare($select_participantes_grupo);
+$stmt_participantes->execute([
+    ":id_conversa" => $informacoes_grupo['id_conversa']
+]);
+$participantes_grupo = $stmt_participantes->fetchAll(PDO::FETCH_ASSOC);
 
 ?>
 <!DOCTYPE html>
@@ -33,9 +56,28 @@ $id_conversa = $_GET['id_conversa'];
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+    <title> Document </title>
 </head>
 <body>
+    <?php
+    if ($informacoes_grupo['tipo'] == 'grupo'){
+     echo '<a href="gerenciar_grupo.php?id_conversa='.htmlspecialchars($id_conversa).'>';
+    } else {
+        echo '<a href="gerenciar_conversa.php?id_conversa='.htmlspecialchars($id_conversa).'';
+    } 
+    ?>
+    <header>
+        <img src="<?= $informacoes_grupo['foto_conversa_url']?>" width="80px" height="auto">
+        <span> <?= $informacoes_grupo['nome_conversa']?> </span>
+        <small>
+        <?php
+        foreach($participantes_grupo as $participante_grupo){
+            echo $participante_grupo['username'];
+        } 
+       ?>
+        </small>
+    </header>
+    </a>
     <section id="mensagens-conversa">
 
     </section>

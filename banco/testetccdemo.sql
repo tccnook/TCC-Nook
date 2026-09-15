@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict 7NsKNw4Ih2MrPoqcBUiR1hhAk2pPnwzVHJo1F60uwE8ZGPOEjcsStAkQ7fw25Hx
+\restrict ZbR0SHDud8QpBiwvuMsfYljddiINxPOWfysLIGjoKQbQlk2h0cbOy0GaBeK4e1q
 
 -- Dumped from database version 18.4
 -- Dumped by pg_dump version 18.4
@@ -778,6 +778,34 @@ ALTER TABLE public.resenha ALTER COLUMN id_resenha ADD GENERATED ALWAYS AS IDENT
 
 
 --
+-- Name: salvos; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.salvos (
+    id integer NOT NULL,
+    id_user integer,
+    categoria_salva character varying(30),
+    id_salvo integer
+);
+
+
+ALTER TABLE public.salvos OWNER TO postgres;
+
+--
+-- Name: salvos_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+ALTER TABLE public.salvos ALTER COLUMN id ADD GENERATED ALWAYS AS IDENTITY (
+    SEQUENCE NAME public.salvos_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1
+);
+
+
+--
 -- Name: top5_livros; Type: TABLE; Schema: public; Owner: postgres
 --
 
@@ -938,6 +966,11 @@ COPY public.autor_user (id_user, id_autor, id) FROM stdin;
 31	8	30
 31	9	31
 31	3	32
+32	4	33
+32	6	34
+32	8	35
+32	9	36
+32	3	37
 \.
 
 
@@ -1013,6 +1046,7 @@ COPY public.comentario (id_comentario, id_user, categoria_curtida, id_coisocurti
 18	19	livro	2	\N	sdgdfgd	2026-08-24 14:00:46.299182
 19	19	livro	2	\N	fsdfsdfsad	2026-08-24 14:10:37.887971
 20	31	livro	2	\N	vou ler	2026-08-30 14:20:43.823762
+21	19	livro	2	\N	Comwntário 1	2026-09-10 18:57:02.465614
 \.
 
 
@@ -1027,6 +1061,7 @@ COPY public.conta (id_user, foto_perfil_url, bio, visibilidade, banner_url) FROM
 19	img/foto_perfil/4f3a97f338ba0c7c65039d97f02cc401.webp	Apenas um cara tranquilo que gosta do palmeiras	publico	img/banner_perfil/25cfe8fb7c9a8d15943d86263f962fda.webp
 30	\N	\N	publico	\N
 31	\N	\N	publico	\N
+32	\N	\N	publico	\N
 \.
 
 
@@ -1100,6 +1135,11 @@ COPY public.livros_lidos (id_user, id_livro, atualizado_em) FROM stdin;
 30	1	2026-08-27 19:31:47.177067
 30	4	2026-08-27 19:32:46.433212
 31	2	2026-08-30 14:21:22.934148
+32	2	2026-09-10 18:50:54.014548
+32	3	2026-09-10 18:51:40.118059
+32	5	2026-09-10 18:52:03.931163
+32	4	2026-09-10 18:52:38.981492
+32	1	2026-09-10 18:53:09.506054
 \.
 
 
@@ -1137,6 +1177,9 @@ COPY public.mensagem (id_mensagem, id_conversa, id_envio, tipo, conteudo, criaca
 38	2	30	texto	mas quando abre no mesmo navegador o último ID aberto predomina	2026-09-01 21:42:32.943205	\N	\N
 41	2	19	texto	123	2026-09-01 21:49:30.551136	\N	\N
 42	2	30	texto	123456	2026-09-01 21:49:45.498302	\N	\N
+43	2	30	texto	oi	2026-09-03 08:45:51.457603	\N	\N
+44	2	19	texto	Saudações de Hoje	2026-09-10 18:55:43.871256	\N	\N
+45	2	19	texto	Mensagem 2	2026-09-10 18:56:00.22785	\N	\N
 \.
 
 
@@ -1150,6 +1193,7 @@ COPY public.meta_leitura (id, id_user, periodo, num_livros, criacao, status, exp
 6	19	semanal	50	2026-08-13 18:36:50.420783	andamento	2027-08-13	meta do ano
 7	19	anual	5000	2026-08-16 20:34:51.764024	andamento	2027-08-16	Meta de agosto
 10	19	semanal	20	2026-08-24 09:10:52.388167	expirado	2026-08-31	meta xxxx
+11	32	mensal	4	2026-09-10 18:54:34.632162	andamento	2026-10-10	Meta de Setembro
 \.
 
 
@@ -1648,6 +1692,11 @@ COPY public.preferencia_user (id_user, id_preferencia, id) FROM stdin;
 31	10	30
 31	11	31
 31	29	32
+32	3	33
+32	10	34
+32	11	35
+32	13	36
+32	17	37
 \.
 
 
@@ -1668,6 +1717,11 @@ COPY public.progresso_leitura (id_progresso, id_user, id_livro, capitulo_atual, 
 9	30	4	2	100.00	2026-08-27 19:32:46.431264
 11	31	2	1	100.00	2026-08-30 14:21:22.9296
 12	31	1	1	0.00	2026-08-30 14:22:18.99065
+13	32	2	1	100.00	2026-09-10 18:50:54.010903
+14	32	3	4	100.00	2026-09-10 18:51:40.097764
+15	32	5	3	100.00	2026-09-10 18:52:03.907356
+16	32	4	2	100.00	2026-09-10 18:52:38.978568
+17	32	1	5	100.00	2026-09-10 18:53:09.483657
 \.
 
 
@@ -1702,6 +1756,14 @@ COPY public.resenha (id_resenha, titulo_resenha, id_user, sinopse, class_ind, da
 
 
 --
+-- Data for Name: salvos; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.salvos (id, id_user, categoria_salva, id_salvo) FROM stdin;
+\.
+
+
+--
 -- Data for Name: top5_livros; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
@@ -1711,6 +1773,9 @@ COPY public.top5_livros (id_user, id_livro, posicao, atualizado_em) FROM stdin;
 19	3	1	2026-08-10 14:02:13.520825
 19	5	2	2026-08-11 21:18:28.213477
 19	1	3	2026-08-12 10:51:44.127281
+30	5	1	2026-09-09 11:58:11.761936
+30	3	2	2026-09-09 11:58:17.854696
+32	3	1	2026-09-10 18:54:09.380581
 \.
 
 
@@ -1736,6 +1801,7 @@ COPY public.usuario (id_user, nome_completo, username, data_nascimento, email, s
 29	Anselmo Paulo Florentino	selmao	1980-06-09	anselmo@gmail.com	$2y$10$6f.Fv3fslTq5ss5iC91TkuFE16FAWKOIOWyHeH9J7V77vLk2aElfS	2026-08-17 13:28:22.52121	\N
 30	Usuario Teste 1	userteste1	2026-08-25	userteste1@gmail.com	$2y$10$UlhPwFP2adrKH4iBG/8aPONB4xLrul4U1KD7puPbwe5RFw0Cx98YK	2026-08-25 21:48:06.885524	\N
 31	Solanjo	Solanjo_Pinho	1994-09-16	solanjo@gmail.com	$2y$10$q9PyG2wMDsljntArZ0Q7DuhskuW/dYY9G/Vp4kTh2ODQX7Eqik4OW	2026-08-30 14:18:33.65179	\N
+32	Rita Ventura	titita	1972-02-11	titita@gmail.com	$2y$10$4hhhlZ7ZGlxeKVI1jZo3ZeJBNHoa/3uILioOSTJNK8dPIiaWw38mO	2026-09-10 18:48:52.330746	\N
 \.
 
 
@@ -1772,7 +1838,7 @@ SELECT pg_catalog.setval('public.autor_id_autor_seq', 9, true);
 -- Name: autor_user_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.autor_user_id_seq', 32, true);
+SELECT pg_catalog.setval('public.autor_user_id_seq', 37, true);
 
 
 --
@@ -1800,7 +1866,7 @@ SELECT pg_catalog.setval('public.cenario_id_cenario_seq', 1, false);
 -- Name: comentario_id_comentario_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.comentario_id_comentario_seq', 20, true);
+SELECT pg_catalog.setval('public.comentario_id_comentario_seq', 21, true);
 
 
 --
@@ -1828,14 +1894,14 @@ SELECT pg_catalog.setval('public.livro_id_seq', 5, true);
 -- Name: mensagem_id_mensagem_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.mensagem_id_mensagem_seq', 42, true);
+SELECT pg_catalog.setval('public.mensagem_id_mensagem_seq', 45, true);
 
 
 --
 -- Name: meta_leitura_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.meta_leitura_id_seq', 10, true);
+SELECT pg_catalog.setval('public.meta_leitura_id_seq', 11, true);
 
 
 --
@@ -1891,14 +1957,14 @@ SELECT pg_catalog.setval('public.preferencia_livro_id_seq', 10, true);
 -- Name: preferencia_user_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.preferencia_user_id_seq', 32, true);
+SELECT pg_catalog.setval('public.preferencia_user_id_seq', 37, true);
 
 
 --
 -- Name: progresso_leitura_id_progresso_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.progresso_leitura_id_progresso_seq', 12, true);
+SELECT pg_catalog.setval('public.progresso_leitura_id_progresso_seq', 17, true);
 
 
 --
@@ -1916,10 +1982,17 @@ SELECT pg_catalog.setval('public.resenha_id_resenha_seq', 2, true);
 
 
 --
+-- Name: salvos_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.salvos_id_seq', 1, false);
+
+
+--
 -- Name: usuario_id_user_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.usuario_id_user_seq', 31, true);
+SELECT pg_catalog.setval('public.usuario_id_user_seq', 32, true);
 
 
 --
@@ -2134,6 +2207,14 @@ ALTER TABLE ONLY public.recuperacao_senha
 
 ALTER TABLE ONLY public.resenha
     ADD CONSTRAINT resenha_pkey PRIMARY KEY (id_resenha);
+
+
+--
+-- Name: salvos salvos_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.salvos
+    ADD CONSTRAINT salvos_pkey PRIMARY KEY (id);
 
 
 --
@@ -2529,6 +2610,14 @@ ALTER TABLE ONLY public.resenha
 
 
 --
+-- Name: salvos salvo_user; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.salvos
+    ADD CONSTRAINT salvo_user FOREIGN KEY (id_user) REFERENCES public.usuario(id_user) ON DELETE CASCADE;
+
+
+--
 -- Name: top5_livros top5_livro; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -2564,5 +2653,5 @@ ALTER TABLE ONLY public.autor
 -- PostgreSQL database dump complete
 --
 
-\unrestrict 7NsKNw4Ih2MrPoqcBUiR1hhAk2pPnwzVHJo1F60uwE8ZGPOEjcsStAkQ7fw25Hx
+\unrestrict ZbR0SHDud8QpBiwvuMsfYljddiINxPOWfysLIGjoKQbQlk2h0cbOy0GaBeK4e1q
 

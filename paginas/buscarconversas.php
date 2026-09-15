@@ -17,10 +17,16 @@ $conn = $db->conectar();
 $nome = $_GET['nome'] ?? null;
 
 $select_conversas = "
-select c.id_conversa, c.tipo, c.nome_conversa, c.foto_conversa_url from conversa c 
+select * from (
+select distinct_on (c.id_conversa)
+c.id_conversa, c.nome_conversa, c.tipo, c.foto_conversa_url, m.id_mensagem, m.id_envio, m.conteudo, m.criacao, u.username
+from conversa c
 inner join conversa_participante cp on cp.id_conversa = c.id_conversa and cp.id_user = :id_user
-where c.nome_conversa ilike :nome
-order by c.nome_conversa desc
+left join mensagem m on m.id_conversa = c.id_conversa
+left join usuario u on u.id_user = m.id_envio
+order by c.id_conversa, m.criacao desc
+) as ultimas 
+order by criacao desc
 ";
 $stmt_conversas = $conn->prepare($select_conversas);
 $stmt_conversas->execute([

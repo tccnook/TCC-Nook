@@ -14,7 +14,8 @@ $id_user = $_SESSION['id_user'];
 
 $id_conversa = $_POST['id_conversa'] ?? null;
 try{
-$select_mensagens = 'select m.id_mensagem, m.id_envio, m.tipo, m.conteudo, m.criacao, m.editado_em, u.username 
+$select_mensagens = 'select 
+m.id_mensagem, m.id_envio, m.tipo, m.conteudo, m.criacao, m.editado_em, u.username 
 from mensagem m
 inner join usuario u on u.id_user = m.id_envio 
 where m.id_conversa = :id_conversa and m.delatado_em is null 
