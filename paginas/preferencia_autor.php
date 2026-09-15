@@ -114,16 +114,16 @@
                         echo "Erro: ". $e->getMessage();
                     }
                 }
-
-                unset($_SESSION['cadastro_concluido']);
-                unset($_SESSION['generos_concluido']);
-                unset($_SESSION['id_user']);
-                unset($_SESSION['erro']);
-
+                
                 if($_SESSION['origem_config']){
+                    unset($_SESSION['origem_config']);
+                    unset($_SESSION['erro']);
                     header('location:config_user.php');
                     exit();
                 } else{
+                    unset($_SESSION['cadastro_concluido']);
+                    unset($_SESSION['generos_concluido']);
+                    unset($_SESSION['id_user']);
                     header('location:reset.php');
                     exit();
                 }

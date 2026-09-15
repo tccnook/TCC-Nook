@@ -217,6 +217,7 @@
     //preferencias (testar dps)
     if(isset($_POST['preferencias'])){
         $_SESSION['origem_config'] = true;
+        unset($_SESSION['generos_concluido']);
         header('location:preferencia_gen.php');
         exit();
     }
