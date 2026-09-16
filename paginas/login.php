@@ -42,9 +42,9 @@ session_start();
             }
 
             if(isset($_POST['logar'])){
-                // $email = $_POST['email'];
+                $email = $_POST['email'];
                 $senha = $_POST['senha'];
-                // $senhahash = password_hash($senha, PASSWORD_DEFAULT);
+                $senhahash = password_hash($senha, PASSWORD_DEFAULT);
                 $parametroBusca = new parametroBusca();
                 $parametroBusca->setEmail($_POST['email']);
                 $parametroBusca->setSenha($senha);
@@ -54,7 +54,7 @@ session_start();
 
                 if ($usuario && password_verify($parametroBusca->getSenha(), $usuario['senha'])){
                         $_SESSION["id"] = $usuario['id_user'];    
-                        header("Location: dashboard.php");
+                        header("Location:perfil.php"); // colocar dashboard.php depois
                     } else{
                         echo '<script> alert("Dados Inválidos, tente novamente"); </script>';
                     }

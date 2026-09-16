@@ -1,6 +1,5 @@
 <?php
 
-session_start();
 require_once('conexao.php');
 
 $db = new Database;
@@ -64,7 +63,7 @@ if (isset($_GET['exc'])) {
         }
     }
 
-    header("Location: perfil_user_proprio.php");
+    header("Location: visao-geral.php");
     exit;
 }
 
@@ -151,7 +150,7 @@ if (count($livros) > 0) {
 
         echo '<br><br>';
 
-        echo '<a href="perfil_user_proprio.php?exc='
+        echo '<a href="visao-geral.php?exc='
             . urlencode($livro['id_livro'])
             . '&posicao='
             . urlencode($livro['posicao'])

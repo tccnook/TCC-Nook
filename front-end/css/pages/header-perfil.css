@@ -1,0 +1,59 @@
+.alinhar-banner {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.sem-banner, .com-banner {
+    width: 80%;
+    border-radius: 0 0 25px 25px;
+    display: flex;
+    align-items: center;
+    justify-content: start;
+}
+
+.sem-banner {
+    background-color: var(--bg-cards);
+    height: 15rem;
+    margin: 20px;
+    position: relative;
+    overflow-x: hidden ;
+}
+
+.sem-banner::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100%25' height='100%25'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.3'/%3E%3C/svg%3E");
+    opacity: 20%;
+    pointer-events: none;
+}
+
+.sem-foto-perfil, .com-foto-perfil {
+    position:static;
+    transform: translate(13vw, -70%);
+    width: 150px;
+    height: 150px;
+}
+
+.sem-foto-perfil {
+    background-color: var(--bg-cards-light);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    border: 1px solid var(--color-accent);
+}
+.ico-camera {
+    width: 50%;
+    height: 50%;
+    stroke: #FFF;
+}
+
+.user-names {
+    color: #FFF;
+    margin: 1rem;
+    position: static;
+    transform: translate(14vw, 150%);
+}

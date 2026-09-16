@@ -50,7 +50,7 @@ $stmt->execute([
 }
 
 
-header("location:perfil_user_proprio.php");
+header("location:visao-geral.php");
 
 } else{
     $id_livro_substituido = $_GET['id_livro_substituido'];
@@ -68,7 +68,7 @@ header("location:perfil_user_proprio.php");
         echo 'Erro: '.$e->getMessage();
     }
 
-    header("location:perfil_user_proprio.php");
+    header("location:visao-geral.php");
 
 }
 

@@ -1,5 +1,4 @@
 <?php
-    session_start();
     require_once('conexao.php');
 
     $db = new Database();
@@ -50,39 +49,49 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     <link rel="stylesheet" href="/TCC-Nook/front-end/css/main.css">
-    <link rel="stylesheet" href="/TCC-Nook/front-end/css/pages/header.css">
-    <link rel="stylesheet" href="/TCC-Nook/front-end/css/utilities/progress.css">
+    <link rel="stylesheet" href="/TCC-Nook/front-end/css/pages/header-perfil.css">
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 
     <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600;1,700&display=swap" rel="stylesheet">
     <link rel="shortcut icon" href="/TCC-Nook/img/icons/ico-nook/ico-nook.ico" type="image/x-icon">
+
+    <script src="https://unpkg.com/lucide@latest"></script>
     <title>Perfil</title>
 
 </head>
 <body>
-    <h1>Cabeçalho do Perfil</h1>
     <main>
         <section>
             <?php
+            echo "<div class='alinhar-banner'>";
                 if(empty($conta['banner_url'])){
-                    echo "Adicione um banner!";
+                    echo "<section class='sem-banner'>";
                 } else {
+                    echo "<section class='com-banner'>";
                     echo "<img src='../".htmlspecialchars($conta['banner_url'])."' alt='Banner'>";
                 }
-            ?>
-        </section>
-        <?php
-            if(empty($conta['foto_perfil_url'])){
-                echo "Adicione uma foto de perfil!";
+                
+                ?>
+                <section class="user-names">
+                    <h2><?= htmlspecialchars($usuario['nome_completo']);?></h2>
+                    <p>@<?= htmlspecialchars($usuario['username']);?></p>
+                </section>
+
+                </section>
+            </div>
+<?php
+                if(empty($conta['foto_perfil_url'])){
+                echo "<section class='sem-foto-perfil'><i class='ico-camera' data-lucide='camera'></i></section>";
             } else {
-                echo "<img src='../".htmlspecialchars($conta['foto_perfil_url'])."' alt='Foto de Perfil'>";
+                echo "<img class='com-foto-perfil' src='../".htmlspecialchars($conta['foto_perfil_url'])."' alt='Foto de Perfil'>";
             }
-        ?>
+
+                ?>
+                
+        </section>
         
-        <h2><?= htmlspecialchars($usuario['nome_completo']);?></h2>
-        <p>@<?= htmlspecialchars($usuario['username']);?></p>
 
         <?php
             if(empty($conta['bio'])){
@@ -231,6 +240,9 @@
         btnFechar.addEventListener("click", function () {
             modal.close();
         });
+
+        lucide.createIcons();
+    
     </script>
 </body>
 </html>

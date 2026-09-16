@@ -1,16 +1,25 @@
 <?php
     session_start();
+    require_once('conexao.php');
 
-    $aba = $_GET['aba'] ?? 'visão-geral';
+    $db = new Database();
+    $conn = $db->conectar();
+
+    if(!isset($_SESSION['id_user'])){
+        header('location:login.php');
+        exit();
+    }
+
+    $aba = $_GET['aba'] ?? 'visao-geral';
     $possiveisAbas = [
-        'visão-geral',
+        'visao-geral',
         'livros-lidos',
         'listas-leitura',
         'resenhas'
     ];
 
     if (!in_array($aba,$possiveisAbas)) {
-        $aba = 'visão-geral';
+        $aba = 'visao-geral';
     }
 
 ?>
@@ -34,24 +43,37 @@
     <title>Perfil</title>
 </head>
 <body>
-
-    <?php require 'includes/header_perfil.php';?>
+    <section class="header">
+        <?php require 'header_perfil.php';?>
+    </section>
     <main>
-        <?php>
+        <nav>
+            <a href="?aba=visao-geral" class="<?=$aba === 'visao-geral' ? 'ativo' : ''?>">Visão Geral</a>
+            <a href="?aba=livros-lidos" class="<?=$aba === 'livros-lidos' ? 'ativo' : ''?>">Livros Lidos</a>
+            <a href="?aba=listas-leitura" class="<?=$aba === 'listas-leitura' ? 'ativo' : ''?>">Listas de Leitura</a>
+            <a href="?aba=resenhas" class="<?=$aba === 'resenhas' ? 'ativo' : ''?>">Resenhas</a>
+        </nav>
+
+        <br><br><br><br>
+        <?php
         
         switch($aba) {
-            case 'visão-geral':
-                require 'includes/perfil_user_proprio.php';
+            case 'visao-geral':
+                require 'visao-geral.php';
                 break;
+
             case 'livros-lidos':
-                require 'includes/livros_lidos.php';
+                require 'livros_lidos.php';
                 break;
             case 'listas-leitura':
-                require 'includes/'
+                require 'listas_livros.php';
+                break;
 
         }
 
         ?>
+
+        
 
     </main>
 

@@ -255,7 +255,7 @@ foreach ($metas as $meta) {
 
 
 echo '<a href="criarmeta.php"> Criar Meta </a>';
-echo '<a href="perfil_user_proprio.php"> Voltar </a>';
+echo '<a href="visao-geral.php"> Voltar </a>';
 
 
 

@@ -1,8 +1,5 @@
 <?php
 
-session_start();
-
-// require_once('header_perfil.php');
 require_once('conexao.php');
 $db = new Database;
 $conn = $db->conectar();

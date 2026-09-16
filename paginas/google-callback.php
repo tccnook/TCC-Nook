@@ -51,7 +51,7 @@ $resultado = $stmt->fetch(PDO::FETCH_ASSOC);
 if($resultado){
     // usuario possui conta
     $_SESSION['id_user'] = $resultado['id_user'];
-    header('Location: perfil_user_proprio.php');
+    header('Location: visao-geral.php');
     exit;
 } else{
     // usuario não possui conta, precisa cadastrar

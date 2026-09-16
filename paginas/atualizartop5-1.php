@@ -11,7 +11,7 @@ $conn = $db->conectar();
 $id_user = $_SESSION['id_user'];
 
 if(!isset($_POST['atualizartop5'])){
-    header("location:perfil_user_proprio.php");
+    header("location:visao-geral.php");
     exit();
 }
 
