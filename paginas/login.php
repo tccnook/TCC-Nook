@@ -53,8 +53,8 @@ session_start();
                 $usuario = $busca->buscarUsuario($parametroBusca);
 
                 if ($usuario && password_verify($parametroBusca->getSenha(), $usuario['senha'])){
-                        $_SESSION["id_user"] = $usuario['id_user'];    
-                        header("location:perfil_user_proprio.php");
+                        $_SESSION["id"] = $usuario['id_user'];    
+                        header("Location: dashboard.php");
                     } else{
                         echo '<script> alert("Dados Inválidos, tente novamente"); </script>';
                     }
