@@ -259,7 +259,7 @@
                 </button>";
                 require_once('seguir_seguindo.php');
             } else{
-                echo '<p>'. $n_seguindo .' Seguindo</p>';
+                echo '<p>'. $n_seguindo['count'] .' Seguindo</p>';
             }
 
             ?>

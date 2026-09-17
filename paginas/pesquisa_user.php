@@ -77,7 +77,7 @@
                     $stmt->execute([":id_user_buscado" => $id_user_buscado]);
                     $foto = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-                    //arrumar para quando n tiver foto de perfil
+                    
             ?>
                     <a href="perfil_user_terceiro.php?id_user=<?= $usuario['id_user']?>" style="text-decoration:none">
                         <section>
