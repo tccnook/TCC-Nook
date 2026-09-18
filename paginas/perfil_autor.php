@@ -71,6 +71,26 @@
     $stmt->execute([':id_autor' => $id_autor]);
     $livros = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
+    $select_generos = "select
+        p.nome_preferencia,
+        COUNT(*) AS quantidade
+    FROM livro l
+    INNER JOIN autor a
+        ON LOWER(TRIM(l.nome_autor)) = LOWER(TRIM(a.nome_autor))
+    INNER JOIN preferencia_livro pl
+        ON pl.id_livro = l.id_livro
+    INNER JOIN preferencia p
+        ON p.id_preferencia = pl.id_preferencia
+    WHERE a.id_autor = :id_autor
+    AND l.visibilidade = 'publico'
+    GROUP BY p.nome_preferencia
+    ORDER BY quantidade DESC
+    LIMIT 5;";
+
+    $stmt = $conn->prepare($select_generos);
+    $stmt->execute([':id_autor' => $id_autor]);
+    $generos = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
     if (isset($_POST['seguir'])) {
         $seguir = "insert into follow_autor (id_follower, id_autor, status_follow) values (:id_follower, :id_autor, :status_follow);";
 
@@ -176,6 +196,14 @@
                 </a>       
             <?php
             }
+            ?>
+        </section>
+        <section>
+            <h3>Principais Gêneros</h3>
+            <?php
+                foreach($generos as $genero){
+                    echo '<div>'.htmlspecialchars($genero['nome_preferencia']).'</div>';
+                }
             ?>
         </section>
 
