@@ -196,7 +196,16 @@
                             <td><?= $autor['id_autor']?></td>
                             <td><?= $autor['nome_autor']?></td>
                             <td><?= $autor['autor'] ?></td>
-                            <td><button class="btnEditar" data-id="<?= $autor['id_autor']?>">Editar</button></td>
+                            <td>
+                                <button type="button" class="btnEditar"
+                                    data-id="<?= $autor['id_autor']?>"
+                                    data-nome="<?= htmlspecialchars($autor['nome_autor'], ENT_QUOTES, 'UTF-8') ?>"
+                                    data-autor="<?= htmlspecialchars($autor['autor'], ENT_QUOTES, 'UTF-8') ?>"
+                                    data-bio="<?= htmlspecialchars($autor['bio'], ENT_QUOTES, 'UTF-8') ?>"
+                                    data-foto="<?= htmlspecialchars($autor['foto_url'], ENT_QUOTES, 'UTF-8') ?>"
+                                    >Editar
+                                </button>
+                            </td>
                             <td><a href="excluir_autor.php?id_autor=<?= $autor['id_autor'] ?>">Excluir</a></td>
                         </tr>
                     <?php endforeach ?>
@@ -210,16 +219,21 @@
             </button>
             <form action="#" method="POST" enctype="multipart/form-data">
                 <input type="hidden" name="id_autor" id="id_autor">
+
+                <img src="" alt="foto do autor" id="foto_atual_editar"><br><br>
+
+                <label for="foto_perfil_editar">
+                    Escolha uma foto de perfil para o autor:
+                </label><br>
+                <input type="file" name="foto_perfil" id="foto_perfil_editar" accept="image/jpeg,image/png">
+
                 <label for="nome_autor_editar">Digite o nome do autor:</label><br>
                 <input type="text" name="nome_autor" id="nome_autor_editar" required><br>
                 <label for="autor_editar">Digite o @ do autor:</label><br>
                 <input type="text" name="autor" id="autor_editar"><br>
                 <label for="bio_editar">Digite uma bio para o autor:</label><br>
                 <textarea name="bio" id="bio_editar"></textarea><br>
-                <label for="foto_perfil_editar">
-                    Escolha uma foto de perfil para o autor:
-                </label><br>
-                <input type="file" name="foto_perfil" id="foto_perfil_editar" accept="image/jpeg,image/png">
+
                 <br><br>
                 <input type="submit" name="editar" value="Editar">
             </form>
@@ -227,18 +241,30 @@
     </main>
     <script>
         const botoes = document.querySelectorAll(".btnEditar");
+
         botoes.forEach(botao => {
             botao.addEventListener("click", function() {
                 const id = this.dataset.id;
+                const nome = this.dataset.nome;
+                const autor = this.dataset.autor;
+                const bio = this.dataset.bio;
+                const foto = this.dataset.foto;
+
                 document.getElementById("id_autor").value = id;
+                document.getElementById("nome_autor_editar").value = nome;
+                document.getElementById("autor_editar").value = autor;
+                document.getElementById("bio_editar").value = bio;
+                document.getElementById("foto_atual_editar").src = "../" + foto;
                 document.getElementById("modal_editar").showModal();
             });
         });
 
         const fecharEditar = document.getElementById("fecharEditar");
+
         fecharEditar.addEventListener("click", function() {
             document.getElementById("modal_editar").close();
         });
+        
     </script>
 </body>
 </html>
