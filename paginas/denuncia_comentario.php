@@ -14,6 +14,7 @@
     $id_adm = $_SESSION['id_adm'];*/
 
     //ver questão: id_denunciado, é o id doq foi denunciado ou da pessoa q foi denunciada
+    //puxar as informações do denunciador
     $select_denuncias = "select 
             d.id_denuncia,
             d.id_denunciado,
@@ -54,8 +55,9 @@
                     <th>Denunciador</th>
                     <th>Denunciado</th>
                     <th>Data</th>
-                    <th>Excluir</th>
                     <th>Visualizar</th>
+                    <th>Ignorar</th>
+                    <th>Excluir</th>
                 </tr>
             </thead>
             <tbody>
@@ -64,14 +66,46 @@
                 ?>
                     <tr>
                         <td><?= $denuncia['id_denuncia'] ?></td>
-                        <td><?= $denuncia['denuncia'] ?></td>
-                        <td><?= $denuncia[''] ?></td>
-                        <td><?= $denuncia['denuncia'] ?></td>
-                        <td><?= $denuncia['denuncia'] ?></td>
+                        <td><?= htmlspecialchars($denuncia['denuncia']) ?></td>
+                        <td><?= $denuncia['id_denuciador'] ?></td>
+                        <td><?= $denuncia['id_denunciado'] ?></td>
+                        <td><?= $denuncia['emissao'] ?></td>
+                        <td><button type="button" class="ver" data-comentario="<?= htmlspecialchars($denuncia['comentario']) ?>">Visualizar</button></td>
+                        <td><a href="excluir_denuncia.php?id_denuncia=<?= $denuncia['id_denuncia'] ?>"></a>Ignorar</td>
+                        <td><a href="excluir_coment.php?id_comentario=<?= $denuncia['id_denunciado'] ?>"></a>Excluir</td>
                     </tr>
                 <?php endforeach ?>
             </tbody>
         </table>
+        <dialog id="modal_comentario">
+            <button type="button" id="fechar_modal">X</button>
+            <section>
+                <h3>Conteudo do comentario</h3>
+                <p id="conteudo_comentario"></p>
+            </section>
+        </dialog>
     </main>
+    <script>
+
+        const modal = document.getElementById('modal_comentario');
+        const conteudoComentario = document.getElementById('conteudo_comentario');
+        const fecharModal = document.getElementById('fechar_modal');
+
+        const botoesVer = document.querySelectorAll('.ver');
+
+        botoesVer.forEach(botao => {
+
+            botao.addEventListener('click', function() {
+                const comentario = this.dataset.comentario;
+                conteudoComentario.textContent = comentario;
+                modal.showModal();
+            });
+        });
+
+        fecharModal.addEventListener('click', function() {
+            modal.close();
+        });
+
+    </script>
 </body>
 </html>
