@@ -43,9 +43,9 @@
     <title>Perfil</title>
 </head>
 <body>
-    <section class="header">
+    <header class="header">
         <?php require 'header_perfil.php';?>
-    </section>
+</header>
     <main>
         <nav>
             <a href="?aba=visao-geral" class="<?=$aba === 'visao-geral' ? 'ativo' : ''?>">Visão Geral</a>

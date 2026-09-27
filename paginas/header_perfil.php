@@ -63,93 +63,65 @@
 </head>
 <body>
     <main>
-        <section>
-            <?php
-            echo "<div class='alinhar-banner'>";
-                if(empty($conta['banner_url'])){
-                    echo "<section class='sem-banner'>";
-                } else {
-                    echo "<section class='com-banner'>";
-                    echo "<img src='../".htmlspecialchars($conta['banner_url'])."' alt='Banner'>";
-                }
-                
-                ?>
-                <section class="user-names">
-                    <h2><?= htmlspecialchars($usuario['nome_completo']);?></h2>
-                    <p>@<?= htmlspecialchars($usuario['username']);?></p>
+
+    <section class="perfil-banner">
+
+        <?php if(empty($conta['banner_url'])): ?>
+
+            <section class="sem-banner"></section>
+        <?php else: ?>
+            <img src="../<?= htmlspecialchars($conta['banner_url']) ?>" alt="Banner do perfil">
+        <?php endif; ?>
+
+    </section>
+    <section class="perfil-header">
+        <section class="perfil-avatar">
+            <?php if(empty($conta['foto_perfil_url'])): ?>
+                <section class="sem-foto-perfil">
+                    <i data-lucide="camera"></i>
                 </section>
 
+            <?php else: ?>
+                <img class="com-foto-perfil" src="../<?= htmlspecialchars($conta['foto_perfil_url']) ?>" alt="Foto de perfil">
+            <?php endif; ?>
+
+        </section>
+
+        <section class="perfil-content">
+
+            <section class="user-names">
+                <h2><?= htmlspecialchars($usuario['nome_completo']) ?></h2>
+                <p> @<?= htmlspecialchars($usuario['username']) ?></p>
+            </section>
+
+            <section class="bio">
+                <?php if(empty($conta['bio'])): ?>
+                    <p>Adicione uma bio!</p>
+                <?php else: ?>
+                    <p><?= nl2br(htmlspecialchars($conta['bio'])) ?></p>
+                <?php endif; ?>
+                <section class="perfil-actions">
+                    <button type="button" id="btnEditar"> Editar perfil </button>
+                    <button type="button"> Compartilhar </button>
+                    <button type="button" onclick="window.location='config_user.php'"> Configurações </button>
                 </section>
-            </div>
-<?php
-                if(empty($conta['foto_perfil_url'])){
-                echo "<section class='sem-foto-perfil'><i class='ico-camera' data-lucide='camera'></i></section>";
-            } else {
-                echo "<img class='com-foto-perfil' src='../".htmlspecialchars($conta['foto_perfil_url'])."' alt='Foto de Perfil'>";
-            }
+            </section>
 
-                ?>
-                
-        </section>
-        
+            <section class="info-usuario">
+                <p><strong><?= $seguidores['count'] ?></strong> Seguidores</p>
+                <p><strong><?= $seguindo['count'] ?></strong> Seguindo</p>
+                <p><strong><?= $resenhas['count'] ?></strong> Resenhas</p>
+                <p><strong><?= $lidos['count'] ?></strong> Livros lidos</p>
+            </section>
 
-        <?php
-            if(empty($conta['bio'])){
-                echo "Adicione uma bio!";
-            } else {
-                echo "<p>".htmlspecialchars($conta['bio'])."</p>";
-            }
-        ?>
-
-        <a href="config_user.php"><button>Configurações</button></a>
-
-        <section>
-            <button type="button" id="btnEditar">
-                Editar perfil
-            </button>
-
-            <dialog id="modalEditar">
-
-                <h2>Editar perfil</h2>
-
-                <form action="#" method="POST" enctype="multipart/form-data"><!--colocar coiso de formato de imagem-->
-
-                    <label for="foto_perfil">Foto de perfil</label><br>
-                    <input type="file" name="foto_perfil" accept="image/jpeg,image/png"><br>
-
-                    <label for="banner">Banner do perfil</label><br>
-                    <input type="file" name="banner" accept="image/jpeg,image/png"><br>
-
-                    <label for="bio">Bio</label><br>
-                    <textarea name="bio"><?= htmlspecialchars($conta['bio'] ?? '') ?></textarea><br>
-
-                    <select name="visibilidade">
-                        <option value="publico" 
-                            <?php if ($conta['visibilidade'] === 'publico') echo 'selected'; ?>>
-                            Público
-                        </option>
-
-                        <option value="privado" 
-                            <?php if ($conta['visibilidade'] === 'privado') echo 'selected'; ?>>
-                            Privado
-                        </option>
-                    </select><br><br>
-
-                    <button type="submit" name="salvar">Salvar</button>
-                    <button type="button" id="btnFechar">Cancelar</button>
-
-                </form>
-
-            </dialog>
-
-            <button>Compartilhar</button><!--fazer isso depois-->
         </section>
 
-        <p><?=$seguidores['count']?> Seguidores</p>
-        <p><?=$seguindo['count']?> Seguindo</p>
-        <p><?=$resenhas['count']?> Resenhas</p>
-        <p><?=$lidos['count']?> Livros lidos</p>
-    </main>
+       
+
+    </section>
+         
+
+</main>
     <?php
         $foto_perfil_url = $conta['foto_perfil_url'];
         $banner_url = $conta['banner_url'];
