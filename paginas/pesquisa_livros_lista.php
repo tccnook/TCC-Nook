@@ -7,46 +7,40 @@
 
     $nome = $_GET['nome'] ?? '';
     $genero = $_GET['genero'] ?? '';
-    $id_lista = $_SESSION['id_lista'];
+    $id_lista = $_SESSION['id_lista'] ?? null;
 
     if ($nome === '' && $genero === '') {
         exit;
     }
 
-    $select_livro = "
-        select distinct 
-        l.id_livro, l.titulo_livro, l.capa_url
-        from livro l
-        left join preferencia_livro pl on pl.id_livro = l.id_livro
-        left join preferencia p on p.id_preferencia = pl.id_preferencia
-        where visibilidade = 'publico' and l.titulo_livro ilike :nome
-        AND NOT EXISTS (
-        SELECT 1
-        FROM whishbook wb
-        WHERE wb.id_livro = l.id_livro
-        AND wb.id_whishlist = :id_lista)";
+    $select_livro = " SELECT
+        DISTINCT l.id_livro, l.titulo_livro, l.capa_url
+        FROM livro l LEFT JOIN preferencia_livro pl
+        ON pl.id_livro = l.id_livro
+        LEFT JOIN preferencia p ON p.id_preferencia = pl.id_preferencia 
+        WHERE l.visibilidade = 'publico' AND l.titulo_livro ILIKE :nome ";
 
-    $params = [
-        ':nome' => '%' . $nome . '%',
-        ':id_lista' => $id_lista
-    ];
+    $params = [ ':nome' => '%' . $nome . '%' ];
 
-    if($genero !== ''){
-        $select_livro .=" and p.id_preferencia = :genero ";
-        $params[':genero'] = $genero; 
+    if ($id_lista !== null) { 
+        $select_livro .= " AND NOT EXISTS ( SELECT 1 FROM whishbook wb WHERE wb.id_livro = l.id_livro AND wb.id_whishlist = :id_lista ) "; 
+        $params[':id_lista'] = $id_lista; 
+    }
+    /* FILTRO POR GÊNERO */
+    if ($genero !== '') { 
+        $select_livro .= " AND p.id_preferencia = :genero "; $params[':genero'] = $genero; 
     }
 
-    $select_livro.= "order by l.titulo_livro";
-
+    $select_livro .= " ORDER BY l.titulo_livro";
     $stmt = $conn->prepare($select_livro);
     $stmt->execute($params);
 
     $livros = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-    if(count($livros) === 0 ){
-        echo '<p> Nenhum Livro encontrado </p>';
-        exit;
-    }
+        
+        if (count($livros) === 0) { 
+            echo '<p>Nenhum Livro encontrado</p>'; 
+            exit; 
+        }
 
     foreach($livros as $livro){
         echo '<section>';

@@ -22,25 +22,28 @@
     $stmt->execute([":id_user" => $id_user]);
     $conta = $stmt->fetch(PDO::FETCH_ASSOC);
 
-    $select_seguidores = "select COUNT(*) from follow where id_following = :id_user;";
+    $select_seguidores = "select COUNT(*) as count from follow where id_following = :id_user;";
     $stmt = $conn->prepare($select_seguidores);
     $stmt->execute([":id_user" => $id_user]);
     $seguidores = $stmt->fetch(PDO::FETCH_ASSOC);
 
-    $select_seguindo = "select COUNT(*) from follow where id_follower = :id_user;";
+    $select_seguindo = "select COUNT(*) as count from follow where id_follower = :id_user;";
     $stmt = $conn->prepare($select_seguindo);
     $stmt->execute([":id_user" => $id_user]);
     $seguindo = $stmt->fetch(PDO::FETCH_ASSOC);
 
-    $select_resenhas = "select COUNT(*) from resenha where id_user = :id_user;";
+    $select_resenhas = "select COUNT(*) as count from resenha where id_user = :id_user;";
     $stmt = $conn->prepare($select_resenhas);
     $stmt->execute([":id_user" => $id_user]);
     $resenhas = $stmt->fetch(PDO::FETCH_ASSOC);
 
-    $select_lidos = "select COUNT(*) from livros_lidos where id_user = :id_user;";
+    $select_lidos = "select COUNT(*) as count from livros_lidos where id_user = :id_user;";
     $stmt = $conn->prepare($select_lidos);
     $stmt->execute([":id_user" => $id_user]);
     $lidos = $stmt->fetch(PDO::FETCH_ASSOC);
+
+    require_once('ver_seguidores.php');
+    require_once('ver_seguindo.php');
 ?>
 
 <!DOCTYPE html>
@@ -64,7 +67,7 @@
         </section>
         <?php
             if(empty($conta['foto_perfil_url'])){
-                echo "<img src='../img/foto_perfil/foto_perfil_default.png alt='Foto de Perfil'>";
+                echo "<img src='../img/foto_perfil/foto_perfil_default.png' alt='Foto de Perfil'>";
             } else {
                 echo "<img src='../".htmlspecialchars($conta['foto_perfil_url'])."' alt='Foto de Perfil'>";
             }
@@ -89,6 +92,9 @@
             </button>
 
             <dialog id="modalEditar">
+                <button type="button" id="fechar_seguidores">
+                    X
+                </button>
 
                 <h2>Editar perfil</h2>
 
@@ -125,10 +131,16 @@
             <button>Compartilhar</button><!--fazer isso depois, se n me enagano é com JS-->
         </section>
 
-        <p><?=$seguidores['count']?> Seguidores</p>
-        <p><?=$seguindo['count']?> Seguindo</p>
-        <p><?=$resenhas['count']?> Resenhas</p>
-        <p><?=$lidos['count']?> Livros lidos</p>
+        <button type="button" id="btnSeguidores">
+            <p><?=$seguidores['count'] ?? 0 ?> Seguidores</p>
+        </button>
+
+        <button type="button" id="btnSeguindo">
+            <p><?=$seguindo['count'] ?? 0 ?> Seguindo</p>
+        </button>
+
+        <p><?=$resenhas['count'] ?? 0 ?> Resenhas</p>
+        <p><?=$lidos['count'] ?? 0 ?> Livros lidos</p>
     </main>
     <?php
         $foto_perfil_url = $conta['foto_perfil_url'];
@@ -213,6 +225,31 @@
         const btnFechar = document.getElementById("btnFechar");
         const modal = document.getElementById("modalEditar");
 
+        const verSeguidores = document.getElementById("btnSeguidores");
+        const verSeguindo = document.getElementById("btnSeguindo");
+
+        const modal_seguidores = document.getElementById("modal_seguidores");
+        const modal_seguindo = document.getElementById("modal_seguindo");
+
+        const fechar_seguidores = document.getElementById("fechar_seguidores");
+        const fechar_seguindo = document.getElementById("fechar_seguindo");
+
+        verSeguidores.addEventListener("click", function () {
+            modal_seguidores.showModal();
+        });
+
+        verSeguindo.addEventListener("click", function () {
+            modal_seguindo.showModal();
+        });
+
+        fechar_seguidores.addEventListener("click", function () {
+            modal_seguidores.close();
+        });
+
+        fechar_seguindo.addEventListener("click", function () {
+            modal_seguindo.close();
+        });
+
         btnEditar.addEventListener("click", function () {
             modal.showModal();
         });
@@ -220,6 +257,6 @@
         btnFechar.addEventListener("click", function () {
             modal.close();
         });
-    </script>
+</script>
 </body>
 </html>

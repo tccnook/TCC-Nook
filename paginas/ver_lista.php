@@ -62,6 +62,44 @@
 
         $livros = json_decode($lista['livros'], true);
 
+        $select_parecidos = "select
+                l.id_livro,
+                l.titulo_livro,
+                l.nome_autor,
+                l.data_publi,
+                l.sinopse_livro,
+                l.capa_url
+            FROM livro l
+            INNER JOIN preferencia_livro pl
+                ON pl.id_livro = l.id_livro
+            WHERE pl.id_preferencia IN (
+                SELECT DISTINCT pl2.id_preferencia
+                FROM whishbook wb
+                INNER JOIN preferencia_livro pl2
+                    ON pl2.id_livro = wb.id_livro
+                WHERE wb.id_whishlist = :id_lista
+            )
+            AND l.id_livro NOT IN (
+                SELECT id_livro
+                FROM whishbook
+                WHERE id_whishlist = :id_lista
+            )
+            AND l.visibilidade = 'publico'
+            GROUP BY
+                l.id_livro,
+                l.titulo_livro,
+                l.nome_autor,
+                l.data_publi,
+                l.sinopse_livro,
+                l.capa_url
+            ORDER BY RANDOM()
+            LIMIT 3";
+
+        $stmt_parecidos = $conn->prepare($select_parecidos);
+        $stmt_parecidos->execute([':id_lista' => $id_lista]);
+
+        $livros_parecidos = $stmt_parecidos->fetchAll(PDO::FETCH_ASSOC);
+
         if (!isset($_SESSION['livros_lista'])) {
             $select_livros_lista = "
                 SELECT id_livro
@@ -145,6 +183,17 @@
                     <?php endforeach ?>
             </tbody>
         </table>
+    </section>
+
+    <section>
+        <h3>Livros que combinam com essa lista:</h3>
+            <?php foreach ($livros_parecidos as $livro_parecido): ?>
+                <img src="<?= htmlspecialchars($livro_parecido['capa_url']) ?>" alt="capa do livro <?= htmlspecialchars($livro_parecido['titulo_livro']) ?>">
+                <p><strong><?= htmlspecialchars($livro_parecido['titulo_livro']) ?></strong></p>
+                <span><?= htmlspecialchars($livro_parecido['nome_autor'])?></span><br>
+                <span><?= htmlspecialchars($livro_parecido['data_publi'])?></span>
+                <p><?= htmlspecialchars($livro_parecido['sinopse_livro'])?></p>
+            <?php endforeach ?>
     </section>
 
     <dialog id="modal_edit">
