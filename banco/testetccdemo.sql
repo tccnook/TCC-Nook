@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict HmxbDLQN7feiiB1xeC7OkuTODeSFRou4bic3GLtqfzHttMUwksA0T2biZguYFLA
+\restrict al1Ad7zT1fLPMJBZdgLibc05h3EcMjWJtwD23ccx9ZQkEckeWshMKm8c32xcdVV
 
 -- Dumped from database version 18.4
 -- Dumped by pg_dump version 18.4
@@ -219,7 +219,7 @@ CREATE TABLE public.conta (
     bio text,
     visibilidade character varying(20) DEFAULT 'publico'::character varying NOT NULL,
     banner_url character varying(250),
-    CONSTRAINT conta_visibilidade_check CHECK (((visibilidade)::text = ANY ((ARRAY['publico'::character varying, 'privado'::character varying])::text[])))
+    CONSTRAINT conta_visibilidade_check CHECK (((visibilidade)::text = ANY (ARRAY[('publico'::character varying)::text, ('privado'::character varying)::text])))
 );
 
 
@@ -299,6 +299,38 @@ ALTER TABLE public.curtida ALTER COLUMN id_curtida ADD GENERATED ALWAYS AS IDENT
 
 
 --
+-- Name: denuncia; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.denuncia (
+    id_denuncia integer NOT NULL,
+    tipo_denunciado character varying(60),
+    id_denunciado integer,
+    id_denunciador integer,
+    denuncia text,
+    status character varying(50) DEFAULT 'pendente'::character varying,
+    emissao timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
+    resolvido timestamp without time zone
+);
+
+
+ALTER TABLE public.denuncia OWNER TO postgres;
+
+--
+-- Name: denuncia_id_denuncia_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+ALTER TABLE public.denuncia ALTER COLUMN id_denuncia ADD GENERATED ALWAYS AS IDENTITY (
+    SEQUENCE NAME public.denuncia_id_denuncia_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1
+);
+
+
+--
 -- Name: follow; Type: TABLE; Schema: public; Owner: postgres
 --
 
@@ -311,6 +343,20 @@ CREATE TABLE public.follow (
 
 
 ALTER TABLE public.follow OWNER TO postgres;
+
+--
+-- Name: follow_autor; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.follow_autor (
+    id_follower integer NOT NULL,
+    id_autor integer NOT NULL,
+    status_follow character varying(50),
+    data_follow timestamp without time zone DEFAULT CURRENT_TIMESTAMP
+);
+
+
+ALTER TABLE public.follow_autor OWNER TO postgres;
 
 --
 -- Name: livro; Type: TABLE; Schema: public; Owner: postgres
@@ -328,7 +374,7 @@ CREATE TABLE public.livro (
     data_publi timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
     idioma character varying(90),
     visibilidade character varying(20) DEFAULT 'publico'::character varying NOT NULL,
-    CONSTRAINT livro_visibilidade_check CHECK (((visibilidade)::text = ANY ((ARRAY['publico'::character varying, 'privado'::character varying])::text[])))
+    CONSTRAINT livro_visibilidade_check CHECK (((visibilidade)::text = ANY (ARRAY[('publico'::character varying)::text, ('privado'::character varying)::text])))
 );
 
 
@@ -526,7 +572,7 @@ CREATE TABLE public.post (
     criado_em timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
     visibilidade character varying(20) DEFAULT 'publico'::character varying NOT NULL,
     legenda text,
-    CONSTRAINT post_visibilidade_check CHECK (((visibilidade)::text = ANY ((ARRAY['publico'::character varying, 'privado'::character varying])::text[])))
+    CONSTRAINT post_visibilidade_check CHECK (((visibilidade)::text = ANY (ARRAY[('publico'::character varying)::text, ('privado'::character varying)::text])))
 );
 
 
@@ -720,7 +766,7 @@ CREATE TABLE public.resenha (
     data_publi timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
     id_livro integer,
     visibilidade character varying(20) DEFAULT 'publico'::character varying NOT NULL,
-    CONSTRAINT resenha_visibilidade_check CHECK (((visibilidade)::text = ANY ((ARRAY['publico'::character varying, 'privado'::character varying])::text[])))
+    CONSTRAINT resenha_visibilidade_check CHECK (((visibilidade)::text = ANY (ARRAY[('publico'::character varying)::text, ('privado'::character varying)::text])))
 );
 
 
@@ -794,7 +840,8 @@ CREATE TABLE public.whishbook (
     id integer NOT NULL,
     id_livro integer,
     id_user integer,
-    id_whishlist integer
+    id_whishlist integer,
+    ordem integer
 );
 
 
@@ -821,7 +868,14 @@ ALTER TABLE public.whishbook ALTER COLUMN id ADD GENERATED ALWAYS AS IDENTITY (
 CREATE TABLE public.whishlist (
     id integer NOT NULL,
     nome_lista character varying(120),
-    id_user integer
+    id_user integer,
+    descricao text,
+    visibilidade character varying(10) DEFAULT 'publica'::character varying NOT NULL,
+    tipo_capa character varying(15) DEFAULT 'automatica'::character varying NOT NULL,
+    capa_url character varying(250),
+    data_criacao timestamp without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    CONSTRAINT whishlist_tipo_capa_check CHECK (((tipo_capa)::text = ANY ((ARRAY['manual'::character varying, 'automatica'::character varying])::text[]))),
+    CONSTRAINT whishlist_visibilidade_check CHECK (((visibilidade)::text = ANY ((ARRAY['publica'::character varying, 'privada'::character varying])::text[])))
 );
 
 
@@ -862,6 +916,7 @@ COPY public.autor (id_autor, nome_autor, autor, bio, foto_url) FROM stdin;
 8	Stephen King	stephen-king	\N	\N
 9	J.R.R. Tolkien	jrr-tolkien	\N	\N
 3	J.K Rowling	jk-rowling	\N	\N
+11	Ozzy Osbourne	principe_das_trevas	Amo comer morcegos hahahahah	img/foto_autor/foto_perfil_autor_ozzy_osbourne.jpg
 \.
 
 
@@ -889,6 +944,26 @@ COPY public.autor_user (id_user, id_autor, id) FROM stdin;
 29	4	20
 29	6	21
 29	8	22
+34	1	23
+34	2	24
+34	4	25
+34	5	26
+34	6	27
+35	1	28
+35	2	29
+35	7	30
+35	8	31
+35	3	32
+42	1	33
+42	2	34
+42	4	35
+42	5	36
+42	6	37
+43	1	68
+43	5	69
+43	7	70
+43	8	71
+43	9	72
 \.
 
 
@@ -897,6 +972,8 @@ COPY public.autor_user (id_user, id_autor, id) FROM stdin;
 --
 
 COPY public.bloqueio (id_bloqueador, id_bloqueado, status_bloqueio, data_bloqueio) FROM stdin;
+32	31	bloqueado	2026-08-25 17:50:47.567767
+32	31	bloqueado	2026-08-25 17:52:01.815923
 \.
 
 
@@ -968,6 +1045,22 @@ COPY public.conta (id_user, foto_perfil_url, bio, visibilidade, banner_url) FROM
 3	foto_do_gomez	Zagueiro Paraguaio, dono da sele‡Æo paraguaia e maior capitÆo da hist¢ria do Palmeiras	publico	\N
 28	\N	\N	publico	\N
 29	\N	\N	publico	\N
+31	\N	\N	publico	\N
+32	\N	\N	publico	\N
+33	\N	\N	publico	\N
+34	img/foto_perfil/758b6f4f4c8d3508181eb200b7f4ddff.jpg		privado	img/banner_perfil/ca1fbd8519e973ba21005c873950ea81.jpg
+35	\N	\N	publico	\N
+36	\N	\N	publico	\N
+37	\N	\N	publico	\N
+38	\N	\N	publico	\N
+39	\N	\N	publico	\N
+40	\N	\N	publico	\N
+41	\N	\N	publico	\N
+42	\N	\N	publico	\N
+43	\N	\N	publico	\N
+44	\N	\N	publico	\N
+45	\N	\N	publico	\N
+30	\N	eu amo minha namorada	publico	img/banner_perfil/efb98f42439312ab63c43c32966d0dc6.png
 \.
 
 
@@ -999,10 +1092,40 @@ COPY public.curtida (id_curtida, id_user, categoria_curtido, id_coisocurtido) FR
 
 
 --
+-- Data for Name: denuncia; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.denuncia (id_denuncia, tipo_denunciado, id_denunciado, id_denunciador, denuncia, status, emissao, resolvido) FROM stdin;
+\.
+
+
+--
 -- Data for Name: follow; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
 COPY public.follow (id_follower, id_following, status_follow, data_follow) FROM stdin;
+31	29	seguindo	2026-08-22 17:19:36.41578
+31	19	seguindo	2026-08-22 17:20:48.835049
+31	21	seguindo	2026-08-22 17:22:28.731183
+31	3	seguindo	2026-08-22 17:22:43.563196
+32	3	seguindo	2026-08-25 17:50:22.111945
+32	31	seguindo	2026-08-25 18:09:17.65672
+33	29	seguindo	2026-08-27 18:22:42.741882
+33	14	seguindo	2026-08-27 19:29:03.980195
+34	32	seguindo	2026-08-29 15:29:04.286338
+34	30	seguindo	2026-08-29 15:38:21.305775
+38	34	seguindo	2026-09-30 18:38:39.150046
+39	30	seguindo	2026-09-30 18:39:28.806301
+30	33	seguindo	2026-09-30 18:40:18.189622
+\.
+
+
+--
+-- Data for Name: follow_autor; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.follow_autor (id_follower, id_autor, status_follow, data_follow) FROM stdin;
+44	1	seguindo	2026-09-16 21:46:30.168311
 \.
 
 
@@ -1453,7 +1576,6 @@ COPY public.post (id_post, titulo_post, id_user, url_imagem, conteudo, criado_em
 --
 
 COPY public.preferencia (id_preferencia, nome_preferencia, preferencia) FROM stdin;
-1	Terror	terror
 2	Com‚dia	comedia
 3	Romance	romance
 6	Dark Romance	dark-romance
@@ -1478,6 +1600,8 @@ COPY public.preferencia (id_preferencia, nome_preferencia, preferencia) FROM std
 27	Poesia	poesia
 28	Gastronomia	gastronomia
 29	Mitologia	mitologia
+30	Romantasia	romantasia
+1	Terror	terror
 \.
 
 
@@ -1523,6 +1647,26 @@ COPY public.preferencia_user (id_user, id_preferencia, id) FROM stdin;
 29	12	20
 29	17	21
 29	26	22
+34	1	23
+34	2	24
+34	3	25
+34	6	26
+34	7	27
+35	1	28
+35	3	29
+35	8	30
+35	10	31
+35	13	32
+42	1	33
+42	2	34
+42	3	35
+42	6	36
+42	7	37
+43	8	53
+43	9	54
+43	10	55
+43	12	56
+43	13	57
 \.
 
 
@@ -1595,6 +1739,22 @@ COPY public.usuario (id_user, nome_completo, username, data_nascimento, email, s
 28	lucas passoli	Lucas P	2004-09-13	lucaspassoli1309@gmail.com	$2y$10$NOvNUh.2gtHJXV95U3uU/.B7tp3ETcQkNJzy0L0VVpik3MqUwwq8i	2026-08-16 20:20:39.23169	\N
 19	Caio Passoli	caico	2008-09-16	passolicaio@gmail.com	$2y$10$lKNJFtjCN0UedXL6R3mB9OrVqI.F7Zj0LnReH0YurYd5h71xAoTmK	2026-08-06 11:19:29.329523	114771290742095317837
 29	Anselmo Paulo Florentino	selmao	1980-06-09	anselmo@gmail.com	$2y$10$6f.Fv3fslTq5ss5iC91TkuFE16FAWKOIOWyHeH9J7V77vLk2aElfS	2026-08-17 13:28:22.52121	\N
+30	Miguel	Gsus0800	2026-08-04	mig@gmail.com	$2y$10$DiWsdtAXo3GpZDb7xRVGA.uMNM/BYwXYlZSGp56s41tl.SsRpF1i.	2026-08-19 22:10:59.937657	\N
+31	Algum Nome	algumnome	2026-08-11	algum@gmail.com	$2y$10$qjedvd05D8SV2BKASt.0/uvczb/vxqkYH5ISBZJ8iA0zxLUo/S.52	2026-08-22 15:30:52.864847	\N
+32	abcde	abc	2026-08-04	abc@gmail.com	$2y$10$Ahmj.G1LfAHVhZDYjfVrmeIALLQ47XEmtmRGUbINOMHdyuvdhB0ry	2026-08-25 17:45:23.212317	\N
+33	aaaaaaaaa	aaaaa	2026-07-28	aaa@gmail.com	$2y$10$L9HbF1QRNVcmebX72acDBuCETnLXP5HUXyCA9M/udfrZqBbclerD.	2026-08-27 18:11:04.984159	\N
+34	eita rapaz	hmmm	2026-08-04	sempre@gmail.com	$2y$10$QFnclxMScIosb/xkDTfKSeVbC5s8eV6JqG8eLkiaD5FAU2kLJSAQm	2026-08-29 15:08:34.980476	\N
+35	ahahahaha	hehehe	2026-07-28	haha@gmail.com	$2y$10$7susad0OljjuXYbu4jhVN.4aUr0NUZ7UMNax7ncuvXz/4C3l7UNaO	2026-08-29 16:35:35.705263	\N
+36	vamos lá dnv	imcjbro	2026-09-02	cj@gmail.com	$2y$10$sGdjan./kdvAULJqWy90iedK4bl0RTsVzJ6mk7UczIA3PMnNYpuqS	2026-09-03 18:35:24.982037	\N
+37	mais um dia	maisumdia	2026-09-02	mais@gmail.com	$2y$10$Nzar4DwJVMtdOF5cD/fL4eaVtEHh6Xfq9a1/RtliBQTy9tTDeDvam	2026-09-05 09:24:02.988331	\N
+38	tcccccc	tcc	2026-09-03	tcc@gmail.com	$2y$10$KQoLLWJhIQuVDoredjmNW.D2PKdmcvO0y683u.nMZyqyUseb6oRrm	2026-09-07 20:24:41.871848	\N
+39	tcc2	tcc2	2026-09-01	tcc2@gmail.com	$2y$10$A/ieBCnUlz/Rto3RzmupKOI0aVse8KnGXXCB/FUEwyxQLjK10gI8K	2026-09-08 16:51:42.308443	\N
+40	tcc3	tcc3	2026-09-09	tcc3@gmail.com	$2y$10$9xMu96c/QMtJu22urF89H.c4ctwusvH5VLTYu69VTxdWv97ksyYta	2026-09-09 19:19:50.730819	\N
+41	tcc4	tcc4	2026-09-09	tcc4@gmail.com	$2y$10$Tcpt1753VV.G6dTjjz7mm.YgZ/sPpjYePmXtOK5RSypuNWQRYvoee	2026-09-10 16:48:43.197208	\N
+42	tcc5	tcc5	2026-09-03	tcc5@gmail.com	$2y$10$EV3JD.PY0Vh2vUn3vOJq..Tjz1Ixp7Fh627jAEPKyy9Z//fuxmR5e	2026-09-14 20:48:43.189697	\N
+43	asdf	asdf	2026-09-09	asdf@gmail.com	$2y$10$hu7QJGXJKKTwYctgygsWQuzxh9uYUu14URzhGvHmLTBnxae7Wj9RW	2026-09-14 21:01:10.371425	\N
+44	tcc6	tcc6	2026-09-09	tcc6@gmail.com	$2y$10$cHtPaKEMK1Rso25MXYM1ceKSBIpN2HAqZVbEfE7HjV7mFILNzANYG	2026-09-16 19:25:41.840066	\N
+45	tcc7	tcc7	2026-09-09	tcc7@gmail.com	$2y$10$jxEUa.XtrJZMh1TlG6msWe50Z322C3m6DX2r.LD2LwfK2.JSsW8ci	2026-09-17 18:06:02.381225	\N
 \.
 
 
@@ -1602,12 +1762,72 @@ COPY public.usuario (id_user, nome_completo, username, data_nascimento, email, s
 -- Data for Name: whishbook; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.whishbook (id, id_livro, id_user, id_whishlist) FROM stdin;
-1	1	19	1
-2	2	19	1
-3	3	19	1
-4	4	19	1
-6	5	19	1
+COPY public.whishbook (id, id_livro, id_user, id_whishlist, ordem) FROM stdin;
+1	1	19	1	\N
+2	2	19	1	\N
+3	3	19	1	\N
+4	4	19	1	\N
+6	5	19	1	\N
+7	2	37	8	\N
+8	1	37	8	\N
+9	5	37	8	\N
+10	3	37	8	\N
+11	4	37	8	\N
+12	2	37	9	\N
+13	1	37	9	\N
+14	5	37	9	\N
+15	3	37	9	\N
+16	4	37	9	\N
+17	2	37	10	\N
+18	1	37	10	\N
+19	5	37	10	\N
+20	3	37	10	\N
+21	4	37	10	\N
+22	2	37	11	\N
+23	3	37	11	\N
+24	2	38	14	\N
+25	3	38	14	\N
+26	5	38	14	\N
+27	4	38	14	\N
+28	2	38	15	\N
+29	1	38	15	\N
+32	4	39	16	\N
+122	2	40	18	\N
+35	2	39	17	\N
+36	1	39	17	\N
+123	1	40	18	\N
+38	5	39	17	\N
+124	3	40	18	\N
+258	3	41	19	\N
+43	2	40	\N	\N
+44	1	40	\N	\N
+45	4	40	\N	\N
+46	5	40	\N	\N
+47	2	40	\N	\N
+48	1	40	\N	\N
+49	4	40	\N	\N
+50	5	40	\N	\N
+51	2	40	\N	\N
+52	1	40	\N	\N
+53	4	40	\N	\N
+54	5	40	\N	\N
+55	2	40	\N	\N
+56	1	40	\N	\N
+57	4	40	\N	\N
+58	5	40	\N	\N
+59	3	40	\N	\N
+259	5	41	19	\N
+260	2	41	19	\N
+261	1	41	19	\N
+264	2	30	21	\N
+265	1	30	21	\N
+266	4	30	21	\N
+100	2	40	\N	\N
+101	1	40	\N	\N
+177	1	41	20	\N
+178	4	41	20	\N
+179	2	41	20	\N
+180	3	41	20	\N
 \.
 
 
@@ -1615,8 +1835,21 @@ COPY public.whishbook (id, id_livro, id_user, id_whishlist) FROM stdin;
 -- Data for Name: whishlist; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.whishlist (id, nome_lista, id_user) FROM stdin;
-1	J  li	19
+COPY public.whishlist (id, nome_lista, id_user, descricao, visibilidade, tipo_capa, capa_url, data_criacao) FROM stdin;
+1	J  li	19	\N	publica	automatica	\N	2026-09-01 14:57:30.281704
+7	sera q vai?	37	tomara q va	publica	automatica	\N	2026-09-05 10:40:00.383718
+8	agora deve ir	37	espero q funcione	publica	automatica	\N	2026-09-05 10:48:17.471894
+9	agora deve ir	37	espero q funcione	publica	automatica	img/capas_listas/capa_auto_lista_9.jpg	2026-09-05 11:02:55.763925
+10	agora deve ir	37	espero q funcione	publica	automatica	img/capas_listas/capa_auto_lista_10.jpg	2026-09-05 11:07:20.528274
+11	testeee	37	lets see	publica	automatica	../img/capas_livros/cartomante-capa.jpeg	2026-09-05 13:37:47.578521
+14	AHHHHHH	38	aaaaaaaaaaaahhhhhhh	publica	manual	img/capas_listas/capa_manual_lista_14.jpg	2026-09-07 20:40:22.741798
+15	funcionoou	38	uhuuuuuu	publica	automatica	../img/capas_livros/cartomante-capa.jpeg	2026-09-07 20:44:13.293684
+16	LISTA MT INCRIVEL	39	uma das melhores listas de todas	publica	automatica	img/capas_listas/capa_auto_lista_16.jpg	2026-09-08 16:52:55.331333
+17	Lista teste 2	39	uma lista de teste	publica	automatica	img/capas_listas/capa_auto_lista_17.jpg	2026-09-08 17:43:52.619201
+19	ja to fincando estressado	41	Falta pouco para ficar 100%	publica	automatica	img/capas_listas/capa_auto_lista_19.jpg	2026-09-10 16:49:54.657141
+21	lista de books	30	lista insana dms	publica	automatica	../img/capas_livros/cartomante-capa.jpeg	2026-09-30 19:14:35.965935
+20	asdas	41	asdasd	publica	automatica	img/capas_listas/capa_auto_lista_20.jpg	2026-09-10 17:04:18.763285
+18	Essa parte foi	40	tem q ver a capa e os livros agora	publica	automatica	../img/capas_livros/cartomante-capa.jpeg	2026-09-09 19:21:31.239319
 \.
 
 
@@ -1624,14 +1857,14 @@ COPY public.whishlist (id, nome_lista, id_user) FROM stdin;
 -- Name: autor_id_autor_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.autor_id_autor_seq', 9, true);
+SELECT pg_catalog.setval('public.autor_id_autor_seq', 11, true);
 
 
 --
 -- Name: autor_user_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.autor_user_id_seq', 22, true);
+SELECT pg_catalog.setval('public.autor_user_id_seq', 72, true);
 
 
 --
@@ -1674,6 +1907,13 @@ SELECT pg_catalog.setval('public.conversa_id_conversa_seq', 1, false);
 --
 
 SELECT pg_catalog.setval('public.curtida_id_curtida_seq', 3, true);
+
+
+--
+-- Name: denuncia_id_denuncia_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.denuncia_id_denuncia_seq', 1, false);
 
 
 --
@@ -1729,7 +1969,7 @@ SELECT pg_catalog.setval('public.post_id_post_seq', 4, true);
 -- Name: preferencia_id_preferencia_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.preferencia_id_preferencia_seq', 29, true);
+SELECT pg_catalog.setval('public.preferencia_id_preferencia_seq', 36, true);
 
 
 --
@@ -1743,7 +1983,7 @@ SELECT pg_catalog.setval('public.preferencia_livro_id_seq', 10, true);
 -- Name: preferencia_user_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.preferencia_user_id_seq', 22, true);
+SELECT pg_catalog.setval('public.preferencia_user_id_seq', 57, true);
 
 
 --
@@ -1771,21 +2011,21 @@ SELECT pg_catalog.setval('public.resenha_id_resenha_seq', 1, false);
 -- Name: usuario_id_user_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.usuario_id_user_seq', 29, true);
+SELECT pg_catalog.setval('public.usuario_id_user_seq', 45, true);
 
 
 --
 -- Name: whishbook_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.whishbook_id_seq', 6, true);
+SELECT pg_catalog.setval('public.whishbook_id_seq', 266, true);
 
 
 --
 -- Name: whishlist_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.whishlist_id_seq', 1, true);
+SELECT pg_catalog.setval('public.whishlist_id_seq', 21, true);
 
 
 --
@@ -1845,6 +2085,14 @@ ALTER TABLE ONLY public.comentario
 
 
 --
+-- Name: conta conta_id_user_unique; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.conta
+    ADD CONSTRAINT conta_id_user_unique UNIQUE (id_user);
+
+
+--
 -- Name: conversa conversa_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1858,6 +2106,30 @@ ALTER TABLE ONLY public.conversa
 
 ALTER TABLE ONLY public.curtida
     ADD CONSTRAINT curtida_pkey PRIMARY KEY (id_curtida);
+
+
+--
+-- Name: denuncia denuncia_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.denuncia
+    ADD CONSTRAINT denuncia_pkey PRIMARY KEY (id_denuncia);
+
+
+--
+-- Name: follow_autor follow_autor_unico; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.follow_autor
+    ADD CONSTRAINT follow_autor_unico UNIQUE (id_follower, id_autor);
+
+
+--
+-- Name: follow follow_unico; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.follow
+    ADD CONSTRAINT follow_unico UNIQUE (id_follower, id_following);
 
 
 --
@@ -1970,6 +2242,14 @@ ALTER TABLE ONLY public.recuperacao_senha
 
 ALTER TABLE ONLY public.resenha
     ADD CONSTRAINT resenha_pkey PRIMARY KEY (id_resenha);
+
+
+--
+-- Name: whishbook unique_livro_lista; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.whishbook
+    ADD CONSTRAINT unique_livro_lista UNIQUE (id_livro, id_whishlist);
 
 
 --
@@ -2197,6 +2477,22 @@ ALTER TABLE ONLY public.whishbook
 
 
 --
+-- Name: follow_autor follow_autor_autor; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.follow_autor
+    ADD CONSTRAINT follow_autor_autor FOREIGN KEY (id_autor) REFERENCES public.autor(id_autor) ON DELETE CASCADE;
+
+
+--
+-- Name: follow_autor follow_autor_usuario; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.follow_autor
+    ADD CONSTRAINT follow_autor_usuario FOREIGN KEY (id_follower) REFERENCES public.usuario(id_user) ON DELETE CASCADE;
+
+
+--
 -- Name: follow follow_usuario; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -2368,5 +2664,5 @@ ALTER TABLE ONLY public.progresso_leitura
 -- PostgreSQL database dump complete
 --
 
-\unrestrict HmxbDLQN7feiiB1xeC7OkuTODeSFRou4bic3GLtqfzHttMUwksA0T2biZguYFLA
+\unrestrict al1Ad7zT1fLPMJBZdgLibc05h3EcMjWJtwD23ccx9ZQkEckeWshMKm8c32xcdVV
 
