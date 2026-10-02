@@ -41,13 +41,6 @@ if(isset($_POST['cadastrar'])){
     }
     $nome_meta = $_POST['nomemeta'];
     if(isset($id_atualizacao)){
-    //     var_dump($nome_meta);
-    // var_dump($periodo);
-    // var_dump($num_livros);
-    // var_dump($prazo);
-    // var_dump($id_atualizacao);
-    // var_dump($id_user);
-    // exit();
         $update = 'update meta_leitura set 
         nome_meta = :nome_meta, periodo = :periodo, num_livros = :num_livros, expiracao = (criacao + CAST(:prazo AS INTEGER) * INTERVAL \'1 day\')::DATE 
         where id = :id_atualizacao and id_user = :id_user;';
@@ -61,9 +54,6 @@ if(isset($_POST['cadastrar'])){
                 ":id_atualizacao" => 7,
                 ":id_user" => 19
             ]);
-            // $linhas_afetadas = $stmt->rowCount();
-            // echo $linhas_afetadas;
-            // exit();
             header("location:gerenciarmetas.php");
             exit();
             
@@ -91,7 +81,7 @@ if(isset($_POST['cadastrar'])){
 
 }
 
-echo '<a href="gerenciarmetas.php"> Voltar </a>';
+echo '<a href="perfil.php"> Voltar </a>';
 echo '<h2> Criar Meta </h2>';
 echo '<br><br>';
 

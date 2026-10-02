@@ -1,18 +1,9 @@
 <?php
+// Aba "Visão Geral" - incluída pelo perfil.php ($conn e $id_user já existem)
 
-require_once('conexao.php');
+/* ---------- EXCLUIR DO TOP 5 ---------- */
 
-$db = new Database;
-$conn = $db->conectar();
-
-if (!isset($_SESSION['id_user'])) {
-    header("Location: login.php");
-    exit;
-}
-
-$id_user = $_SESSION['id_user'];
-
-if (isset($_GET['exc'])) {
+if (isset($_GET['exc'], $_GET['posicao'])) {
 
     $id_exclusao = $_GET['exc'];
     $posicao_exclusao = $_GET['posicao'];
@@ -36,7 +27,7 @@ if (isset($_GET['exc'])) {
 
     } catch (PDOException $e) {
 
-        echo 'Erro: ' . $e->getMessage();
+        error_log($e->getMessage());
     }
 
     if ($posicao_exclusao < 5) {
@@ -59,17 +50,61 @@ if (isset($_GET['exc'])) {
 
         } catch (PDOException $e) {
 
-            echo 'Erro: ' . $e->getMessage();
+            error_log($e->getMessage());
         }
     }
 
-    header("Location: visao-geral.php");
+    header("Location: perfil.php?aba=visao-geral");
     exit;
 }
 
-echo '<h2>Top 5 Livros</h2>';
+/* ---------- FUNÇÕES ---------- */
 
-$sql = "
+function buscar_dados($conn, $sql, $params, $todos = false){
+    try {
+        $stmt = $conn->prepare($sql);
+        $stmt->execute($params);
+
+        return $todos ? $stmt->fetchAll(PDO::FETCH_ASSOC) : $stmt->fetch(PDO::FETCH_ASSOC);
+
+    } catch (PDOException $e) {
+        error_log($e->getMessage());
+
+        return $todos ? [] : false;
+    }
+}
+
+function executar_sql($conn, $sql, $params){
+    try {
+        $stmt = $conn->prepare($sql);
+        $stmt->execute($params);
+
+    } catch (PDOException $e) {
+        error_log($e->getMessage());
+    }
+}
+
+// livros terminados depois da criação da meta
+function contar_lidos_meta($conn, $id_user, $criacao){
+    $sql = "
+        SELECT COUNT(*) AS quantidade
+        FROM progresso_leitura
+        WHERE id_user = :id_user
+        AND porcentagem_progresso = 100
+        AND ultima_leitura > :criacao_meta
+    ";
+
+    $resultado = buscar_dados($conn, $sql, [
+        ":id_user" => $id_user,
+        ":criacao_meta" => $criacao
+    ]);
+
+    return $resultado['quantidade'] ?? 0;
+}
+
+/* ---------- TOP 5 ---------- */
+
+$sql_top5 = "
     SELECT
         t.posicao,
         l.id_livro,
@@ -92,194 +127,37 @@ $sql = "
     ORDER BY t.posicao
 ";
 
-try {
+$livros = buscar_dados($conn, $sql_top5, [":id_user" => $id_user], true);
 
-    $stmt = $conn->prepare($sql);
+/* ---------- METAS ---------- */
 
-    $stmt->execute([
-        ":id_user" => $id_user
-    ]);
+// atualiza o status das metas (concluída ou expirada)
+$todas_metas = buscar_dados($conn, "SELECT * FROM meta_leitura WHERE id_user = :id_user", [":id_user" => $id_user], true);
 
-    $livros = $stmt->fetchAll(PDO::FETCH_ASSOC);
+foreach ($todas_metas as $meta) {
 
-} catch (PDOException $e) {
-
-    echo 'Erro ao buscar Top 5: ' . $e->getMessage();
-
-    $livros = [];
-}
-
-if (count($livros) > 0) {
-
-    foreach ($livros as $livro) {
-
-        echo '<h3>';
-        echo htmlspecialchars($livro['posicao']) . 'º lugar - ';
-        echo htmlspecialchars($livro['titulo_livro']);
-        echo '</h3>';
-
-        echo '<br>';
-
-        if (!empty($livro['capa_url'])) {
-
-            echo '<img
-                    src="' . htmlspecialchars($livro['capa_url']) . '"
-                    alt="' . htmlspecialchars($livro['titulo_livro']) . '"
-                    width="100px"
-                    height="auto"
-                  >';
-
-        } else {
-
-            echo 'Capa não disponível.';
-        }
-
-
-        echo '<br><br>';
-
-        echo 'Nota: ';
-
-        if ($livro['nota_avaliacao'] !== null) {
-
-            echo htmlspecialchars($livro['nota_avaliacao']);
-
-        } else {
-
-            echo 'Não avaliado';
-        }
-
-        echo '<br><br>';
-
-        echo '<a href="visao-geral.php?exc='
-            . urlencode($livro['id_livro'])
-            . '&posicao='
-            . urlencode($livro['posicao'])
-            . '">
-            Excluir
-        </a>';
-
-        echo '<br><br><hr>';
-    }
-
-} else {
-
-    echo 'Você ainda não possui livros no Top 5.';
-}
-
-echo '
-<form name="atualizarlista" method="POST" action="atualizartop5-1.php">
-
-    <input
-        type="submit"
-        name="atualizartop5"
-        value="Atualizar Lista"
-    >
-
-</form>
-';
-
-$select_meta = "
-    SELECT *
-    FROM meta_leitura
-    WHERE id_user = :id_user
-";
-
-try {
-
-    $stmt = $conn->prepare($select_meta);
-
-    $stmt->execute([
-        ":id_user" => $id_user
-    ]);
-
-    $metas = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-} catch (PDOException $e) {
-
-    echo 'Erro: ' . $e->getMessage();
-
-    $metas = [];
-}
-
-foreach ($metas as $meta) {
-
-    $select_progresso = "
-        SELECT COUNT(*) AS quantidade
-        FROM progresso_leitura
-        WHERE id_user = :id_user
-        AND porcentagem_progresso = 100
-        AND ultima_leitura > :criacao_meta
-    ";
-
-    try {
-
-        $stmt = $conn->prepare($select_progresso);
-
-        $stmt->execute([
-            ":id_user" => $id_user,
-            ":criacao_meta" => $meta['criacao']
-        ]);
-
-        $resultado = $stmt->fetch(PDO::FETCH_ASSOC);
-
-        $quantidade = $resultado['quantidade'];
-
-    } catch (PDOException $e) {
-
-        echo 'Erro: ' . $e->getMessage();
-
-        $quantidade = 0;
-    }
-
-
+    $quantidade = contar_lidos_meta($conn, $id_user, $meta['criacao']);
     $faltando = $meta['num_livros'] - $quantidade;
+
     if ($faltando <= 0 && $meta['status'] == 'andamento') {
 
-        $update_concluida = "
-            UPDATE meta_leitura
-            SET status = 'concluida'
-            WHERE id = :id
-        ";
-
-        try {
-
-            $stmt = $conn->prepare($update_concluida);
-
-            $stmt->execute([
-                ":id" => $meta['id']
-            ]);
-
-        } catch (PDOException $e) {
-
-            echo 'Erro: ' . $e->getMessage();
-        }
-
+        executar_sql($conn, "UPDATE meta_leitura SET status = 'concluida' WHERE id = :id", [
+            ":id" => $meta['id']
+        ]);
 
     } else {
 
-        $update_expirada = "
+        executar_sql($conn, "
             UPDATE meta_leitura
             SET status = 'expirado'
             WHERE id = :id
             AND status = 'andamento'
             AND expiracao < CURRENT_DATE
-        ";
-
-        try {
-
-            $stmt = $conn->prepare($update_expirada);
-
-            $stmt->execute([
-                ":id" => $meta['id']
-            ]);
-
-        } catch (PDOException $e) {
-
-            echo 'Erro: ' . $e->getMessage();
-        }
+        ", [":id" => $meta['id']]);
     }
 }
 
+// metas que aparecem na tela (máximo 3, em andamento primeiro)
 $select_meta = "
     SELECT *
     FROM meta_leitura
@@ -296,267 +174,66 @@ $select_meta = "
     LIMIT 3
 ";
 
-try {
+$metas = buscar_dados($conn, $select_meta, [":id_user" => $id_user], true);
 
-    $stmt = $conn->prepare($select_meta);
+$resultado = buscar_dados($conn, "SELECT COUNT(*) AS quantidade FROM meta_leitura WHERE id_user = :id_user", [":id_user" => $id_user]);
+$total_meta = $resultado['quantidade'] ?? 0;
+$metas_sobrando = $total_meta - 3;
 
-    $stmt->execute([
-        ":id_user" => $id_user
-    ]);
+foreach ($metas as $i => $meta) {
 
-    $metas = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-} catch (PDOException $e) {
-
-    echo 'Erro: ' . $e->getMessage();
-
-    $metas = [];
-}
-
-$quantidade_meta = "
-    SELECT COUNT(*) AS quantidade
-    FROM meta_leitura
-    WHERE id_user = :id_user
-";
-
-try {
-
-    $stmt = $conn->prepare($quantidade_meta);
-
-    $stmt->execute([
-        ":id_user" => $id_user
-    ]);
-
-    $resultado = $stmt->fetch(PDO::FETCH_ASSOC);
-
-    $total_meta = $resultado['quantidade'];
-
-} catch (PDOException $e) {
-
-    echo 'Erro: ' . $e->getMessage();
-
-    $total_meta = 0;
-}
-
-
-echo '<a href="gerenciarmetas.php">Gerenciar metas</a>';
-
-
-foreach ($metas as $meta) {
-
-    $select_progresso = "
-        SELECT COUNT(*) AS quantidade
-        FROM progresso_leitura
-        WHERE id_user = :id_user
-        AND porcentagem_progresso = 100
-        AND ultima_leitura > :criacao_meta
-    ";
-
-    try {
-
-        $stmt = $conn->prepare($select_progresso);
-
-        $stmt->execute([
-            ":id_user" => $id_user,
-            ":criacao_meta" => $meta['criacao']
-        ]);
-
-        $resultado = $stmt->fetch(PDO::FETCH_ASSOC);
-
-        $quantidade = $resultado['quantidade'];
-
-    } catch (PDOException $e) {
-
-        echo 'Erro: ' . $e->getMessage();
-
-        $quantidade = 0;
-    }
+    $quantidade = contar_lidos_meta($conn, $id_user, $meta['criacao']);
 
     if ($meta['num_livros'] > 0) {
-
         $percent = ($quantidade / $meta['num_livros']) * 100;
-
     } else {
-
         $percent = 0;
     }
 
-
     $faltando = $meta['num_livros'] - $quantidade;
 
-
-    echo '<strong>';
-    echo htmlspecialchars($meta['nome_meta']);
-    echo '</strong>';
-
-    if ($meta['periodo'] == 'mensal') {
-
-        $periodo = "mensal";
-
-    } elseif ($meta['periodo'] == 'semanal') {
-
-        $periodo = "semanal";
-
-    } elseif ($meta['periodo'] == 'anual') {
-
-        $periodo = "anual";
-
-    } else {
-
-        $periodo = htmlspecialchars($meta['periodo']);
-    }
-
-
-    echo 'Sua meta ' . $periodo;
-    echo '<br>';
-
-
-    echo $quantidade
-        . ' de '
-        . htmlspecialchars($meta['num_livros'])
-        . ' livros lidos.';
-
-    echo '
-    <progress
-        id="progresso_meta"
-        value="' . htmlspecialchars($quantidade) . '"
-        max="' . htmlspecialchars($meta['num_livros']) . '">
-    </progress>
-    ';
-
-    echo round($percent, 2) . '%';
-
     if ($faltando > 1) {
-
-        echo 'Faltam '
-            . $faltando
-            . ' livros para completar a meta';
-
-    } elseif ($faltando == 0) {
-
-        echo 'Meta concluída!';
-
+        $mensagem = 'Faltam ' . $faltando . ' livros para alcançar a meta!';
+    } elseif ($faltando == 1) {
+        $mensagem = 'Falta apenas 1 livro para alcançar a meta!';
     } else {
-
-        echo 'Falta 1 livro para completar a meta';
+        $mensagem = 'Meta concluída!';
     }
-    echo 'Status: '
-        . htmlspecialchars($meta['status']);
+
+    $metas[$i]['quantidade'] = $quantidade;
+    $metas[$i]['percent'] = min($percent, 100);
+    $metas[$i]['mensagem'] = $mensagem;
+    $metas[$i]['concluida'] = $faltando <= 0;
 }
 
-if ($total_meta > 3) {
+/* ---------- ESTATÍSTICAS DE LEITURA ---------- */
 
-    $metas_sobrando = $total_meta - 3;
-
-    echo '
-    <a href="gerenciarmetas.php">
-        Mais ' . $metas_sobrando . ' metas.
-    </a>
-    ';
-}
-
-echo '<h3>Estatísticas de Leitura</h3>';
-
-$select_livros_lidos = "
+$resultado = buscar_dados($conn, "
     SELECT COUNT(*) AS total_livros_lidos
     FROM progresso_leitura
     WHERE id_user = :id_user
     AND porcentagem_progresso = 100
-";
+", [":id_user" => $id_user]);
+$total_livros_lidos = $resultado['total_livros_lidos'] ?? 0;
 
-try {
-
-    $stmt = $conn->prepare($select_livros_lidos);
-
-    $stmt->execute([
-        ":id_user" => $id_user
-    ]);
-
-    $total_livros_lidos =
-        $stmt->fetch(PDO::FETCH_ASSOC)['total_livros_lidos'];
-
-} catch (PDOException $e) {
-
-    echo 'Erro: ' . $e->getMessage();
-
-    $total_livros_lidos = 0;
-}
-
-$select_avaliacoes = "
+$resultado = buscar_dados($conn, "
     SELECT AVG(nota_avaliacao) AS media_avaliacoes
     FROM comentario
     WHERE id_user = :id_user
     AND categoria_curtida = 'livro'
-";
+", [":id_user" => $id_user]);
+$media_avaliacoes = $resultado['media_avaliacoes'] ?? null;
 
-try {
-
-    $stmt = $conn->prepare($select_avaliacoes);
-
-    $stmt->execute([
-        ":id_user" => $id_user
-    ]);
-
-    $media_avaliacoes =
-        $stmt->fetch(PDO::FETCH_ASSOC)['media_avaliacoes'];
-
-} catch (PDOException $e) {
-
-    echo 'Erro: ' . $e->getMessage();
-
-    $media_avaliacoes = null;
-}
-
-$select_capitulo = "
+$resultado = buscar_dados($conn, "
     SELECT SUM(capitulo_atual) AS total_capitulos_lidos
     FROM progresso_leitura
     WHERE id_user = :id_user
-";
+", [":id_user" => $id_user]);
+$total_capitulos_lidos = $resultado['total_capitulos_lidos'] ?? 0;
 
-try {
+/* ---------- PERFIL LITERÁRIO ---------- */
 
-    $stmt = $conn->prepare($select_capitulo);
-
-    $stmt->execute([
-        ":id_user" => $id_user
-    ]);
-
-    $total_capitulos_lidos =
-        $stmt->fetch(PDO::FETCH_ASSOC)['total_capitulos_lidos'];
-
-} catch (PDOException $e) {
-
-    echo 'Erro: ' . $e->getMessage();
-
-    $total_capitulos_lidos = 0;
-}
-
-
-if ($total_capitulos_lidos === null) {
-    $total_capitulos_lidos = 0;
-}
-
-
-echo 'Livros lidos: '
-    . htmlspecialchars($total_livros_lidos)
-    . '<br>';
-
-echo 'Capítulos lidos: '
-    . htmlspecialchars($total_capitulos_lidos)
-    . '<br>';
-
-echo 'Média de avaliações: ';
-
-if ($media_avaliacoes !== null) {
-
-    echo round($media_avaliacoes, 2);
-
-} else {
-
-    echo 'Nenhuma avaliação';
-}
-
-$select_generos_lidos = "
+$genero_mais_lido = buscar_dados($conn, "
     SELECT
         p.nome_preferencia,
         COUNT(DISTINCT pr.id_livro) AS quantidade_livros
@@ -578,26 +255,9 @@ $select_generos_lidos = "
     ORDER BY quantidade_livros DESC
 
     LIMIT 1
-";
+", [":id_user" => $id_user]);
 
-try {
-
-    $stmt = $conn->prepare($select_generos_lidos);
-
-    $stmt->execute([
-        ":id_user" => $id_user
-    ]);
-
-    $genero_mais_lido = $stmt->fetch(PDO::FETCH_ASSOC);
-
-} catch (PDOException $e) {
-
-    echo 'Erro: ' . $e->getMessage();
-
-    $genero_mais_lido = false;
-}
-
-$select_autores_lidos = "
+$autor_mais_lido = buscar_dados($conn, "
     SELECT
         a.nome_autor,
         COUNT(DISTINCT pr.id_livro) AS quantidade_autores
@@ -619,26 +279,9 @@ $select_autores_lidos = "
     ORDER BY quantidade_autores DESC
 
     LIMIT 1
-";
+", [":id_user" => $id_user]);
 
-try {
-
-    $stmt = $conn->prepare($select_autores_lidos);
-
-    $stmt->execute([
-        ":id_user" => $id_user
-    ]);
-
-    $autor_mais_lido = $stmt->fetch(PDO::FETCH_ASSOC);
-
-} catch (PDOException $e) {
-
-    echo 'Erro: ' . $e->getMessage();
-
-    $autor_mais_lido = false;
-}
-
-$select_livros_lidos = "
+$maior_livro_lido = buscar_dados($conn, "
     SELECT
         l.titulo_livro,
         COUNT(c.id_capitulo) AS quantidade_capitulos
@@ -661,72 +304,203 @@ $select_livros_lidos = "
     ORDER BY quantidade_capitulos DESC
 
     LIMIT 1
-";
-
-try {
-
-    $stmt = $conn->prepare($select_livros_lidos);
-
-    $stmt->execute([
-        ":id_user" => $id_user
-    ]);
-
-    $maior_livro_lido = $stmt->fetch(PDO::FETCH_ASSOC);
-
-} catch (PDOException $e) {
-
-    echo 'Erro: ' . $e->getMessage();
-
-    $maior_livro_lido = false;
-}
-
-echo '<h3>Perfil Literário</h3>';
-
-
-echo 'Gênero mais lido: <br>';
-
-if ($genero_mais_lido) {
-
-    echo htmlspecialchars($genero_mais_lido['nome_preferencia'])
-        . ' - '
-        . htmlspecialchars($genero_mais_lido['quantidade_livros'])
-        . ' livros';
-
-} else {
-
-    echo 'Nenhum gênero encontrado.';
-}
-
-echo 'Autor mais lido: <br>';
-
-if ($autor_mais_lido) {
-
-    echo htmlspecialchars($autor_mais_lido['nome_autor'])
-        . ' - '
-        . htmlspecialchars($autor_mais_lido['quantidade_autores'])
-        . ' livros';
-
-} else {
-
-    echo 'Nenhum autor encontrado.';
-}
-
-echo 'Maior livro lido: <br>';
-
-if ($maior_livro_lido) {
-
-    echo htmlspecialchars($maior_livro_lido['titulo_livro'])
-        . ' - '
-        . htmlspecialchars($maior_livro_lido['quantidade_capitulos'])
-        . ' capítulos';
-
-} else {
-
-    echo 'Nenhum livro lido encontrado.';
-}
-
-echo '<a href="paginaprincipal.php">Home</a>';
-
-echo '<a href="catalogo.php">Catálogo</a>';
+", [":id_user" => $id_user]);
 
 ?>
+
+<section class="visao-grid">
+
+    <section class="visao-principal">
+
+        <!-- TOP 5 -->
+        <section class="card top5">
+            <section class="card-topo">
+                <h2>Top 5 livros</h2>
+
+                <form id="form-atualizar-top5" method="POST" action="atualizartop5-1.php">
+                    <button type="submit" name="atualizartop5" class="link-card">
+                        <i data-lucide="pencil"></i> Atualizar
+                    </button>
+                </form>
+            </section>
+
+            <ul class="top5-lista">
+                <?php foreach ($livros as $livro): ?>
+                    <li class="top5-item posicao-<?= (int) $livro['posicao'] ?>">
+                        <section class="top5-capa">
+                            <span class="top5-posicao"><?= htmlspecialchars($livro['posicao']) ?></span>
+
+                            <a class="top5-remover"
+                               href="perfil.php?aba=visao-geral&exc=<?= urlencode($livro['id_livro']) ?>&posicao=<?= urlencode($livro['posicao']) ?>"
+                               aria-label="Remover <?= htmlspecialchars($livro['titulo_livro']) ?> do Top 5"
+                               onclick="return confirm('Remover este livro do Top 5?')">
+                                <i data-lucide="x"></i>
+                            </a>
+
+                            <?php if (!empty($livro['capa_url'])): ?>
+                                <img src="<?= htmlspecialchars($livro['capa_url']) ?>"
+                                     alt="Capa de <?= htmlspecialchars($livro['titulo_livro']) ?>"
+                                     loading="lazy">
+                            <?php else: ?>
+                                <section class="sem-capa">Capa não disponível</section>
+                            <?php endif; ?>
+                        </section>
+
+                        <h3><?= htmlspecialchars($livro['titulo_livro']) ?></h3>
+
+                        <?= estrelas($livro['nota_avaliacao'] ?? 0) ?>
+                    </li>
+                <?php endforeach; ?>
+
+                <?php if (count($livros) < 5): ?>
+                    <li class="top5-item">
+                        <button type="submit" form="form-atualizar-top5" name="atualizartop5" class="top5-adicionar">
+                            <i data-lucide="plus"></i>
+                            <span>Adicionar Livro</span>
+                        </button>
+                    </li>
+                <?php endif; ?>
+            </ul>
+        </section>
+
+    </section>
+
+    <section class="visao-lateral">
+
+        <!-- METAS -->
+        <section class="card metas">
+            <section class="card-topo">
+                <h2><i data-lucide="target"></i> Meta de Leitura</h2>
+                <button type="button" class="pilula" data-abrir-metas>Gerenciar metas</button>
+            </section>
+
+            <?php if (count($metas) > 0): ?>
+                <?php foreach ($metas as $meta): ?>
+                    <article class="meta">
+                        <h3><?= htmlspecialchars($meta['nome_meta']) ?></h3>
+                        <p class="meta-periodo">Sua meta <?= htmlspecialchars($meta['periodo']) ?></p>
+
+                        <p class="meta-numeros">
+                            <strong><?= htmlspecialchars($meta['quantidade']) ?></strong>
+                            / <?= htmlspecialchars($meta['num_livros']) ?> Livros lidos
+                        </p>
+
+                        <section class="meta-barra">
+                            <progress value="<?= htmlspecialchars($meta['quantidade']) ?>"
+                                      max="<?= htmlspecialchars($meta['num_livros']) ?>"
+                                      aria-label="Progresso da meta <?= htmlspecialchars($meta['nome_meta']) ?>">
+                                <?= round($meta['percent']) ?>%
+                            </progress>
+                            <span class="pilula"><?= round($meta['percent']) ?>%</span>
+                        </section>
+
+                        <p class="meta-mensagem <?= $meta['concluida'] ? 'concluida' : '' ?>"><?= $meta['mensagem'] ?></p>
+                        <p class="meta-status">Status: <?= htmlspecialchars($meta['status']) ?></p>
+                    </article>
+                <?php endforeach; ?>
+
+                <?php if ($metas_sobrando > 0): ?>
+                    <button type="button" class="link-card" data-abrir-metas>Mais <?= $metas_sobrando ?> metas.</button>
+                <?php endif; ?>
+            <?php else: ?>
+                <p class="aba-vazia">Você ainda não criou nenhuma meta.</p>
+            <?php endif; ?>
+        </section>
+
+        <!-- ESTATÍSTICAS -->
+        <section class="card estatisticas">
+            <section class="card-topo">
+                <h2><i data-lucide="chart-no-axes-column"></i> Estatísticas de leitura</h2>
+            </section>
+
+            <ul class="mini-cards">
+                <li class="mini-card">
+                    <i data-lucide="book-open"></i>
+                    <strong><?= htmlspecialchars($total_livros_lidos) ?></strong>
+                    <span>Livros lidos</span>
+                </li>
+                <li class="mini-card">
+                    <i data-lucide="file-text"></i>
+                    <strong><?= htmlspecialchars($total_capitulos_lidos) ?></strong>
+                    <span>Capítulos lidos</span>
+                </li>
+                <li class="mini-card">
+                    <i data-lucide="star"></i>
+                    <strong><?= $media_avaliacoes !== null ? round($media_avaliacoes, 1) : '-' ?></strong>
+                    <span>Média de avaliações</span>
+                </li>
+            </ul>
+        </section>
+
+        <!-- PERFIL LITERÁRIO -->
+        <section class="card perfil-literario">
+            <section class="card-topo">
+                <h2><i data-lucide="chart-no-axes-column"></i> Perfil Literário</h2>
+            </section>
+
+            <ul class="mini-cards">
+                <li class="mini-card">
+                    <i data-lucide="layout-grid"></i>
+                    <span>Gênero mais lido</span>
+                    <?php if ($genero_mais_lido): ?>
+                        <strong class="texto"><?= htmlspecialchars($genero_mais_lido['nome_preferencia']) ?></strong>
+                        <small><?= htmlspecialchars($genero_mais_lido['quantidade_livros']) ?> livros</small>
+                    <?php else: ?>
+                        <small>Nenhum gênero encontrado.</small>
+                    <?php endif; ?>
+                </li>
+
+                <li class="mini-card">
+                    <i data-lucide="user-round"></i>
+                    <span>Autor mais lido</span>
+                    <?php if ($autor_mais_lido): ?>
+                        <strong class="texto"><?= htmlspecialchars($autor_mais_lido['nome_autor']) ?></strong>
+                        <small><?= htmlspecialchars($autor_mais_lido['quantidade_autores']) ?> livros</small>
+                    <?php else: ?>
+                        <small>Nenhum autor encontrado.</small>
+                    <?php endif; ?>
+                </li>
+
+                <li class="mini-card">
+                    <i data-lucide="book-text"></i>
+                    <span>Maior livro lido</span>
+                    <?php if ($maior_livro_lido): ?>
+                        <strong class="texto"><?= htmlspecialchars($maior_livro_lido['titulo_livro']) ?></strong>
+                        <small><?= htmlspecialchars($maior_livro_lido['quantidade_capitulos']) ?> capítulos</small>
+                    <?php else: ?>
+                        <small>Nenhum livro lido encontrado.</small>
+                    <?php endif; ?>
+                </li>
+            </ul>
+        </section>
+
+    </section>
+</section>
+
+<!-- MODAL: GERENCIAR METAS (reabre sozinho depois de filtrar ou excluir) -->
+<dialog id="gerenciarMetas" <?= isset($_POST['filtrar']) || isset($_GET['metas']) ? 'data-abrir' : '' ?>>
+    <?php require_once('gerenciarmetas.php'); ?>
+</dialog>
+
+<script>
+    const modalMetas = document.getElementById("gerenciarMetas");
+
+    document.querySelectorAll("[data-abrir-metas]").forEach((botao) => {
+        botao.addEventListener("click", () => modalMetas.showModal());
+    });
+
+    modalMetas.querySelectorAll("[data-fechar]").forEach((botao) => {
+        botao.addEventListener("click", () => modalMetas.close());
+    });
+
+    // clicar fora do modal também fecha
+    modalMetas.addEventListener("click", (e) => {
+        if (e.target === modalMetas) {
+            modalMetas.close();
+        }
+    });
+
+    if (modalMetas.hasAttribute("data-abrir")) {
+        modalMetas.showModal();
+    }
+</script>
