@@ -57,6 +57,7 @@
         }
     } else{
         echo "Conta Publica, fazer include das outras paginas";
+        require_once('listas_livros_terceiros.php');
     }
     
 ?>

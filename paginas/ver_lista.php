@@ -174,8 +174,12 @@
                     foreach($livros as $livro):
                 ?>
                     <tr>
-                       <td><?= $cont ?></td>
-                        <td><img src="<?= $livro['capa_url'] ?>" alt="Capa do livro <?= $livro['titulo_livro'] ?>"> <?= $livro['titulo_livro'] ?></td>
+                        <td><?= $cont ?></td>
+                        <td>
+                            <a href="visao_livro.php?id_livro=<?= $livro['id_livro']?>">
+                                <img src="<?= $livro['capa_url'] ?>" alt="Capa do livro <?= $livro['titulo_livro'] ?>"> <?= $livro['titulo_livro'] ?>
+                            </a>
+                        </td>
                         <td><?= $livro['nome_autor'] ?></td>
                         <td><a href="excluir_livro_lista.php?id_livro=<?= $livro['id_livro'] ?>&id_lista=<?= $id_lista?>">Excluir</a></td>
                         <?php $cont++ ?>
@@ -188,11 +192,13 @@
     <section>
         <h3>Livros que combinam com essa lista:</h3>
             <?php foreach ($livros_parecidos as $livro_parecido): ?>
-                <img src="<?= htmlspecialchars($livro_parecido['capa_url']) ?>" alt="capa do livro <?= htmlspecialchars($livro_parecido['titulo_livro']) ?>">
-                <p><strong><?= htmlspecialchars($livro_parecido['titulo_livro']) ?></strong></p>
-                <span><?= htmlspecialchars($livro_parecido['nome_autor'])?></span><br>
-                <span><?= htmlspecialchars($livro_parecido['data_publi'])?></span>
-                <p><?= htmlspecialchars($livro_parecido['sinopse_livro'])?></p>
+                <a href="visao_livro.php?id_livro=<?= $livro_parecido['id_livro']?>">
+                    <img src="<?= htmlspecialchars($livro_parecido['capa_url']) ?>" alt="capa do livro <?= htmlspecialchars($livro_parecido['titulo_livro']) ?>">
+                    <p><strong><?= htmlspecialchars($livro_parecido['titulo_livro']) ?></strong></p>
+                    <span><?= htmlspecialchars($livro_parecido['nome_autor'])?></span><br>
+                    <span><?= htmlspecialchars($livro_parecido['data_publi'])?></span>
+                    <p><?= htmlspecialchars($livro_parecido['sinopse_livro'])?></p>
+                </a>
             <?php endforeach ?>
     </section>
 

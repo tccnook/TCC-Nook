@@ -38,7 +38,7 @@ echo '<section class="livro-externo">';
     echo '<img src="'.$livro['capa_url'].'" width="600px" height="auto">';
     echo '<br>';
     echo '<p>'.$livro['sinopse_livro'].'</p>';
-    echo '<a href="autor.php"?nome_autor='.$livro['nome_autor'].'>'.$livro['nome_autor'].'</a><br>';
+    echo '<a href="perfil_autor.php"?nome_autor='.$livro['nome_autor'].'>'.$livro['nome_autor'].'</a><br>';
     echo $livro['class_ind'].'<br>';
     echo '<p>'.$livro['resumo_livro'].'</p>';
     $data_publi = new DateTime ($livro['data_publi']);
