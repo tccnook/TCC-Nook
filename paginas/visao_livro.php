@@ -44,18 +44,35 @@ if($id_livro === null && $google_books_id !== null){
 
         $url = 'https://www.googleapis.com/books/v1/volumes/'.urlencode($google_books_id).'?key='.urlencode($chave_api);
         $ch = curl_init();
+
         curl_setopt($ch, CURLOPT_URL, $url);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
         curl_setopt($ch, CURLOPT_TIMEOUT, 10);
+        curl_setopt($ch, CURLOPT_USERAGENT, 'Mozilla/5.0');
+
         $resposta = curl_exec($ch);
+
         if($resposta === false){
             echo "Erro ao consultar a Google Books API.";
             curl_close($ch);
             exit();
         }
+
         curl_close($ch);
+
         $dados_google = json_decode($resposta, true);
+
+        if(isset($dados_google['error'])){
+            echo "Erro na Google Books: " .
+                htmlspecialchars($dados_google['error']['message'] ?? 'Erro desconhecido');
+            exit();
+        }
+
+        $codigo_http = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $erro_curl = curl_error($ch);
+
+        curl_close($ch);
 
         if(isset($dados_google['error'])){
             echo "Livro não encontrado na Google Books.";
@@ -64,6 +81,19 @@ if($id_livro === null && $google_books_id !== null){
 
         $info = $dados_google['volumeInfo'];
 
+        $isbn10 = null;
+        $isbn13 = null;
+
+        if(isset($info['industryIdentifiers'])){
+            foreach($info['industryIdentifiers'] as $isbn){
+                if($isbn['type'] === 'ISBN_10'){
+                    $isbn10 = $isbn['identifier'];
+                }
+                if($isbn['type'] === 'ISBN_13'){
+                    $isbn13 = $isbn['identifier'];
+                }
+            }
+}
 
         $titulo = $info['title'] ?? 'sem titulo';
 
@@ -117,8 +147,16 @@ if($id_livro === null && $google_books_id !== null){
         $access = $dados_google['accessInfo'] ?? [];
         $sale = $dados_google['saleInfo'] ?? [];
 
-        $link_leitura = $access['webReaderLink'] ?? null;
+        $link_leitura = null;
+        $tipo_acesso = $access['accessViewStatus'] ?? null;
+
+        // verifica se existe alguma forma de leitura/prévia
+        if($tipo_acesso === 'FULL_READING' || $tipo_acesso === 'PARTIAL'){
+            $link_leitura = $access['webReaderLink'] ?? null;
+        }
+
         $link_compra = $sale['buyLink'] ?? null;
+
         try{            
             $insert_livro = "insert into livro (
                     titulo_livro,
@@ -137,7 +175,9 @@ if($id_livro === null && $google_books_id !== null){
                     link_compra,
                     nota_google,
                     avaliacoes_google,
-                    paginas
+                    paginas,
+                    isbn10,
+                    isbn13
 
                     ) values (
 
@@ -157,7 +197,9 @@ if($id_livro === null && $google_books_id !== null){
                     :link_compra,
                     :nota_google,
                     :avaliacoes_google,
-                    :paginas
+                    :paginas,
+                    :isbn10,
+                    :isbn13
                 )
                 returning id_livro
             ";
@@ -176,7 +218,9 @@ if($id_livro === null && $google_books_id !== null){
                 ':link_compra' => $link_compra,
                 ':nota_google' => $nota,
                 ':avaliacoes_google' => $qtd_avaliacoes,
-                ':paginas' => $paginas
+                ':paginas' => $paginas,
+                ':isbn10' => $isbn10,
+                ':isbn13' => $isbn13
             ]);
             $id_livro = $stmt->fetchColumn();
 
@@ -210,11 +254,14 @@ $generos = $stmt->fetchAll(PDO::FETCH_ASSOC);
 echo '<section class="livro-externo">';
     echo '<h2>'.$livro['titulo_livro'].'<h2>';
     echo 'Idioma: '.$livro['idioma'].'<br>';
-    echo '<img src="'.$livro['capa_url'].'" width="600px" height="auto">';
+    echo '<p>Paginas: '. $livro['paginas']. '</p>';
+    echo '<img src="'.$livro['capa_url'].'" width="150px" height="auto">';
     echo '<br>';
+    echo '<p>Nota: '.$livro['nota_google'].'</p>';
+    echo '<p> Número de avaliações: '.$livro['avaliacoes_google'].'</p>';
     echo '<p>'.$livro['sinopse_livro'].'</p>';
     echo '<a href="perfil_autor.php?nome_autor='.$livro['nome_autor'].'">'.$livro['nome_autor'].'</a><br>';
-    echo $livro['class_ind'].'<br>';
+    echo '<p>Classificação Indicativa:'.$livro['class_ind'].'</p>';
     echo '<p>'.$livro['resumo_livro'].'</p>';
     $data_publi = new DateTime ($livro['data_publi']);
     echo 'Publicado em: '.$data_publi->format('Y/m/d h:i').'<br>';
@@ -222,6 +269,25 @@ echo '<section class="livro-externo">';
     foreach($generos as $genero){
         echo $genero['nome_preferencia'].'  ';
     }
+
+    if($livro['isbn13'] !== null){
+        echo '<p> ISBN: '.$livro['isbn13'].'</p>';
+    } else {
+        echo '<p> ISBN: '.$livro['isbn10'].'</p>';
+    }
+
+    if($livro['link_leitura'] !== null){
+        echo '<a href="'.$livro['link_leitura'].'"><button type="button">
+            Leia no Google Books
+        </button></a>';
+    }
+
+    if($livro['link_compra'] !== null){
+        echo '<a href="'.$livro['link_compra'].'"><button type="button">
+            Compre aqui
+        </button></a>';
+    }
+
 
 
 

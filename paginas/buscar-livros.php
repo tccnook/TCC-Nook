@@ -115,7 +115,7 @@
             $capa = $info['imageLinks']['thumbnail'];
         }
 ?>
-        <a href="visao_livro.php?google_books_id='<?= htmlspecialchars($livro['id']) ?>'">
+        <a href="visao_livro.php?google_books_id=<?= htmlspecialchars($livro['id']) ?>">
             <section>
             <?php
                 if($capa !== ''){
