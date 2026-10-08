@@ -72,7 +72,7 @@
 
     if($consulta_google !== ''){
 
-        $url = 'https://www.googleapis.com/books/v1/volumes?q='.urlencode($consulta_google).'&maxResults=20'.'&key='.urlencode($chave_api);
+        $url = 'https://www.googleapis.com/books/v1/volumes?q='.urlencode($consulta_google).'&langRestrict=pt'.'&maxResults=20'.'&key='.urlencode($chave_api);
         $ch = curl_init(); //inicia o CURL (recurso php para requisições em API
 
         curl_setopt($ch, CURLOPT_URL, $url); //faz a requisição para essa URL

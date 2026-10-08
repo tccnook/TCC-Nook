@@ -20,6 +20,79 @@ require_once('conexao.php');
 $db = new Database;
 $conn = $db->conectar();
 
+
+function relacionarGeneros($conn, $id_livro, $categorias_google) {
+    // Tradução de categorias comuns da Google Books para o NOOK
+    $mapa_generos = [
+        'fiction' => 'ficcao',
+        'comedy' => 'comedia',
+        'romance' => 'romance',
+        'dark romance' => 'dark-romance',
+        'drama' => 'drama',
+        'thrillers' => 'suspense',
+        'suspense' => 'suspense',
+        'action' => 'acao',
+        'adventure' => 'aventura',
+        'fantasy' => 'fantasia',
+        'novels' => 'novela',
+        'manga' => 'manga',
+        'comics' => 'hq',
+        'graphic novels' => 'hq',
+        'webtoons' => 'webtoons',
+        'science fiction' => 'ficcao-cientifica',
+        'police procedurals' => 'policial',
+        'medical' => 'medico',
+        'biography' => 'biografia',
+        'documentary' => 'documentario',
+        'history' => 'historia',
+        'philosophy' => 'filosofia',
+        'psychology' => 'psicologia',
+        'politics' => 'politica',
+        'poetry' => 'poesia',
+        'cooking' => 'gastronomia',
+        'mythology' => 'mitologia',
+        'horror' => 'terror'
+    ];
+
+    // Prepara a consulta uma única vez
+    $sql_genero = "select id_preferencia from preferencia where LOWER(preferencia) = LOWER(:genero) LIMIT 1";
+    $stmt_genero = $conn->prepare($sql_genero);
+    $sql_relacao = "insert into preferencia_livro (id_livro, id_preferencia)
+        SELECT :id_livro, :id_preferencia
+        WHERE NOT EXISTS (
+            SELECT 1
+            FROM preferencia_livro
+            WHERE id_livro = :id_livro_verificar
+              AND id_preferencia = :id_preferencia_verificar
+        )";
+
+    $stmt_relacao = $conn->prepare($sql_relacao);
+
+    foreach ($categorias_google as $categoria) {
+        // Exemplo: "Fiction / Romance / Contemporary"
+        $partes = explode('/', $categoria);
+        foreach ($partes as $parte) {
+            $parte = trim($parte);
+            $chave = strtolower($parte);
+            // Traduz se houver correspondência; caso contrário, tenta o próprio nome
+            $genero_nook = $mapa_generos[$chave] ?? $chave;
+            $stmt_genero->execute([
+                ':genero' => $genero_nook
+            ]);
+            $id_preferencia = $stmt_genero->fetchColumn();
+            // Só relaciona gêneros que já existem no banco
+            if ($id_preferencia !== false) {
+                $stmt_relacao->execute([
+                    ':id_livro' => $id_livro,
+                    ':id_preferencia' => $id_preferencia,
+                    ':id_livro_verificar' => $id_livro,
+                    ':id_preferencia_verificar' => $id_preferencia
+                ]);
+            }
+        }
+    }
+}
+
 if($id_livro !== null){
     $select_livro = "select * from livro where id_livro = :id_livro and visibilidade = 'publico' ";
     $stmt = $conn->prepare($select_livro);
@@ -93,7 +166,7 @@ if($id_livro === null && $google_books_id !== null){
                     $isbn13 = $isbn['identifier'];
                 }
             }
-}
+        }
 
         $titulo = $info['title'] ?? 'sem titulo';
 
@@ -201,8 +274,8 @@ if($id_livro === null && $google_books_id !== null){
                     :isbn10,
                     :isbn13
                 )
-                returning id_livro
-            ";
+                returning id_livro";
+
             $stmt = $conn->prepare($insert_livro);
             $stmt->execute([
                 ':titulo_livro' => $titulo,
@@ -240,6 +313,10 @@ if($id_livro === null && $google_books_id !== null){
     }
 }
 
+$categorias_google = $info['categories'] ?? [];
+
+relacionarGeneros($conn, $id_livro, $categorias_google);
+
 $select_generos = "select p.nome_preferencia from preferencia p
 inner join preferencia_livro pl on pl.id_preferencia = p.id_preferencia
 inner join livro l on l.id_livro = pl.id_livro
@@ -265,7 +342,8 @@ echo '<section class="livro-externo">';
     echo '<p>'.$livro['resumo_livro'].'</p>';
     $data_publi = new DateTime ($livro['data_publi']);
     echo 'Publicado em: '.$data_publi->format('Y/m/d h:i').'<br>';
-    echo 'Gêneros: <br>';
+    echo 'Gêneros:<br>';
+    
     foreach($generos as $genero){
         echo $genero['nome_preferencia'].'  ';
     }
