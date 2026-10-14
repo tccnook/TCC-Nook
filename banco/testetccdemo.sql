@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict gqFd3uBI1mEfk7zaGpGZ2mZOLaMDffLeeqzj2xM76oRf6QCj9Hxr4KKYWwNE4UB
+\restrict hs44SmMbZkOLKfC2b6oDqgibAUdexO9fcLamdyISGKhrCHHcIGtU0nUHZLWGQ9R
 
 -- Dumped from database version 18.4
 -- Dumped by pg_dump version 18.4
@@ -1151,6 +1151,9 @@ COPY public.livro (id_livro, titulo_livro, resumo_livro, class_ind, nome_autor, 
 5	Guardador de Rebanhos	Guardador de Rebanhos, de Fernando Pessoa, escrito sob o heter“nimo Alberto Caeiro, ‚ um conjunto de poemas que apresenta uma visÆo simples, direta e profundamente ligada … natureza. O eu l¡rico rejeita interpreta‡äes filos¢ficas e metaf¡sicas do mundo e prefere observar as coisas exatamente como elas sÆo. Para Caeiro, pensar demais sobre a realidade pode afastar o ser humano da experiˆncia verdadeira de simplesmente ver, sentir e existir. A natureza, os animais, as  rvores, as flores, o c‚u e as sensa‡äes cotidianas tornam-se elementos centrais de sua poesia. O poema tamb‚m questiona conceitos tradicionais sobre Deus, espiritualidade e transcendˆncia, defendendo uma esp‚cie de rela‡Æo concreta e imediata com o mundo.	10	JoÆo Pessoa	\N	Guardador de Rebanhos acompanha o olhar de um eu l¡rico que se apresenta como um pastor que guarda rebanhos, embora esses rebanhos sejam, sobretudo, pensamentos e sensa‡äes. Ao observar a natureza, ele desenvolve uma filosofia baseada na simplicidade, recusando explica‡äes abstratas e procurando enxergar o mundo sem atribuir-lhe significados ocultos. Ao longo da obra, a natureza funciona como fonte de conhecimento e verdade, enquanto o pensamento excessivo ‚ visto como algo que complica aquilo que deveria ser simples. A obra constr¢i, assim, uma reflexÆo po‚tica sobre a existˆncia, a percep‡Æo e a rela‡Æo do ser humano com a realidade.	../img/capas_livros/rebanhos-capa.jpg	2026-08-10 13:21:21.325504	Portugues-BR	publico	\N	usuario	\N	\N	\N	\N	\N	\N	\N
 7	Harry Potter and the Chamber of Secrets	\N	0	J. K. Rowling	\N	Harry can't wait for his holidays with the dire Dursleys to end. But a small, self-punishing house-elf warns Harry of mortal danger awaiting him at Hogwarts School. Returning to the castle nevertheless, Harry hears a rumour about a chamber of secrets, holding unknown horrors to wizards of Muggle parentage. Now someone is casting spells that turn people to stone, and a terrible warning is found painted on the wall. The chief suspect - always in the wrong place - is Harry. But something much darker has yet to be unleashed.	http://books.google.com/books/content?id=nmXTy4FPfcwC&printsec=frontcover&img=1&zoom=1&imgtk=AFLRE72jWd_cxawEeLUMJm0NaKMsfVNjF7om5mh2E9UPR5xBUzpO9lyq_v8HMbv3fsoARcZcgy4PTFM0Tzak1mYQDAebHHZtNyrK8FK-dkfPACh-BS3f9Gsncu-7R6BEr5ysunudoHt4&source=gbs_api	1999-01-01 00:00:00	en	publico	nmXTy4FPfcwC	google_books	http://play.google.com/books/reader?id=nmXTy4FPfcwC&hl=&source=gbs_api	\N	5.0	1	251	1551922444	9781551922447
 8	The Witcher Library Edition Volume 1	\N	0	Paul Tobin	\N	<b>Multi-Eisner award-winning writer Paul Tobin pens a fantasy epic of the adventures of Geralt of Rivia, a witcher--one of the few remaining monster hunters from the critically acclaimed video game fantasy <i>The Witcher</i> by CD Projekt Red!</b><br><br>Featuring story art by Joe Querio, Piotr Kowalski, Max Bertolini, with a bonus sketchbook section and additional art by Dave Johnson (<i>100 Bullets</i>), Dan Panosian (<i>Slots</i>), Stan Sakai (<i>Usagi Yojimbo</i>), Duncan Fegredo (<i>MPH</i>), Simon Bisley (<i>Lobo</i>), and a cover by Mike Mignola (<i>Hellboy</i>). <br><br>Collects issues #1-#5 of the Witcher comic series <i>House of Glass</i>, <i>Fox Children</i>, <i>Curse of Crows</i>, and collected for the first time<i>, Killing Monster</i>s one-shot--and features annotations from the creators of the comics, as well as a sketchbook section.	http://books.google.com/books/publisher/content?id=AcJyDwAAQBAJ&printsec=frontcover&img=1&zoom=1&edge=curl&imgtk=AFLRE70kwh0u-twijrq-nRRe5kwLjlhTgGiWob31YoGGnDY281-vgBLIt9oXqyVKDwOuWDSP6TVjvt0XWNfVzqM24PUY6f1eMFZiyjISggVKoC8aAJRdJGTQpSSSq0ETQhBrC36Ln2ll&source=gbs_api	2018-11-13 00:00:00	en	publico	AcJyDwAAQBAJ	google_books	\N	\N	\N	\N	440	1506706827	9781506706825
+9	Carrie, a estranha	\N	0	Stephen King	\N	Até 1972, Stephen King ainda era um professor cujo salário mal dava para sustentar a mulher, Tabitha, e os dois filhos. Nas horas vagas, escrevia histórias de suspense, sempre rejeitadas pelas editoras. Foi então que finalizou mais uma obra. Em seguida, porém, desiludido com o mercado editorial, King arremessou-a pela janela. Foi Tabitha quem o convenceu de recuperar os originais e tentar outra vez. Enviado a um editor, o livro foi aceito. Nascia Carrie, a Estranha, obra que lançou Stephen King no cenário literário mundial. <br>O livro narra a atormentada adolescência de uma jovem problemática, perseguida pelos colegas, professores e impedida pela mãe de levar a vida como as garotas de sua idade. Só que Carrie guarda um segredo: quando ela está por perto, objetos voam, portas são trancadas ao sabor do nada, velas se apagam e voltam a iluminar, misteriosamente. <br>Com tantos ingredientes de suspense, Carrie, a Estranha"" logo se transformou num enorme sucesso internacional. Ao ser transportado para as telas, em 1976, pelas mãos de Brian de Palma, teve a atriz Sissy Spacek e John Travolta em seus papéis principais.	http://books.google.com/books/content?id=QB19ir2j2TMC&printsec=frontcover&img=1&zoom=1&edge=curl&imgtk=AFLRE72t1ckosE1Z8RVOcsk_JM1JW9RIhE01PhE0ml3a10IBj8966HftX56KY69_5wy4dWnwBE7Bp32yAV468rPSouqCOJUlzB7U2Rrymc09vUDuA9dwwlZ-DB_NJkydjRpIgV4YNxS4&source=gbs_api	2007-01-11 00:00:00	pt-BR	publico	QB19ir2j2TMC	google_books	\N	https://play.google.com/store/books/details?id=QB19ir2j2TMC&rdid=book-QB19ir2j2TMC&rdot=1&source=gbs_api	5.0	1	140	8581051030	9788581051031
+10	It: A coisa	\N	0	Stephen King	\N	<p> <b>Nesse clássico que inspirou os filmes da Warner, um grupo de amigos conhecido como Clube dos Otários aprende o real sentido da amizade, do amor, da confiança... e do medo. O mais profundo e tenebroso medo.</b> </p> <p>Durante as férias de 1958, em uma pacata cidadezinha chamada Derry, um grupo de sete amigos começa a ver coisas estranhas. Um conta que viu um palhaço, outro que viu uma múmia. Finalmente, acabam descobrindo que estavam todos vendo a mesma coisa: um ser sobrenatural e maligno que pode assumir várias formas. É assim que Bill, Beverly, Eddie, Ben, Richie, Mike e Stan enfrentam a Coisa pela primeira vez. <br>Quase trinta anos depois, o grupo volta a se encontrar. Mike, o único que permaneceu em Derry, dá o sinal — uma nova onda de terror tomou a pequena cidade. É preciso unir forças novamente. Só eles têm a chave do enigma. Só eles sabem o que se esconde nas entranhas de Derry. Só eles podem vencer a Coisa.</p> <p>"Mesmo depois de tantos anos, o público continua obcecado por IT. Ficamos obcecados porque todos temos medos. Todos temos algo que nos assusta, sejam palhaços e aranhas ou coisas que se escondem em um lugar muito mais profundo de nossa mente. Este livro fala com todo mundo. É o romance mais assustador de King, e duvido que isso vá mudar" — <i>The Guardian</i> </p>	http://books.google.com/books/publisher/content?id=s_o3BAAAQBAJ&printsec=frontcover&img=1&zoom=1&edge=curl&imgtk=AFLRE73VO3bdPXwdTgDaFN08cc9euJFIDsQt5T-KCj0qDJ6ffdQSEe89cqIba6349gUPacHo-tAXKcRkLB6upjEVGTxrs9QrJmtWOEzTyGcNh-bdDe8786R2yClY4MEWCYlOzzfjY3jX&source=gbs_api	2014-08-04 00:00:00	pt-BR	publico	s_o3BAAAQBAJ	google_books	\N	https://play.google.com/store/books/details?id=s_o3BAAAQBAJ&rdid=book-s_o3BAAAQBAJ&rdot=1&source=gbs_api	5.0	7	1104	8581051529	9788581051529
+11	A revolução dos bichos	\N	0	George Orwell	\N	<b>Edição Especial para Leitores Exigentes</b> <br>Relançado pela Troia Editora, "A Revolução dos Bichos" (1945), de George Orwell (1903-1950), sátira ao comunismo soviético do século XX, retrata o arbítrio e a desigualdade que imperam nos regimes de exceção. A história se passa na Fazenda do Solar, de seu despótico proprietário, Jones, que explora e maltrata os animais. Revoltados, os bichos se unem e expulsam o dono, assumindo a gestão da fazenda com o nome de Fazenda dos Bichos, sob a liderança de dois porcos rivais, Napoleão (representando Stalin) e Bola de Neve (Trótski). São estabelecidos os Sete Mandamentos da fazenda, que pregam igualdade entre os animais, mas aos poucos eles são adulterados até serem praticamente abolidos. <br>Os leitores modernos passaram a ver o livro de Orwell como um poderoso ataque a qualquer poder político, retórico ou militar que busca controlar os seres humanos por meio de mecanismos cruéis e injustos, afirma o tradutor Claudio Blanc. Ele enriquece a nova edição brasileira com prefácio e notas substanciosas e didáticas, contextualizando a novela de Orwell, e uma cronologia da vida do escritor e dos principais acontecimentos no mundo e no Brasil, de 1903 a 1950. Esta nova edição apresenta um moderno, original e arrojado projeto gráfico de Alan Maia, ilustrações de Nelson Provazi e inclui um extenso caderno de fotos. Além disso, a obra contém duas videoaulas que exploram profundamente a vida e a obra do renomado escritor, bem como um guia de leitura repleto de insights, análises e informações valiosas. <br> <i> <b>Segundo a revista Time, "A Revolução dos Bichos" é uma das mais importantes obras da língua inglesa de todos os tempos. <br> </b> </i> <br> <b>Diferenciais:</b> <br> <ul> <li>Texto integral traduzido do original;</li> <li>Traduzido, apresentado e comentado pelo filósofo Claudio Blanc; </li> <li>Páginas com ilustrações incríveis de Nelson Provazi; </li> <li>Caderno de fotos que retrata a vida do autor; </li> <li>Cronologia com eventos na vida do autor, no mundo e no Brasil; </li> <li>Projeto gráfico do artista Alan Maia; QR Code que leva o leitor para duas videoaulas incríveis; </li> <li>QR Code que leva o leitor para um Guia de leitura.</li> </ul>	http://books.google.com/books/publisher/content?id=H4kbEAAAQBAJ&printsec=frontcover&img=1&zoom=1&edge=curl&imgtk=AFLRE70j7099uJZqIN1TQZGx9oHPjFpqknq9uE-XiOMgucT638QHhcb5eoZrSaBajqjur92R1ZlL_f54-5OoXCbcTbIVMFAgxOSqjPB_4YDAF6oIpB4He0iicfPH0xxZMTVmcqOSZwGo&source=gbs_api	2021-01-06 00:00:00	pt-BR	publico	H4kbEAAAQBAJ	google_books	\N	https://play.google.com/store/books/details?id=H4kbEAAAQBAJ&rdid=book-H4kbEAAAQBAJ&rdot=1&source=gbs_api	\N	\N	228	6588436076	9786588436073
 \.
 
 
@@ -1159,11 +1162,12 @@ COPY public.livro (id_livro, titulo_livro, resumo_livro, class_ind, nome_autor, 
 --
 
 COPY public.livros_lidos (id_user, id_livro, atualizado_em) FROM stdin;
-19	1	2026-08-10 13:49:14.580055
 19	2	2026-08-10 13:49:21.595999
 19	3	2026-08-10 13:49:23.684314
 19	4	2026-08-10 13:49:26.221843
 19	5	2026-08-10 13:49:28.566783
+19	1	2026-10-14 08:59:22.793017
+30	8	2026-10-14 09:30:51.161949
 \.
 
 
@@ -1632,6 +1636,8 @@ COPY public.preferencia_livro (id, id_preferencia, id_livro) FROM stdin;
 8	7	4
 9	7	5
 10	8	5
+11	8	9
+12	1	10
 \.
 
 
@@ -1831,13 +1837,17 @@ COPY public.whishbook (id, id_livro, id_user, id_whishlist, ordem) FROM stdin;
 259	5	41	19	\N
 260	2	41	19	\N
 261	1	41	19	\N
-264	2	30	21	\N
-265	1	30	21	\N
-266	4	30	21	\N
 269	2	30	22	\N
 270	3	30	22	\N
 271	5	30	22	\N
 272	4	30	22	\N
+273	8	\N	21	\N
+280	11	\N	21	\N
+281	11	\N	23	\N
+283	9	30	23	\N
+284	8	30	23	\N
+285	10	30	23	\N
+286	4	\N	23	\N
 100	2	40	\N	\N
 101	1	40	\N	\N
 177	1	41	20	\N
@@ -1863,10 +1873,11 @@ COPY public.whishlist (id, nome_lista, id_user, descricao, visibilidade, tipo_ca
 16	LISTA MT INCRIVEL	39	uma das melhores listas de todas	publica	automatica	img/capas_listas/capa_auto_lista_16.jpg	2026-09-08 16:52:55.331333
 17	Lista teste 2	39	uma lista de teste	publica	automatica	img/capas_listas/capa_auto_lista_17.jpg	2026-09-08 17:43:52.619201
 19	ja to fincando estressado	41	Falta pouco para ficar 100%	publica	automatica	img/capas_listas/capa_auto_lista_19.jpg	2026-09-10 16:49:54.657141
-21	lista de books	30	lista insana dms	publica	automatica	../img/capas_livros/cartomante-capa.jpeg	2026-09-30 19:14:35.965935
 20	asdas	41	asdasd	publica	automatica	img/capas_listas/capa_auto_lista_20.jpg	2026-09-10 17:04:18.763285
 22	Machado de Assis	30	lista com livros do machado assim	publica	automatica	img/capas_listas/capa_auto_lista_22.jpg	2026-10-05 20:01:46.59487
+21	lista de books	30	lista insana dms	publica	automatica	../img/capas_livros/cartomante-capa.jpeg	2026-09-30 19:14:35.965935
 18	Essa parte foi	40	tem q ver a capa e os livros agora	publica	automatica	../img/capas_livros/cartomante-capa.jpeg	2026-09-09 19:21:31.239319
+23	lista de teste	30	pra testar	publica	automatica	img/capas_listas/capa_auto_lista_23.jpg	2026-10-14 11:01:43.104961
 \.
 
 
@@ -1937,7 +1948,7 @@ SELECT pg_catalog.setval('public.denuncia_id_denuncia_seq', 1, false);
 -- Name: livro_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.livro_id_seq', 8, true);
+SELECT pg_catalog.setval('public.livro_id_seq', 11, true);
 
 
 --
@@ -1986,14 +1997,14 @@ SELECT pg_catalog.setval('public.post_id_post_seq', 4, true);
 -- Name: preferencia_id_preferencia_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.preferencia_id_preferencia_seq', 36, true);
+SELECT pg_catalog.setval('public.preferencia_id_preferencia_seq', 37, true);
 
 
 --
 -- Name: preferencia_livro_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.preferencia_livro_id_seq', 10, true);
+SELECT pg_catalog.setval('public.preferencia_livro_id_seq', 12, true);
 
 
 --
@@ -2035,14 +2046,14 @@ SELECT pg_catalog.setval('public.usuario_id_user_seq', 45, true);
 -- Name: whishbook_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.whishbook_id_seq', 272, true);
+SELECT pg_catalog.setval('public.whishbook_id_seq', 286, true);
 
 
 --
 -- Name: whishlist_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.whishlist_id_seq', 22, true);
+SELECT pg_catalog.setval('public.whishlist_id_seq', 23, true);
 
 
 --
@@ -2275,6 +2286,14 @@ ALTER TABLE ONLY public.resenha
 
 ALTER TABLE ONLY public.whishbook
     ADD CONSTRAINT unique_livro_lista UNIQUE (id_livro, id_whishlist);
+
+
+--
+-- Name: livros_lidos unique_usuario_livro; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.livros_lidos
+    ADD CONSTRAINT unique_usuario_livro UNIQUE (id_user, id_livro);
 
 
 --
@@ -2689,5 +2708,5 @@ ALTER TABLE ONLY public.progresso_leitura
 -- PostgreSQL database dump complete
 --
 
-\unrestrict gqFd3uBI1mEfk7zaGpGZ2mZOLaMDffLeeqzj2xM76oRf6QCj9Hxr4KKYWwNE4UB
+\unrestrict hs44SmMbZkOLKfC2b6oDqgibAUdexO9fcLamdyISGKhrCHHcIGtU0nUHZLWGQ9R
 

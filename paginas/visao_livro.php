@@ -7,6 +7,8 @@ if(!isset($_SESSION['id_user'])){
     exit();
 }
 
+$id_user = $_SESSION['id_user'];
+
 $id_livro = $_GET['id_livro'] ?? null;
 $google_books_id = $_GET['google_books_id'] ?? null;
 
@@ -329,7 +331,7 @@ $stmt->execute([
 $generos = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 echo '<section class="livro-externo">';
-    echo '<h2>'.$livro['titulo_livro'].'<h2>';
+    echo '<h2>'.$livro['titulo_livro'].'</h2>';
     echo 'Idioma: '.$livro['idioma'].'<br>';
     echo '<p>Paginas: '. $livro['paginas']. '</p>';
     echo '<img src="'.$livro['capa_url'].'" width="150px" height="auto">';
@@ -366,9 +368,49 @@ echo '<section class="livro-externo">';
         </button></a>';
     }
 
+    $select_lido = "select * from livros_lidos where id_livro = :id_livro";
+    $stmt  = $conn->prepare($select_lido);
+    $stmt->execute([':id_livro' => $id_livro]);
+    $lido = $stmt->fetch(PDO::FETCH_ASSOC);
 
+    if(empty($lido)){
+        $msg = "Marcar como lido";
+        $name = "marcar_lido";
+    } else {
+        $msg = "Lido";
+        $name = "desmarcar_lido";
+    }
 
+    echo '<form action="#" method="POST">
+                <button type="submit" name="'.$name.'">'
+                    .$msg.
+                '</button>
+         </form>';
 
+    if(isset($_POST['marcar_lido'])){
+        $insert = "insert into livros_lidos (id_user, id_livro) values (:id_user, :id_livro)";
+        $stmt = $conn->prepare($insert);
+        $stmt->execute([
+            ':id_user' => $id_user,
+            ':id_livro' => $id_livro
+        ]);
+
+        header('Location: visao_livro.php?id_livro='.$id_livro);
+    }
+
+    if(isset($_POST['desmarcar_lido'])){
+        $delete = "delete from livros_lidos where id_user = :id_user and id_livro = :id_livro";
+        $stmt = $conn->prepare($delete);
+        $stmt->execute([
+            ':id_user' => $id_user,
+            ':id_livro' => $id_livro
+        ]);
+
+        header('Location: visao_livro.php?id_livro='.$id_livro);
+    }
+
+    echo '<button type="button" id="Adicionar">Adicionar +</button>';
+    require_once('add_livro_lista.php');
 
 echo '</section>';
 
@@ -376,3 +418,18 @@ echo '</section>';
 
 
 ?>
+
+<script>
+    const btnAdicionar = document.getElementById('Adicionar');
+    const btnFechar = document.getElementById('fechar');
+    const modal = document.getElementById('modalListas');
+
+    btnAdicionar.addEventListener("click", function () {
+        modal.showModal();
+    });
+
+    btnFechar.addEventListener("click", function () {
+        modal.close();
+    });
+
+</script>
