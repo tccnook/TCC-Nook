@@ -52,7 +52,7 @@ $con = $db->conectar();
             .then(response => response.json())
             .then(data =>{
                 if(!data.sucesso){
-                    console.log('Erro ao buscar conversas');
+                    console.log(data.mensagem);
                     return;
                 };
                 resultados.innerHTML = '';

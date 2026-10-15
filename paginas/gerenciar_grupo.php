@@ -46,11 +46,13 @@ $informacoes_grupo = $stmt_grupo->fetch(PDO::FETCH_ASSOC);
 if(isset($_GET['id_promover'])){
     if($proprio['cargo'] == 'Admin'){
     $alter_promote = "
-    alter table conversa_participante set cargo = 'Admin' where id_user = :id_user
+    update conversa_participante set cargo = 'Admin' 
+    where id_user = :id_user and id_conversa = :id_conversa
     ";
     $stmt_promote = $conn->prepare($alter_promote);
     $stmt_promote->execute([
-        ":id_user" => $_GET['id_promover']
+        ":id_user" => $_GET['id_promover'],
+        ":id_conversa" => $id_conversa
     ]);
     echo '<script> alert("Usuário promovido a Admin"); </script>';
     } else{
@@ -59,7 +61,7 @@ if(isset($_GET['id_promover'])){
 }
 if(isset($_GET['id_rebaixar'])){
     $dados_operacao = "select cargo from conversa_participante where id_conversa = :id_conversa and id_user = :id_user";
-    $stmt_operacao = $con->prepare($dados_operacao);
+    $stmt_operacao = $conn->prepare($dados_operacao);
     $stmt_operacao->execute([
         ":id_conversa" => $id_conversa,
         ":id_user" => $_GET['id_rebaixar']
@@ -68,11 +70,13 @@ if(isset($_GET['id_rebaixar'])){
     if(($proprio['cargo'] == 'Admin')){
         if(($operacao['cargo'] == 'Admin') && ($informacoes_grupo['id_dono'] == $id_user)){
         $alter_rebaixa = "
-        alter table conversa_participante set cargo = 'Integrante' where id_user = :id_user
+        update conversa_participante set cargo = 'Integrante' 
+        where id_user = :id_user and id_conversa = :id_conversa
         ";
         $stmt_rebaixar = $conn->prepare($alter_rebaixa);
         $stmt_rebaixar->execute([
-        ":id_user" => $_GET['id_rebaixar']
+        ":id_user" => $_GET['id_rebaixar'],
+        ":id_conversa" => $id_conversa
     ]);
     } else{
         echo '<script> alert("Você não é dono para rebaixar outros admins");</script>';
@@ -82,13 +86,14 @@ if(isset($_GET['id_rebaixar'])){
     }
 }
 if(isset($_GET['id_remover'])){
-    if($proprio['id_dono'] == $id_user){
+    if($informacoes_grupo['id_dono'] == $id_user){
     $remove_participante = "
-    delete from conversa_participante where id_user = :id_user
+    delete from conversa_participante where id_user = :id_user and id_conversa = :id_conversa
     ";
     $stmt_remove = $conn->prepare($remove_participante);
     $stmt_remove->execute([
-        ":id_user" => $_GET['id_remover']
+        ":id_user" => $_GET['id_remover'],
+        ":id_conversa" => $id_conversa
     ]);
     } else{
         echo '<script> alert("Apenas donos da conversa podem remover integrantes");</script>';
@@ -109,14 +114,14 @@ if(isset($_GET['id_delete_grupo'])){
         echo '<script> alert("Você precisa ser dono do grupo para fazer isso");</script>';
     }
 }
-if(isset($_GET['id_limpar_grupo'])){
+if(isset($_GET['id_limpar_conversa'])){
     if($informacoes_grupo['id_dono'] == $id_user){
         $limpar_grupo = "
         update mensagem set delatado_em = current_timestamp where id_conversa = :id_conversa
         ";
         $stmt_limpar_grupo = $conn->prepare($limpar_grupo);
         $stmt_limpar_grupo->execute([
-            ":id_conversa" => $_GET['id_limpar_grupo']
+            ":id_conversa" => $_GET['id_limpar_conversa']
         ]);
     } else{
         echo '<script> alert("Você precisa ser dono do grupo para fazer isso");</script>';
@@ -150,15 +155,15 @@ foreach($participantes_grupo as $participante_grupo){
     echo '<img src="'.htmlspecialchars($participante_grupo['foto_perfil_url']).'" width="50px" height="auto">';
     echo $participante_grupo['username'];
     echo $participante_grupo['cargo'];
-    echo '<a href="gerenciar_grupo.php?id_promover='.htmlspecialchars($participante_grupo['id_user']).'"> Promover a Admin </a>';
-    echo '<a href="gerenciar_grupo.php?id_rebaixar='.htmlspecialchars($participante_grupo['id_user']).'"> Rebaixar de Cargo </a>';
-    echo '<a href="gerenciar_grupo.php?id_remover='.htmlspecialchars($participante_grupo['id_user']).'"> Remover do Grupo </a>';
+    echo '<a href="gerenciar_grupo.php?id_promover='.htmlspecialchars($participante_grupo['id_user']).'&id_conversa='.$id_conversa.'"> Promover a Admin </a>';
+    echo '<a href="gerenciar_grupo.php?id_rebaixar='.htmlspecialchars($participante_grupo['id_user']).'&id_conversa='.$id_conversa.'"> Rebaixar de Cargo </a>';
+    echo '<a href="gerenciar_grupo.php?id_remover='.htmlspecialchars($participante_grupo['id_user']).'&id_conversa='.$id_conversa.'"> Remover do Grupo </a>';
     echo '</section>';
 }
 echo '<section class="adicionais">';
     echo '<a href="adicionar_integrantes_grupo.php?id_conversa='.htmlspecialchars($informacoes_grupo['id_conversa']).'"> Adicionar pessoas </a>';
-    echo '<a href="gerenciar_grupo.php?id_limpar_conversa='.htmlspecialchars($informacoes_grupo['id_conversa']).'"> Limpar Conversa </a>';
-    echo '<a href="gerenciar_grupo.php?id_delete_grupo='.htmlspecialchars($informacoes_grupo['id_conversa']).'"> Apagar Grupo </a>';
+    echo '<a href="gerenciar_grupo.php?id_limpar_conversa='.htmlspecialchars($informacoes_grupo['id_conversa']).'&id_conversa='.$id_conversa.'"> Limpar Conversa </a>';
+    echo '<a href="gerenciar_grupo.php?id_delete_grupo='.htmlspecialchars($informacoes_grupo['id_conversa']).'&id_conversa='.$id_conversa.'"> Apagar Grupo </a>';
     // falta fazer o convite de usuários
 echo '</section>';
 ?>

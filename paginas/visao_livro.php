@@ -33,9 +33,118 @@ echo '.lista-comentarios{
 .lista-comentarios.expandido .comentario:nth-child(n + 4) {
     display: block;
 }
-';
+
+.estrelas{
+    display: flex;
+    gap: 5px;
+}
+
+.estrelas button{
+    border: none;
+    background: none;
+    font-size: 40px;
+    color: #ccc;
+    cursor: pointer;
+    padding: 0;
+}
+
+.estrelas button.ativa{
+    background-image: linear-gradient(
+        to right,
+        gold 0%,
+        gold var(--preenchimento),
+        #ccc var(--preenchimento),
+        #ccc 100%
+    );
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: transparent;
+}
+'
+
+;
 
 echo '</style>';
+
+// Processa a avaliação antes de carregar os dados exibidos na página.
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && array_key_exists('avaliacao', $_POST)) {
+    $valor_recebido = $_POST['avaliacao'];
+
+    // A nota deve ser um único valor numérico, nunca um array.
+    if (!is_string($valor_recebido) || !is_numeric($valor_recebido)) {
+        http_response_code(400);
+        exit('Avaliação inválida. Selecione uma nota entre 0,5 e 5 estrelas.');
+    }
+
+    $nota_avaliacao = (float) $valor_recebido;
+
+    if (
+        $nota_avaliacao < 0.5 ||
+        $nota_avaliacao > 5 ||
+        abs(($nota_avaliacao * 2) - round($nota_avaliacao * 2)) > 0.00001
+    ) {
+        http_response_code(400);
+        exit('Avaliação inválida. Selecione uma nota entre 0,5 e 5 estrelas.');
+    }
+
+    $select_avaliacoes = "
+        select nota_avaliacao
+        from avaliacao
+        where id_user = :id_user
+          and categoria_avaliada = 'livro'
+          and id_avaliado = :id_livro
+    ";
+    $stmt_select_avaliacoes = $conn->prepare($select_avaliacoes);
+    $stmt_select_avaliacoes->execute([
+        ':id_user' => $id_user,
+        ':id_livro' => $id_livro
+    ]);
+    $avaliacao_existente = $stmt_select_avaliacoes->fetch(PDO::FETCH_ASSOC);
+
+    if (!$avaliacao_existente) {
+        $sql_avaliacao = "
+            insert into avaliacao
+                (id_user, categoria_avaliada, id_avaliado, nota_avaliacao)
+            values
+                (:id_user, 'livro', :id_livro, :nota_avaliacao)
+        ";
+    } else {
+        $sql_avaliacao = "
+            update avaliacao
+            set nota_avaliacao = :nota_avaliacao
+            where id_user = :id_user
+              and categoria_avaliada = 'livro'
+              and id_avaliado = :id_livro
+        ";
+    }
+
+    $stmt_salvar_avaliacao = $conn->prepare($sql_avaliacao);
+    $stmt_salvar_avaliacao->execute([
+        ':nota_avaliacao' => $nota_avaliacao,
+        ':id_user' => $id_user,
+        ':id_livro' => $id_livro
+    ]);
+
+    // Redireciona para recalcular a média e evitar reenvio do formulário.
+    header('Location: visao_livro.php?id_livro=' . urlencode((string) $id_livro));
+    exit();
+}
+
+// Recupera a nota que o usuário já deu a este livro, se existir.
+$stmt_nota_usuario = $conn->prepare("
+    select nota_avaliacao
+    from avaliacao
+    where id_user = :id_user
+      and categoria_avaliada = 'livro'
+      and id_avaliado = :id_livro
+");
+$stmt_nota_usuario->execute([
+    ':id_user' => $id_user,
+    ':id_livro' => $id_livro
+]);
+$nota_usuario = $stmt_nota_usuario->fetchColumn();
+
 
 $select_livro = "select * from livro where id_livro = :id_livro and visibilidade = 'publico' ";
 $stmt = $conn->prepare($select_livro);
@@ -57,12 +166,12 @@ $stmt->execute([
 $generos = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 $select_avaliacao = "select count(*) as numero_avaliacoes, AVG(nota_avaliacao) as avaliacao_media 
-from comentario where categoria_curtida = 'livro' and id_coisocurtido = :id_livro";
+from avaliacao where categoria_avaliada = 'livro' and id_avaliado = :id_livro";
 $stmt_avaliacao = $conn->prepare($select_avaliacao);
 $stmt_avaliacao->execute([
     ":id_livro" => $id_livro
 ]);
-$avaliacao = $stmt_avaliacao->fetch(PDO::FETCH_ASSOC);
+$dados_avaliacao = $stmt_avaliacao->fetch(PDO::FETCH_ASSOC);
 
 echo '<section class="livro-externo">';
     echo '<h2>'.$livro['titulo_livro'].'<h2>';
@@ -79,13 +188,31 @@ echo '<section class="livro-externo">';
     foreach($generos as $genero){
         echo $genero['nome_preferencia'].'  ';
     }
-    echo 'Avaliação média: '.$avaliacao['avaliacao_media'].' // '.$avaliacao['numero_avaliacoes'].'<br>';
+    $avaliacao_media = number_format((float)($dados_avaliacao['avaliacao_media'] ?? 0), 2, ',', '.');
+    echo 'Avaliação média: '.$avaliacao_media.' // '.$dados_avaliacao['numero_avaliacoes'].'<br>';
     if($livro['origem'] == 'interna'){
     echo '<a href="ler_Livro.php?id_livro='.$livro['id_livro'].'"> Ler Livro </a>';
     } else if($livro['origem'] == 'externa'){
     // echo '<a href="ler_Livro.php?id_livro='.$livro['id_livro'].'"> Ler Livro </a>'; 
     // MANDAR PRA API
     }
+    echo '<form action="#" method="POST">';
+    echo '<label for="avaliacao"> Avalie este Livro </label>';
+    echo '<div class="estrelas" id="estrelas">';
+    echo '<button type="button" data-estrela="1"> ★ </button>';
+    echo '<button type="button" data-estrela="2"> ★ </button>';
+    echo '<button type="button" data-estrela="3"> ★ </button>';
+    echo '<button type="button" data-estrela="4"> ★ </button>';
+    echo '<button type="button" data-estrela="5"> ★ </button>';
+    echo '</div>';
+    echo '<input type="hidden" name="avaliacao" id="avaliacao" value="0">';
+    echo '<p id="valor_avaliacao"> 0 estrelas </p>';
+    echo '<button type="submit"> Enviar Avaliação </button>';
+    echo '</form>';
+    echo '<br><br>';
+    echo '<button type="button" id="botao_curtida"> Curtir </button>';
+    echo '<div class="num-curtidas" id="num_curtidas"> </div>';
+    echo '<a href="fazer_denuncia.php?id_denunciado='.htmlspecialchars($livro['id_livro']).'&tipo_denuncia=livro"> Denunciar </a>';
     echo '<a href="catalogo.php"> Voltar </a>';
 echo '</section>';
 // echo '<section class="resenhas">';
@@ -109,7 +236,7 @@ echo '</section>';
 echo '<section class="comentarios">';
 
     $select_comentarios = "select 
-    c.comentario, c.nota_avaliacao, c.criado_em, u.nome_completo, u.username 
+    c.id_comentario, c.comentario, c.nota_avaliacao, c.criado_em, u.nome_completo, u.username 
     from comentario c
     inner join usuario u on u.id_user = c.id_user
     where c.categoria_curtida = 'livro' and id_coisocurtido = :id_livro
@@ -130,6 +257,7 @@ foreach($comentarios as $comentario){
     echo htmlspecialchars($comentario['comentario']);
     echo htmlspecialchars($comentario['criado_em']);
     echo '<br>';
+    echo '<a href="fazer_denuncia.php?id_denunciado='.htmlspecialchars($comentario['id_comentario']).'&tipo_denuncia=comentario"> Denunciar </a>';
     echo '</div>';
 }
 echo '</div>';
@@ -151,6 +279,7 @@ inner join livro l on l.id_livro = r.id_livro
 inner join usuario u on u.id_user = r.id_user
 where r.id_livro = :id_livro
 order by random()
+limit 3
 ";
 $stmt_resenhas = $conn->prepare($select_resenhas);
 $stmt_resenhas->execute([
@@ -179,9 +308,11 @@ foreach($resenhas as $resenha){
     foreach($paragrafos as $paragrafo){
         echo '<p>'.$paragrafo['texto_paragrafo_resenha'].'</p>';
     }
+    echo '<br>';
+    echo '<a href="fazer_denuncia.php?id_denunciado='.htmlspecialchars($resenha['id_resenha']).'&tipo_denuncia=resenha"> Denunciar </a>';
 }
+echo '<a href="mais_resenhas.php?id_livro='.htmlspecialchars($id_livro).'"> Ver mais resenhas </a>';
 echo '</section>';
-
 ?>
 <script>
 const btnComentarios = document.getElementById('btn-comentarios');
@@ -214,7 +345,7 @@ formComentario.addEventListener('submit', async (event) => {
 
     const dados = new URLSearchParams();
 
-    dados.append('id_livro', idLivro);
+    dados.append('id_curtido', idLivro);
     dados.append('comentario', comentario);
     dados.append('categoria_curtida', categoriaCurtida);
 
@@ -241,7 +372,95 @@ formComentario.addEventListener('submit', async (event) => {
     }
 });
 
-</script>
 
-<?php
-?>
+const estrelas = document.querySelectorAll("#estrelas button");
+const inputAvaliacao = document.querySelector("#avaliacao");
+const textoAvaliacao = document.querySelector("#valor_avaliacao");
+
+let avaliacaoAtual = <?= json_encode($nota_usuario !== false ? (float) $nota_usuario : 0) ?>;
+
+estrelas.forEach((estrela) => {
+    estrela.addEventListener("click", (evento) => {
+        const retangulo = estrela.getBoundingClientRect();
+        const posicao = evento.clientX - retangulo.left;
+        const metade = posicao < retangulo.width / 2;
+        const numeroEstrela = Number(estrela.dataset.estrela);
+
+        avaliacaoAtual = metade ? numeroEstrela - 0.5 : numeroEstrela;
+        atualizarEstrelas();
+    });
+});
+
+function atualizarEstrelas(){
+    estrelas.forEach((estrela) => {
+        const numero = Number(estrela.dataset.estrela);
+        console.log(numero);
+        let preenchimento = 0;
+        if(avaliacaoAtual >= numero){
+            preenchimento = 100;
+        } else if(avaliacaoAtual >= numero - 0.5){
+            preenchimento = 50;
+        }
+        estrela.style.setProperty("--preenchimento", preenchimento + "%");
+        estrela.classList.toggle("ativa", preenchimento > 0);
+    });
+    inputAvaliacao.value = avaliacaoAtual;
+    textoAvaliacao.textContent = avaliacaoAtual + (avaliacaoAtual === 1 ? " estrela" : " estrelas");
+}
+
+// Aplica a aparência inicial e mantém as estrelas preenchidas ao carregar a página.
+atualizarEstrelas();
+
+const coracao = document.querySelector("#botao_curtida");
+const numCurtidas = document.querySelector("#num_curtidas");
+const idUser = <?= $id_user ?>;
+
+coracao.addEventListener('click', async (curtir) => {
+    const dados_curtida = new URLSearchParams();
+    dados_curtida.append('id_user', idUser);
+    dados_curtida.append('id_coisocurtido', idLivro);
+    dados_curtida.append('categoria_curtido', 'livro');
+    dados_curtida.append('action', 'curtida');
+    try{
+        const respostaCurtida = await fetch('curtida.php', {
+            method: 'POST',
+            body: dados_curtida
+        });
+        const resultadoCurtida = await respostaCurtida.json();
+        console.log(resultadoCurtida);
+        buscarCurtidas();
+    } catch(erro){
+        console.error(erro);
+        alert("Erro");
+    }
+});
+
+async function buscarCurtidas(){
+    const dados_elemento = new URLSearchParams();
+    dados_elemento.append('id_user', idUser);
+    dados_elemento.append('categoria_curtido', 'livro');
+    dados_elemento.append('id_coisocurtido', idLivro);
+    dados_elemento.append('action', 'num_curtidas');
+    try{
+        const respostaElemento = await fetch('curtida.php', {
+            method: 'POST',
+            body: dados_elemento
+        });
+        const resultadoElemento = await respostaElemento.json();
+        const totalCurtidas = Number(resultadoElemento.total);
+        atualizarCurtidas(totalCurtidas);
+    } catch(erro2){
+        // console.error(erro2);
+        // alert("Erro");
+    }
+}
+
+function atualizarCurtidas(totalCurtidas){
+    numCurtidas.innerHTML = totalCurtidas+' curtidas';
+}
+
+buscarCurtidas();
+
+
+
+</script>

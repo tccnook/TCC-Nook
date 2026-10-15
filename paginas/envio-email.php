@@ -38,8 +38,11 @@ if($stmt->rowCount()>0){
         </form>
         <?php
             if (isset($_POST['enviar-email'])){
+                if(isset($_GET['tipo']) && $_GET['tipo'] == 'admin'){
+                    $link = 'https://localhost/tcc-development/paginas/redefine-senha.php?token='.$token.'&&tipo=admin';
+                }else{
                 $link = 'http://localhost/tcc-development/paginas/redefine-senha.php?token='. $token;
-
+                }
                 $mail = new PHPMailer(true);
 
                 try{

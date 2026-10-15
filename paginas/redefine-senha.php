@@ -42,7 +42,11 @@ if($stmt->rowCount()>0){
                 if($senha == $senha2){
 
                 $senhahash = password_hash($senha, PASSWORD_DEFAULT);
+                if(isset($_GET['tipo']) && $_GET['tipo'] == 'admin'){
+                    $sql = 'update admin set senha=? where id_admin=?';
+                } else{
                 $sql = 'update usuario set senha=? where id_user=?;';
+                }
                 $stmt = $db->conectar()->prepare($sql);
                 $stmt->execute([$senhahash, $resultado['id_user']]);
 

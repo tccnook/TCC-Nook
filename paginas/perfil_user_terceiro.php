@@ -176,7 +176,8 @@ echo 'Autor mais lido: <br>';
 echo $autor_mais_lido['nome_autor'].' - '.$autor_mais_lido['quantidade_autores'].' livros <br>';
 echo 'Maio livro lido: <br>';
 echo $maior_livro_lido['titulo_livro'].' - '.$maior_livro_lido['quantidade_capitulos'].' capítulo <br>';
-
+echo '<br>';
+echo '<a href="fazer_denuncia.php?id_denunciado='.htmlspecialchars($id_user_terceiro).'&tipo_denuncia=usuario"> Denunciar </a>';
 
 echo '<a href="paginaprincipal.php"> Home </a>';
 echo '<a href="catalogo.php"> Catálogo </a>';

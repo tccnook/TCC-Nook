@@ -18,23 +18,34 @@ $nome = $_GET['nome'] ?? null;
 
 $select_conversas = "
 select * from (
-select distinct_on (c.id_conversa)
+select distinct on (c.id_conversa)
 c.id_conversa, c.nome_conversa, c.tipo, c.foto_conversa_url, m.id_mensagem, m.id_envio, m.conteudo, m.criacao, u.username
 from conversa c
 inner join conversa_participante cp on cp.id_conversa = c.id_conversa and cp.id_user = :id_user
-left join mensagem m on m.id_conversa = c.id_conversa
+left join mensagem m on m.id_conversa = c.id_conversa and m.delatado_em is null
 left join usuario u on u.id_user = m.id_envio
+where c.nome_conversa ilike :nome
 order by c.id_conversa, m.criacao desc
 ) as ultimas 
 order by criacao desc
 ";
+
+// $select_conversa = "
+// select c.id_conversa, c.nome_conversa, c.tipo, c.foto_conversa_url, m.id_mensagem, m.id_envio, m.conteudo, m.criacao, u.username
+// from conversa c
+// inner join conversa_participante cp on cp.id_conversa = c.id_conversa and cp.id_user = :id_user
+// left join mensagem m on m.id_conversa = c.id_conversa
+// left join usuario u on u.id_user = m.id_envio
+// order by c.id_conversa, m.criacao desc
+// ";
+
+try{
 $stmt_conversas = $conn->prepare($select_conversas);
 $stmt_conversas->execute([
     ":id_user" => $id_user,
     ":nome" => '%'.$nome.'%'
 ]);
-
-$conversas = $stmt_conversas->fetchAll(PDO:: FETCH_ASSOC);
+$conversas = $stmt_conversas->fetchAll(PDO::FETCH_ASSOC);
 
 header('Content-Type: application/json; charset=UTF-8');
 
@@ -42,5 +53,11 @@ echo json_encode([
     'sucesso' => true,
     'conversas' => $conversas
 ]);
+} catch(PDOException $e){
+    echo json_encode([
+        'sucesso' => false,
+        'mensagem' => $e->getMessage()
+    ]);
+}
 
 ?>

@@ -16,11 +16,11 @@ if(!isset($_SESSION['id_user'])){
 
 $id_user = $_SESSION['id_user'];
 
-$id_livro = $_POST['id_livro'] ?? null;
+$id_curtido = $_POST['id_curtido'] ?? null;
 $comentario = $_POST['comentario'] ?? '';
 $categoria = $_POST['categoria_curtida'] ?? null;
 
-if(!$id_livro || $comentario == '' || !$categoria){
+if(!$id_curtido || $comentario == '' || !$categoria){
     echo json_encode([
         'sucesso' => false,
         'mensagem' => 'Dados incompletos.'
@@ -34,14 +34,14 @@ try{
 
     $insert_comentario = "
     insert into comentario (id_user, categoria_curtida, id_coisocurtido, comentario) values
-    (:id_user, :categoria, :id_livro, :comentario);
+    (:id_user, :categoria, :id_curtido, :comentario);
     ";
 
     $stmt = $conn->prepare($insert_comentario);
     $stmt->execute([
         ":id_user" => $id_user,
         ":categoria" => $categoria,
-        ":id_livro" => $id_livro,
+        ":id_curtido" => $id_curtido,
         ":comentario" => $comentario
     ]);
     echo json_encode([

@@ -56,7 +56,7 @@ session_start();
                         $_SESSION["id_user"] = $usuario['id_user'];    
                         header("location:perfil_user_proprio.php");
                     } else{
-                        echo '<script> alert("Dados Inválidos, tente novamente"); </script>';
+                    echo '<script> alert("Dados Inválidos, tente novamente"); </script>';
                     }
 
                 

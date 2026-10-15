@@ -61,9 +61,9 @@ $participantes_grupo = $stmt_participantes->fetchAll(PDO::FETCH_ASSOC);
 <body>
     <?php
     if ($informacoes_grupo['tipo'] == 'grupo'){
-     echo '<a href="gerenciar_grupo.php?id_conversa='.htmlspecialchars($id_conversa).'>';
+     echo '<a href="gerenciar_grupo.php?id_conversa='.htmlspecialchars($id_conversa).'">';
     } else {
-        echo '<a href="gerenciar_conversa.php?id_conversa='.htmlspecialchars($id_conversa).'';
+        echo '<a href="gerenciar_conversa.php?id_conversa='.htmlspecialchars($id_conversa).'">';
     } 
     ?>
     <header>

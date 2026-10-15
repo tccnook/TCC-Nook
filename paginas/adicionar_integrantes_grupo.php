@@ -35,6 +35,17 @@ echo '</div>';
     const idConversa = <?= json_encode($id_conversa) ?>;
 
     campoPesquisa.addEventListener('input', pesquisarAmigos);
+    async function adicionarAmigo(event){
+            const idAdicionar = event.target.dataset.id;
+
+            const resposta2 = await fetch(
+                `adicionar_integrantes_grupo_2.php?id_adicionar=${idAdicionar}&id_conversa=${idConversa}`
+            );
+
+            const dados = await resposta2.json();
+
+            console.log(dados);
+        }
 
     async function pesquisarAmigos(){
         const nome = campoPesquisa.value;
@@ -49,34 +60,22 @@ echo '</div>';
             return;
         }
 
-        listarAmigos.innerHTML = '';
+        listaAmigos.innerHTML = '';
 
         dados.amigos.forEach(amigo => {
 
-        listarAmigos.innerHTML += `
+        listaAmigos.innerHTML += `
         <section class="amigo">
         <img src="${amigo.foto_perfil_url}" width="50px" height="auto">
         ${amigo.username}
-        <button class="btn-adicionar-amigo" data-id="${amigo.id_following}"
+        <button class="btn-adicionar-amigo" data-id="${amigo.id_following}"> Adicionar </button>
         </section>
-        </a>
         `;
 
         document.querySelectorAll('.btn-adicionar-amigo').forEach(botao => {
             botao.addEventListener('click', adicionarAmigo);
         });
 
-        async functino adicionarAmigo(event){
-            const idAdicionar = event.target.dataset.id;
-
-            const resposta2 = await fetch(
-                `adicionar_integrantes_grupo_2.php?id_adicionar=${idAdicionar}&id_conversa=${idConversa}`
-            );
-
-            const dados = await resposta2.json();
-
-            console.log(dados);
-        }
     });
 
 }
@@ -85,5 +84,5 @@ echo '</div>';
 </script>
 <?php
 
-echo '<a href="chat.php?id_conversa='.htmlspecialchars($id_conversa).'> Voltae </a>';
+echo '<a href="chat.php?id_conversa='.htmlspecialchars($id_conversa).'"> Voltar </a>';
 ?>
