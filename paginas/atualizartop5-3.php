@@ -1,4 +1,11 @@
 <?php
+session_start();
+if (!isset($_SESSION['id_user'])) {
+    header('Location: login.php');
+    exit();
+}
+header('Location: perfil.php?aba=visao-geral&top5=1');
+exit();
 
 session_start();
 
@@ -50,7 +57,7 @@ $stmt->execute([
 }
 
 
-header("location:perfil_user_proprio.php");
+header("location:visao-geral.php");
 
 } else{
     $id_livro_substituido = $_GET['id_livro_substituido'];
@@ -68,7 +75,7 @@ header("location:perfil_user_proprio.php");
         echo 'Erro: '.$e->getMessage();
     }
 
-    header("location:perfil_user_proprio.php");
+    header("location:visao-geral.php");
 
 }
 

@@ -1,16 +1,61 @@
 <?php
-    session_start();
-    require_once('conexao.php');
 
-    $db = new Database();
-    $conn = $db->conectar();
+ require_once('header.php');
+    // Incluído pelo perfil.php ($conn, $id_user e $aba já existem)
 
-    if(!isset($_SESSION['id_user'])){
-        header('location:login.php');
-        exit();
+    function contar($conn, $sql, $id_user){
+        $stmt = $conn->prepare($sql);
+        $stmt->execute([":id_user" => $id_user]);
+        return $stmt->fetchColumn();
     }
 
-    $id_user = $_SESSION['id_user'];
+    // salva a imagem enviada e devolve o caminho que vai pro banco
+    function salvarImagem($arquivo, $pasta, &$erro){
+        if($arquivo === null || $arquivo['error'] === UPLOAD_ERR_NO_FILE){
+            return null;
+        }
+
+        if($arquivo['error'] !== UPLOAD_ERR_OK){
+            $erro = "Erro ao enviar a imagem (código " . $arquivo['error'] . "). Ela pode ser grande demais.";
+            return null;
+        }
+
+        $info = getimagesize($arquivo['tmp_name']);
+        $tipos = ['image/jpeg' => 'jpg', 'image/png' => 'png', 'image/webp' => 'webp'];
+
+        if(!$info || !isset($tipos[$info['mime']])){
+            $detectado = $info ? $info['mime'] : 'não reconhecido';
+            $erro = "Envie uma imagem JPG, PNG ou Webp. (arquivo: " . $arquivo['name'] . ", tipo detectado: " . $detectado . ", tamanho: " . $arquivo['size'] . " bytes)";
+            return null;
+        }
+
+        $destino = __DIR__ . '/../' . $pasta;
+
+        if(!is_dir($destino)){
+            mkdir($destino, 0775, true);
+        }
+
+        $nome = bin2hex(random_bytes(16)) . "." . $tipos[$info['mime']];
+
+        if(!move_uploaded_file($arquivo['tmp_name'], $destino . $nome)){
+            $erro = "Não foi possível salvar a imagem em " . $pasta . " (veja se a pasta existe e tem permissão de escrita).";
+            return null;
+        }
+
+        return $pasta . $nome;
+    }
+
+    function apagarImagem($caminho){
+        if(empty($caminho)){
+            return;
+        }
+
+        $caminho_completo = __DIR__ . '/../' . $caminho;
+
+        if(file_exists($caminho_completo)){
+            unlink($caminho_completo);
+        }
+    }
 
     $select_usuario = "select * from usuario where id_user = :id_user;";
     $stmt = $conn->prepare($select_usuario);
@@ -22,169 +67,36 @@
     $stmt->execute([":id_user" => $id_user]);
     $conta = $stmt->fetch(PDO::FETCH_ASSOC);
 
-    $select_seguidores = "select COUNT(*) from follow where id_following = :id_user;";
-    $stmt = $conn->prepare($select_seguidores);
-    $stmt->execute([":id_user" => $id_user]);
-    $seguidores = $stmt->fetch(PDO::FETCH_ASSOC);
+    $seguidores = contar($conn, "select COUNT(*) from follow where id_following = :id_user;", $id_user);
+    $seguindo   = contar($conn, "select COUNT(*) from follow where id_follower = :id_user;", $id_user);
+    $resenhas   = contar($conn, "select COUNT(*) from resenha where id_user = :id_user;", $id_user);
+    $lidos      = contar($conn, "select COUNT(*) from livros_lidos where id_user = :id_user;", $id_user);
 
-    $select_seguindo = "select COUNT(*) from follow where id_follower = :id_user;";
-    $stmt = $conn->prepare($select_seguindo);
-    $stmt->execute([":id_user" => $id_user]);
-    $seguindo = $stmt->fetch(PDO::FETCH_ASSOC);
+    $erro_perfil = '';
 
-    $select_resenhas = "select COUNT(*) from resenha where id_user = :id_user;";
-    $stmt = $conn->prepare($select_resenhas);
-    $stmt->execute([":id_user" => $id_user]);
-    $resenhas = $stmt->fetch(PDO::FETCH_ASSOC);
-
-    $select_lidos = "select COUNT(*) from livros_lidos where id_user = :id_user;";
-    $stmt = $conn->prepare($select_lidos);
-    $stmt->execute([":id_user" => $id_user]);
-    $lidos = $stmt->fetch(PDO::FETCH_ASSOC);
-?>
-
-<!DOCTYPE html>
-<html lang="pt-br">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Perfil</title>
-</head>
-<body>
-    <h1>Cabeçalho do Perfil</h1>
-    <main>
-        <section>
-            <?php
-                if(empty($conta['banner_url'])){
-                    echo "Adicione um banner!";
-                } else {
-                    echo "<img src='../".htmlspecialchars($conta['banner_url'])."' alt='Banner'>";
-                }
-            ?>
-        </section>
-        <?php
-            if(empty($conta['foto_perfil_url'])){
-                echo "Adicione uma foto de perfil!";
-            } else {
-                echo "<img src='../".htmlspecialchars($conta['foto_perfil_url'])."' alt='Foto de Perfil'>";
-            }
-        ?>
-        
-        <h2><?= htmlspecialchars($usuario['nome_completo']);?></h2>
-        <p>@<?= htmlspecialchars($usuario['username']);?></p>
-
-        <?php
-            if(empty($conta['bio'])){
-                echo "Adicione uma bio!";
-            } else {
-                echo "<p>".htmlspecialchars($conta['bio'])."</p>";
-            }
-        ?>
-
-        <a href="config_user.php"><button>Configurações</button></a>
-
-        <section>
-            <button type="button" id="btnEditar">
-                Editar perfil
-            </button>
-
-            <dialog id="modalEditar">
-
-                <h2>Editar perfil</h2>
-
-                <form action="#" method="POST" enctype="multipart/form-data"><!--colocar coiso de formato de imagem-->
-
-                    <label for="foto_perfil">Foto de perfil</label><br>
-                    <input type="file" name="foto_perfil" accept="image/jpeg,image/png"><br>
-
-                    <label for="banner">Banner do perfil</label><br>
-                    <input type="file" name="banner" accept="image/jpeg,image/png"><br>
-
-                    <label for="bio">Bio</label><br>
-                    <textarea name="bio"><?= htmlspecialchars($conta['bio'] ?? '') ?></textarea><br>
-
-                    <select name="visibilidade">
-                        <option value="publico" 
-                            <?php if ($conta['visibilidade'] === 'publico') echo 'selected'; ?>>
-                            Público
-                        </option>
-
-                        <option value="privado" 
-                            <?php if ($conta['visibilidade'] === 'privado') echo 'selected'; ?>>
-                            Privado
-                        </option>
-                    </select><br><br>
-
-                    <button type="submit" name="salvar">Salvar</button>
-                    <button type="button" id="btnFechar">Cancelar</button>
-
-                </form>
-
-            </dialog>
-
-            <button>Compartilhar</button><!--fazer isso depois-->
-        </section>
-
-        <p><?=$seguidores['count']?> Seguidores</p>
-        <p><?=$seguindo['count']?> Seguindo</p>
-        <p><?=$resenhas['count']?> Resenhas</p>
-        <p><?=$lidos['count']?> Livros lidos</p>
-    </main>
-    <?php
+    if(isset($_POST['salvar'])){
         $foto_perfil_url = $conta['foto_perfil_url'];
         $banner_url = $conta['banner_url'];
-        $bio = $conta['bio'];
+        $bio = trim($_POST['bio'] ?? '');
+        $visibilidade = $_POST['visibilidade'] ?? 'publico';
 
-        if(isset($_POST['salvar'])){
-            $foto_perfil = $_FILES['foto_perfil'];
-            $banner = $_FILES['banner'];
-            $bio = $_POST['bio'];
-            $visibilidade = $_POST['visibilidade'] ?? 'publico';
+        if($visibilidade !== 'publico' && $visibilidade !== 'privado'){
+            $visibilidade = 'publico';
+        }
 
-            if($visibilidade !== 'publico' && $visibilidade !== 'privado'){
-                $visibilidade = 'publico';
+        $nova_foto = salvarImagem($_FILES['foto_perfil'] ?? null, 'img/foto_perfil/', $erro_perfil);
+        $novo_banner = salvarImagem($_FILES['banner'] ?? null, 'img/banner_perfil/', $erro_perfil);
+
+        // só troca as imagens (e apaga as antigas) se nenhum upload deu erro
+        if($erro_perfil === ''){
+            if($nova_foto !== null){
+                apagarImagem($foto_perfil_url);
+                $foto_perfil_url = $nova_foto;
             }
 
-            if (isset($_FILES['foto_perfil']) && $_FILES['foto_perfil']['error'] === UPLOAD_ERR_OK){
-
-            if(!empty($conta['foto_perfil_url'])){
-                $caminho_antigo_foto = __DIR__ . '/../' . $conta['foto_perfil_url'];
-
-                if(file_exists($caminho_antigo_foto)){
-                    unlink($caminho_antigo_foto);
-                }
-            }
-
-                $extensao_foto = strtolower(pathinfo($foto_perfil['name'], PATHINFO_EXTENSION));
-                $nome_foto = bin2hex(random_bytes(16)) . "." . $extensao_foto;
-                $pasta_foto = __DIR__ . '/../img/foto_perfil/';
-                $caminho_banco_foto = 'img/foto_perfil/' . $nome_foto;
-                $foto_perfil_url = $caminho_banco_foto;
-                $caminho_completo_foto = $pasta_foto . $nome_foto;
-
-                move_uploaded_file($foto_perfil['tmp_name'], $caminho_completo_foto);
-
-            }
-
-            if (isset($_FILES['banner']) && $_FILES['banner']['error'] === UPLOAD_ERR_OK){
-
-                if(!empty($conta['banner_url'])){
-                    $caminho_antigo_banner = __DIR__ . '/../' . $conta['banner_url'];
-
-                    if(file_exists($caminho_antigo_banner)){
-                        unlink($caminho_antigo_banner);
-                    }
-                }
-
-                $extensao_banner = strtolower(pathinfo($banner['name'], PATHINFO_EXTENSION));
-                $nome_banner = bin2hex(random_bytes(16)) . "." . $extensao_banner;
-                $pasta_banner = __DIR__ . '/../img/banner_perfil/';
-                $caminho_banco_banner = 'img/banner_perfil/' . $nome_banner;
-                $banner_url = $caminho_banco_banner;
-                $caminho_completo_banner = $pasta_banner . $nome_banner;
-
-                move_uploaded_file($banner['tmp_name'], $caminho_completo_banner);
-
+            if($novo_banner !== null){
+                apagarImagem($banner_url);
+                $banner_url = $novo_banner;
             }
 
             $editar = "update conta set foto_perfil_url = :foto_perfil_url, visibilidade = :visibilidade, bio = :bio, banner_url = :banner_url where id_user = :id_user;";
@@ -198,27 +110,252 @@
                     ":id_user" => $id_user
                 ]);
 
-                header("Location: " . $_SERVER['PHP_SELF']);
+                header("Location: perfil.php?aba=" . urlencode($aba));
                 exit();
 
             } catch (PDOException $e) {
-                echo "Erro a atualizar dados: ". $e->getMessage();
+                error_log($e->getMessage());
+                $erro_perfil = "Não foi possível atualizar o perfil. Tente novamente.";
             }
         }
-    
-    ?>
-    <script>
-        const btnEditar = document.getElementById("btnEditar");
-        const btnFechar = document.getElementById("btnFechar");
-        const modal = document.getElementById("modalEditar");
+    }
 
-        btnEditar.addEventListener("click", function () {
-            modal.showModal();
-        });
+    $publico = $conta['visibilidade'] === 'publico';
+?>
 
-        btnFechar.addEventListener("click", function () {
-            modal.close();
-        });
-    </script>
-</body>
-</html>
+<section class="main">
+
+    <section class="perfil-banner">
+        <?php if(empty($conta['banner_url'])): ?>
+            <section class="sem-banner" aria-label="Banner do perfil"></section>
+        <?php else: ?>
+            <img src="../<?= htmlspecialchars($conta['banner_url'], ENT_QUOTES, 'UTF-8') ?>" alt="Banner do perfil">
+        <?php endif; ?>
+    </section>
+
+    <section class="perfil-header">
+
+        <section class="perfil-avatar">
+            <?php if(empty($conta['foto_perfil_url'])): ?>
+                <section class="sem-foto-perfil" role="img" aria-label="Sem foto de perfil">
+                    <i data-lucide="camera"></i>
+                </section>
+            <?php else: ?>
+                <img class="com-foto-perfil" src="../<?= htmlspecialchars($conta['foto_perfil_url']) ?>" alt="Foto de perfil">
+            <?php endif; ?>
+        </section>
+
+        <section class="perfil-content">
+
+            <section class="user-names">
+                <h1><?= htmlspecialchars($usuario['nome_completo']) ?></h1>
+                <p>@<?= htmlspecialchars($usuario['username']) ?></p>
+            </section>
+
+            <section class="bio">
+                <?php if(empty($conta['bio'])): ?>
+                    <p>Adicione uma bio!</p>
+                <?php else: ?>
+                    <p><?= nl2br(htmlspecialchars($conta['bio'])) ?></p>
+                <?php endif; ?>
+
+                <section class="perfil-actions">
+                    <button type="button" id="btnEditar" class="button-perfil">
+                        <i data-lucide="pencil"></i> Editar perfil
+                    </button>
+
+                    <!-- TODO: ação de compartilhar -->
+                    <button type="button" id="btnCompartilhar" class="button-perfil claro">
+                        <i data-lucide="send"></i> Compartilhar
+                    </button>
+
+                    <section class="menu-opcoes">
+                        <button type="button" class="btn-opcoes" aria-label="Mais opções" aria-haspopup="true" aria-expanded="false">
+                            <i data-lucide="ellipsis"></i>
+                        </button>
+
+                        <section class="dropdown-opcoes">
+                            <a href="#">Notificações</a>
+                            <a href="config_user.php">Configurações</a>
+                            <a href="#">Se torne um escritor Nook!</a>
+                        </section>
+                    </section>
+                </section>
+            </section>
+
+            <ul class="info-usuario">
+                <li><i data-lucide="users"></i> <strong><?= $seguidores ?></strong> Seguidores</li>
+                <li><i data-lucide="user-check"></i> <strong><?= $seguindo ?></strong> Seguindo</li>
+                <li><i data-lucide="square-pen"></i> <strong><?= $resenhas ?></strong> Resenhas</li>
+                <li><i data-lucide="library"></i> <strong><?= $lidos ?></strong> Livros lidos</li>
+            </ul>
+
+        </section>
+    </section>
+
+    <dialog id="modalEditar" <?= $erro_perfil !== '' ? 'data-abrir' : '' ?>>
+        <button type="button" class="btn-fechar" data-fechar aria-label="Fechar">
+            <i data-lucide="x"></i>
+        </button>
+
+        <h2>Editar perfil</h2>
+        <p class="subtitulo">Atualize suas informações e personalize o seu perfil!</p>
+
+        <?php if($erro_perfil !== ''): ?>
+            <p class="erro-form" role="alert"><?= htmlspecialchars($erro_perfil) ?></p>
+        <?php endif; ?>
+
+        <form action="" method="POST" enctype="multipart/form-data" class="form-perfil">
+
+            <!-- prévia do perfil -->
+            <aside class="previa">
+
+                <section class="previa-banner" id="previaBanner" style="<?= empty($conta['banner_url']) ? '' : 'background-image:url(&quot;../' . htmlspecialchars($conta['banner_url'], ENT_QUOTES, 'UTF-8') . '&quot;)' ?>">
+                    <input type="file" id="banner" name="banner" accept="image/jpeg,image/png,image/webp" class="sr-only">
+                    <label for="banner" class="btn-alterar"><i data-lucide="camera"></i> Alterar banner</label>
+                </section>
+
+                <section class="previa-foto">
+                    <section class="previa-avatar">
+                        <img id="previaFoto" class="avatar-previa" alt="Prévia da foto de perfil" <?= empty($conta['foto_perfil_url']) ? 'hidden' : 'src="../' . htmlspecialchars($conta['foto_perfil_url']) . '"' ?>>
+                        <section id="previaSemFoto" class="avatar-previa" <?= empty($conta['foto_perfil_url']) ? '' : 'hidden' ?>></section>
+                    </section>
+
+                    <input type="file" id="foto_perfil" name="foto_perfil" accept="image/jpeg,image/png,image/webp" class="sr-only">
+                    <label for="foto_perfil" class="btn-alterar"><i data-lucide="camera"></i> Alterar foto</label>
+                </section>
+
+                <section class="previa-info">
+                    <h3><?= htmlspecialchars($usuario['nome_completo']) ?></h3>
+                    <p class="user">@<?= htmlspecialchars($usuario['username']) ?></p>
+                    <p class="bio-previa"><?= empty($conta['bio']) ? 'Adicione uma bio!' : nl2br(htmlspecialchars($conta['bio'])) ?></p>
+
+                    <ul class="previa-stats">
+                        <li><strong><?= $seguidores ?></strong> <span>seguidores</span></li>
+                        <li><strong><?= $seguindo ?></strong> <span>seguindo</span></li>
+                        <li><strong><?= $lidos ?></strong> <span>livros lidos</span></li>
+                    </ul>
+
+                    <section class="previa-visib">
+                        <i data-lucide="pen-line"></i>
+                        <section>
+                            <strong>Seu perfil é <?= $publico ? 'público' : 'privado' ?></strong>
+                            <span><?= $publico ? 'Todos podem ver suas informações, leituras e atividade.' : 'Só você pode ver suas informações, leituras e atividade.' ?></span>
+                        </section>
+                    </section>
+                </section>
+
+            </aside>
+
+            <!-- campos -->
+            <section class="campos">
+                <h3>Informações básicas</h3>
+
+                <section class="linha">
+                    <section>
+                        <label for="nome"><i data-lucide="user"></i> Nome de exibição</label>
+                        <section class="campo-icone">
+                            <i data-lucide="user-round"></i>
+                            <input type="text" id="nome" value="<?= htmlspecialchars($usuario['nome_completo']) ?>" disabled>
+                        </section>
+                    </section>
+
+                    <section>
+                        <label for="username">Username</label>
+                        <section class="campo-icone">
+                            <i data-lucide="at-sign"></i>
+                            <input type="text" id="username" value="<?= htmlspecialchars($usuario['username']) ?>" disabled>
+                        </section>
+                    </section>
+                </section>
+
+                <label for="bio"><i data-lucide="notebook-text"></i> Bio</label>
+                <section class="campo-bio">
+                    <textarea id="bio" name="bio" maxlength="200"><?= htmlspecialchars($conta['bio'] ?? '') ?></textarea>
+                    <span class="contador" id="contador"><?= mb_strlen($conta['bio'] ?? '') ?> / 200</span>
+                </section>
+
+                <label for="visibilidade"><i data-lucide="eye"></i> Visibilidade do perfil</label>
+                <select id="visibilidade" name="visibilidade">
+                    <option value="publico" <?= $publico ? 'selected' : '' ?>>Público</option>
+                    <option value="privado" <?= $publico ? '' : 'selected' ?>>Privado</option>
+                </select>
+            </section>
+
+            <section class="form-acoes">
+                <button type="button" class="btn-cancelar" data-fechar>Cancelar</button>
+                <button type="submit" name="salvar" class="button-perfil">Salvar alterações</button>
+            </section>
+
+        </form>
+    </dialog>
+
+</section>
+
+<script>
+    const modal = document.getElementById("modalEditar");
+
+    document.getElementById("btnEditar").addEventListener("click", () => modal.showModal());
+
+    modal.querySelectorAll("[data-fechar]").forEach((botao) => {
+        botao.addEventListener("click", () => modal.close());
+    });
+
+    // reabre o modal se deu erro ao salvar
+    if (modal.hasAttribute("data-abrir")) {
+        modal.showModal();
+    }
+
+    // prévia das imagens escolhidas
+    const previaBanner = document.getElementById("previaBanner");
+    const previaFoto = document.getElementById("previaFoto");
+    const previaSemFoto = document.getElementById("previaSemFoto");
+
+    document.getElementById("banner").addEventListener("change", function () {
+        if (this.files[0]) {
+            previaBanner.style.backgroundImage = `url(${URL.createObjectURL(this.files[0])})`;
+        }
+    });
+
+    document.getElementById("foto_perfil").addEventListener("change", function () {
+        if (this.files[0]) {
+            previaFoto.src = URL.createObjectURL(this.files[0]);
+            previaFoto.hidden = false;
+            previaSemFoto.hidden = true;
+        }
+    });
+
+    // contador da bio
+    const bio = document.getElementById("bio");
+    const contador = document.getElementById("contador");
+
+    bio.addEventListener("input", () => {
+        contador.textContent = bio.value.length + " / 200";
+    });
+
+    // menu de opções
+    const botaoOpcoes = document.querySelector(".btn-opcoes");
+    const dropdown = document.querySelector(".dropdown-opcoes");
+
+    function fecharDropdown() {
+        dropdown.classList.remove("ativo");
+        botaoOpcoes.setAttribute("aria-expanded", "false");
+    }
+
+    botaoOpcoes.addEventListener("click", () => {
+        const aberto = dropdown.classList.toggle("ativo");
+        botaoOpcoes.setAttribute("aria-expanded", aberto);
+    });
+
+    document.addEventListener("click", (e) => {
+        if (!e.target.closest(".menu-opcoes")) {
+            fecharDropdown();
+        }
+    });
+
+    document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") {
+            fecharDropdown();
+        }
+    });
+</script>

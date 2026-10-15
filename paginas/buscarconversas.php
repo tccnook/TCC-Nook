@@ -1,13 +1,17 @@
 <?php
-
 session_start();
+header('Content-Type: application/json; charset=UTF-8');
 
-if(!isset($_SESSION['id_user'])){
-    header("location:login.php");
+if (!isset($_SESSION['id_user'])) {
+    http_response_code(401);
+    echo json_encode(['sucesso' => false, 'mensagem' => 'Faça login para ver conversas.']);
     exit();
 }
 
-$id_user = $_SESSION['id_user'];
+require_once __DIR__ . '/conexao.php';
+$conn = (new Database())->conectar();
+$id_user = (int) $_SESSION['id_user'];
+$termo = trim($_GET['nome'] ?? '');
 
 require_once('conexao.php');
 

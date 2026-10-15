@@ -1,5 +1,6 @@
 <?php
     session_start();
+    ob_start();
     require_once('conexao.php');
 
     $db = new Database();
@@ -36,6 +37,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/TCC-Nook/front-end/css/main.css">
+    <link rel="shortcut icon" href="/TCC-Nook/img/icons/ico-nook/ico-nook.ico" type="image/x-icon">
     <title>Configurações</title>
     <style>
         #foto_vazia{
@@ -52,6 +55,7 @@
     </style>
 </head>
 <body>
+    <?php require_once __DIR__ . '/header.php'; ?>
     <h1>Minha conta</h1>
     <form action="#" method="POST" enctype="multipart/form-data">
         <?php

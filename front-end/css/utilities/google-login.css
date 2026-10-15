@@ -19,5 +19,20 @@
 
 .ico-google {
     width: 15px;
-    border-left: 5px;
+    margin-right: 10px;
+
+}
+
+.division-google-area {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+
+    hr {
+        width: clamp(30px, 15vw, 600px);
+    }
+    span {
+        font-size: 14px;
+    color: #252525;
+    }
 }

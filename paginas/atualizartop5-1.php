@@ -1,4 +1,11 @@
 <?php
+session_start();
+if (!isset($_SESSION['id_user'])) {
+    header('Location: login.php');
+    exit();
+}
+header('Location: perfil.php?aba=visao-geral&top5=1');
+exit();
 
 session_start();
 
@@ -11,7 +18,7 @@ $conn = $db->conectar();
 $id_user = $_SESSION['id_user'];
 
 if(!isset($_POST['atualizartop5'])){
-    header("location:perfil_user_proprio.php");
+    header("location:visao-geral.php");
     exit();
 }
 

@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict EufuD9jDZ2ntyUVvwp3MtJl4Z8XSanyGfbU3srdkkdf4fo0Z6U7j55MB6AEOQIr
+\restrict 6fIR9iEduYZtjrzzm4wCgmpQxWSPFXhdPrQz0o7c1mxCjrPfNR6hPZpySd0zj2e
 
 -- Dumped from database version 18.4
 -- Dumped by pg_dump version 18.4
@@ -445,12 +445,19 @@ CREATE TABLE public.livro (
     nome_autor character varying(100),
     id_user integer,
     sinopse_livro text,
-    capa_url character varying(250),
     data_publi timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
     idioma character varying(90),
     visibilidade character varying(20) DEFAULT 'publico'::character varying NOT NULL,
     origem character varying(20),
     interacao_de character varying(20) DEFAULT 'todos'::character varying,
+    capa_url text,
+    google_books_id character varying(50),
+    link_leitura text,
+    link_compra text,
+    nota_google numeric(2,1),
+    paginas integer,
+    isbn10 character varying(10),
+    isbn13 character varying(13),
     CONSTRAINT livro_visibilidade_check CHECK (((visibilidade)::text = ANY ((ARRAY['publico'::character varying, 'privado'::character varying])::text[])))
 );
 
@@ -979,7 +986,8 @@ CREATE TABLE public.whishbook (
     id integer NOT NULL,
     id_livro integer,
     id_user integer,
-    id_whishlist integer
+    id_whishlist integer,
+    ordem integer
 );
 
 
@@ -1008,7 +1016,10 @@ CREATE TABLE public.whishlist (
     nome_lista character varying(120),
     id_user integer,
     descricao character varying(90),
-    capa character varying(250)
+    visibilidade character varying(10) DEFAULT 'publica'::character varying,
+    tipo_capa character varying(15) DEFAULT 'automatica'::character varying,
+    capa_url character varying(250),
+    data_criacao timestamp without time zone DEFAULT CURRENT_TIMESTAMP
 );
 
 
@@ -1327,12 +1338,12 @@ COPY public.follow_autor (id, id_follower, id_autor, status, data_follow) FROM s
 -- Data for Name: livro; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.livro (id_livro, titulo_livro, resumo_livro, class_ind, nome_autor, id_user, sinopse_livro, capa_url, data_publi, idioma, visibilidade, origem, interacao_de) FROM stdin;
-3	A Semana	""A Semana", de Machado de Assis, re£ne uma s‚rie de cr“nicas publicadas originalmente em jornais, nas quais o autor observa acontecimentos cotidianos, pol¡ticos e sociais de seu tempo. Com uma escrita marcada pela ironia, pelo humor e pela reflexÆo, Machado transforma situa‡äes aparentemente simples em oportunidades para analisar o comportamento humano e as contradi‡äes da sociedade. Ao comentar fatos da vida p£blica e do dia a dia, o autor questiona costumes, valores e atitudes presentes na sociedade brasileira. A obra se destaca pela capacidade de unir cr¡tica social e entretenimento, apresentando uma visÆo inteligente e muitas vezes bem-humorada da realidade.	12	Machado de Assis	\N	""A Semana", de Machado de Assis, re£ne cr“nicas em que o autor aborda acontecimentos cotidianos e questäes sociais e pol¡ticas de sua ‚poca. Com ironia, humor e olhar cr¡tico, Machado transforma fatos comuns em reflexäes sobre a sociedade e o comportamento humano. A obra apresenta um retrato interessante e perspicaz do Brasil de seu tempo.	../img/capas_livros/semana-capa.jpeg	2026-08-10 12:53:45.173089	Portugues-BR	publico	interna	todos
-4	Mensagem	Mensagem, de Fernando Pessoa, ‚ uma obra po‚tica que revisita a hist¢ria e os s¡mbolos de Portugal, destacando figuras como reis, navegadores e her¢is nacionais. Dividido em trˆs partes, o livro apresenta a forma‡Æo, a realiza‡Æo e a queda simb¢lica do imp‚rio portuguˆs, relacionando o passado glorioso do pa¡s a um futuro de renova‡Æo. Por meio de poemas marcados pelo nacionalismo, pelo simbolismo e pelo misticismo, Pessoa reflete sobre o destino de Portugal e sobre a importƒncia de sua identidade hist¢rica. A obra tamb‚m aborda o sonho de um novo per¡odo de grandeza, representado pelo retorno simb¢lico de D. SebastiÆo e pelo surgimento de um novo imp‚rio, agora ligado … cultura e ao esp¡rito	10	JoÆo Pessoa	\N	Mensagem, de Fernando Pessoa, re£ne poemas que celebram e reinterpretam a hist¢ria, os her¢is e os mitos de Portugal. A obra percorre momentos fundamentais da trajet¢ria portuguesa e transforma o passado em uma reflexÆo sobre o destino e o futuro do pa¡s. Entre simbolismo, patriotismo e misticismo, Pessoa constr¢i uma visÆo po‚tica de renascimento e de uma nova grandeza portuguesa.	../img/capas_livros/mensagem-capa.jpeg	2026-08-10 13:06:38.938784	Portugues-BR	publico	interna	todos
-2	A Cartomante	"A Cartomante", de Machado de Assis, conta a hist¢ria de Camilo e Rita, dois amigos que se envolvem em um relacionamento amoroso proibido, apesar de Rita ser casada com Vilela, amigo de Camilo. Com medo de que o marido descubra a trai‡Æo, Rita procura uma cartomante, que lhe garante que nada de ruim acontecer . Camilo inicialmente duvida desse tipo de previsÆo, mas, diante de acontecimentos que despertam seu medo e sua inseguran‡a, tamb‚m acaba recorrendo … cartomante. Ap¢s receber uma previsÆo tranquilizadora, ele segue confiante para encontrar Vilela, sem imaginar o destino que o aguarda. A narrativa combina suspense, ironia e cr¡tica … supersti‡Æo, mostrando como os personagens tentam encontrar seguran‡a em cren‡as diante da incerteza.	12	Machado de Assis	\N	"A Cartomante", de Machado de Assis, acompanha Camilo e Rita, dois amantes que vivem um relacionamento secreto, enquanto Vilela, marido de Rita e amigo de Camilo, come‡a a despertar preocupa‡Æo no casal. Em meio ao medo de serem descobertos, Rita procura uma cartomante em busca de respostas. A partir da¡, a hist¢ria conduz os personagens por uma sequˆncia de tensÆo e acontecimentos inesperados, marcada por suspense, ironia e uma reviravolta surpreendente.	../img/capas_livros/cartomante-capa.jpeg	2026-08-10 12:42:47.362398	Portugues-BR	publico	interna	todos
-1	O Alienista	O Alienista, de Machado de Assis, conta a hist¢ria de SimÆo Bacamarte, um m‚dico que decide estudar a mente humana e compreender os limites entre a razÆo e a loucura. Para realizar suas pesquisas, ele cria a Casa Verde, onde come‡a a internar pessoas consideradas mentalmente desequilibradas. Com o passar do tempo, Bacamarte amplia tanto seus crit‚rios que grande parte da popula‡Æo de Itagua¡ acaba sendo considerada louca. Depois, ele muda sua teoria e passa a acreditar que aqueles que apresentam equil¡brio perfeito sÆo os verdadeiros anormais. No final, conclui que ele pr¢prio possui essa caracter¡stica e decide se internar na Casa Verde. A obra utiliza ironia e humor para criticar o abuso da ciˆncia, do poder e a dificuldade de definir o que ‚ realmente normal.	12	Machado de Assis	\N	O Alienista, de Machado de Assis, acompanha SimÆo Bacamarte, um m‚dico que se dedica a estudar a loucura e cria a Casa Verde, um local destinado … interna‡Æo de pessoas consideradas desequilibradas. Por‚m, sua busca pela defini‡Æo da normalidade faz com que cada vez mais habitantes de Itagua¡ sejam considerados loucos. A obra apresenta, de forma ir“nica e humor¡stica, uma cr¡tica ao excesso de poder, ao cientificismo e … dificuldade de determinar os limites entre a razÆo e a loucura.	../img/capas_livros/alienista-capa.jpeg	2026-08-10 11:37:10.803001	Portugues-BR	publico	interna	todos
-5	Guardador de Rebanhos	Guardador de Rebanhos, de Fernando Pessoa, escrito sob o heter“nimo Alberto Caeiro, ‚ um conjunto de poemas que apresenta uma visÆo simples, direta e profundamente ligada … natureza. O eu l¡rico rejeita interpreta‡äes filos¢ficas e metaf¡sicas do mundo e prefere observar as coisas exatamente como elas sÆo. Para Caeiro, pensar demais sobre a realidade pode afastar o ser humano da experiˆncia verdadeira de simplesmente ver, sentir e existir. A natureza, os animais, as  rvores, as flores, o c‚u e as sensa‡äes cotidianas tornam-se elementos centrais de sua poesia. O poema tamb‚m questiona conceitos tradicionais sobre Deus, espiritualidade e transcendˆncia, defendendo uma esp‚cie de rela‡Æo concreta e imediata com o mundo.	10	JoÆo Pessoa	\N	Guardador de Rebanhos acompanha o olhar de um eu l¡rico que se apresenta como um pastor que guarda rebanhos, embora esses rebanhos sejam, sobretudo, pensamentos e sensa‡äes. Ao observar a natureza, ele desenvolve uma filosofia baseada na simplicidade, recusando explica‡äes abstratas e procurando enxergar o mundo sem atribuir-lhe significados ocultos. Ao longo da obra, a natureza funciona como fonte de conhecimento e verdade, enquanto o pensamento excessivo ‚ visto como algo que complica aquilo que deveria ser simples. A obra constr¢i, assim, uma reflexÆo po‚tica sobre a existˆncia, a percep‡Æo e a rela‡Æo do ser humano com a realidade.	../img/capas_livros/rebanhos-capa.jpg	2026-08-10 13:21:21.325504	Portugues-BR	publico	interna	todos
+COPY public.livro (id_livro, titulo_livro, resumo_livro, class_ind, nome_autor, id_user, sinopse_livro, data_publi, idioma, visibilidade, origem, interacao_de, capa_url, google_books_id, link_leitura, link_compra, nota_google, paginas, isbn10, isbn13) FROM stdin;
+3	A Semana	""A Semana", de Machado de Assis, re£ne uma s‚rie de cr“nicas publicadas originalmente em jornais, nas quais o autor observa acontecimentos cotidianos, pol¡ticos e sociais de seu tempo. Com uma escrita marcada pela ironia, pelo humor e pela reflexÆo, Machado transforma situa‡äes aparentemente simples em oportunidades para analisar o comportamento humano e as contradi‡äes da sociedade. Ao comentar fatos da vida p£blica e do dia a dia, o autor questiona costumes, valores e atitudes presentes na sociedade brasileira. A obra se destaca pela capacidade de unir cr¡tica social e entretenimento, apresentando uma visÆo inteligente e muitas vezes bem-humorada da realidade.	12	Machado de Assis	\N	""A Semana", de Machado de Assis, re£ne cr“nicas em que o autor aborda acontecimentos cotidianos e questäes sociais e pol¡ticas de sua ‚poca. Com ironia, humor e olhar cr¡tico, Machado transforma fatos comuns em reflexäes sobre a sociedade e o comportamento humano. A obra apresenta um retrato interessante e perspicaz do Brasil de seu tempo.	2026-08-10 12:53:45.173089	Portugues-BR	publico	interna	todos	\N	\N	\N	\N	\N	\N	\N	\N
+4	Mensagem	Mensagem, de Fernando Pessoa, ‚ uma obra po‚tica que revisita a hist¢ria e os s¡mbolos de Portugal, destacando figuras como reis, navegadores e her¢is nacionais. Dividido em trˆs partes, o livro apresenta a forma‡Æo, a realiza‡Æo e a queda simb¢lica do imp‚rio portuguˆs, relacionando o passado glorioso do pa¡s a um futuro de renova‡Æo. Por meio de poemas marcados pelo nacionalismo, pelo simbolismo e pelo misticismo, Pessoa reflete sobre o destino de Portugal e sobre a importƒncia de sua identidade hist¢rica. A obra tamb‚m aborda o sonho de um novo per¡odo de grandeza, representado pelo retorno simb¢lico de D. SebastiÆo e pelo surgimento de um novo imp‚rio, agora ligado … cultura e ao esp¡rito	10	JoÆo Pessoa	\N	Mensagem, de Fernando Pessoa, re£ne poemas que celebram e reinterpretam a hist¢ria, os her¢is e os mitos de Portugal. A obra percorre momentos fundamentais da trajet¢ria portuguesa e transforma o passado em uma reflexÆo sobre o destino e o futuro do pa¡s. Entre simbolismo, patriotismo e misticismo, Pessoa constr¢i uma visÆo po‚tica de renascimento e de uma nova grandeza portuguesa.	2026-08-10 13:06:38.938784	Portugues-BR	publico	interna	todos	\N	\N	\N	\N	\N	\N	\N	\N
+2	A Cartomante	"A Cartomante", de Machado de Assis, conta a hist¢ria de Camilo e Rita, dois amigos que se envolvem em um relacionamento amoroso proibido, apesar de Rita ser casada com Vilela, amigo de Camilo. Com medo de que o marido descubra a trai‡Æo, Rita procura uma cartomante, que lhe garante que nada de ruim acontecer . Camilo inicialmente duvida desse tipo de previsÆo, mas, diante de acontecimentos que despertam seu medo e sua inseguran‡a, tamb‚m acaba recorrendo … cartomante. Ap¢s receber uma previsÆo tranquilizadora, ele segue confiante para encontrar Vilela, sem imaginar o destino que o aguarda. A narrativa combina suspense, ironia e cr¡tica … supersti‡Æo, mostrando como os personagens tentam encontrar seguran‡a em cren‡as diante da incerteza.	12	Machado de Assis	\N	"A Cartomante", de Machado de Assis, acompanha Camilo e Rita, dois amantes que vivem um relacionamento secreto, enquanto Vilela, marido de Rita e amigo de Camilo, come‡a a despertar preocupa‡Æo no casal. Em meio ao medo de serem descobertos, Rita procura uma cartomante em busca de respostas. A partir da¡, a hist¢ria conduz os personagens por uma sequˆncia de tensÆo e acontecimentos inesperados, marcada por suspense, ironia e uma reviravolta surpreendente.	2026-08-10 12:42:47.362398	Portugues-BR	publico	interna	todos	\N	\N	\N	\N	\N	\N	\N	\N
+1	O Alienista	O Alienista, de Machado de Assis, conta a hist¢ria de SimÆo Bacamarte, um m‚dico que decide estudar a mente humana e compreender os limites entre a razÆo e a loucura. Para realizar suas pesquisas, ele cria a Casa Verde, onde come‡a a internar pessoas consideradas mentalmente desequilibradas. Com o passar do tempo, Bacamarte amplia tanto seus crit‚rios que grande parte da popula‡Æo de Itagua¡ acaba sendo considerada louca. Depois, ele muda sua teoria e passa a acreditar que aqueles que apresentam equil¡brio perfeito sÆo os verdadeiros anormais. No final, conclui que ele pr¢prio possui essa caracter¡stica e decide se internar na Casa Verde. A obra utiliza ironia e humor para criticar o abuso da ciˆncia, do poder e a dificuldade de definir o que ‚ realmente normal.	12	Machado de Assis	\N	O Alienista, de Machado de Assis, acompanha SimÆo Bacamarte, um m‚dico que se dedica a estudar a loucura e cria a Casa Verde, um local destinado … interna‡Æo de pessoas consideradas desequilibradas. Por‚m, sua busca pela defini‡Æo da normalidade faz com que cada vez mais habitantes de Itagua¡ sejam considerados loucos. A obra apresenta, de forma ir“nica e humor¡stica, uma cr¡tica ao excesso de poder, ao cientificismo e … dificuldade de determinar os limites entre a razÆo e a loucura.	2026-08-10 11:37:10.803001	Portugues-BR	publico	interna	todos	\N	\N	\N	\N	\N	\N	\N	\N
+5	Guardador de Rebanhos	Guardador de Rebanhos, de Fernando Pessoa, escrito sob o heter“nimo Alberto Caeiro, ‚ um conjunto de poemas que apresenta uma visÆo simples, direta e profundamente ligada … natureza. O eu l¡rico rejeita interpreta‡äes filos¢ficas e metaf¡sicas do mundo e prefere observar as coisas exatamente como elas sÆo. Para Caeiro, pensar demais sobre a realidade pode afastar o ser humano da experiˆncia verdadeira de simplesmente ver, sentir e existir. A natureza, os animais, as  rvores, as flores, o c‚u e as sensa‡äes cotidianas tornam-se elementos centrais de sua poesia. O poema tamb‚m questiona conceitos tradicionais sobre Deus, espiritualidade e transcendˆncia, defendendo uma esp‚cie de rela‡Æo concreta e imediata com o mundo.	10	JoÆo Pessoa	\N	Guardador de Rebanhos acompanha o olhar de um eu l¡rico que se apresenta como um pastor que guarda rebanhos, embora esses rebanhos sejam, sobretudo, pensamentos e sensa‡äes. Ao observar a natureza, ele desenvolve uma filosofia baseada na simplicidade, recusando explica‡äes abstratas e procurando enxergar o mundo sem atribuir-lhe significados ocultos. Ao longo da obra, a natureza funciona como fonte de conhecimento e verdade, enquanto o pensamento excessivo ‚ visto como algo que complica aquilo que deveria ser simples. A obra constr¢i, assim, uma reflexÆo po‚tica sobre a existˆncia, a percep‡Æo e a rela‡Æo do ser humano com a realidade.	2026-08-10 13:21:21.325504	Portugues-BR	publico	interna	todos	\N	\N	\N	\N	\N	\N	\N	\N
 \.
 
 
@@ -2069,12 +2080,12 @@ COPY public.usuario (id_user, nome_completo, username, data_nascimento, email, s
 -- Data for Name: whishbook; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.whishbook (id, id_livro, id_user, id_whishlist) FROM stdin;
-1	1	19	1
-2	2	19	1
-3	3	19	1
-4	4	19	1
-6	5	19	1
+COPY public.whishbook (id, id_livro, id_user, id_whishlist, ordem) FROM stdin;
+1	1	19	1	\N
+2	2	19	1	\N
+3	3	19	1	\N
+4	4	19	1	\N
+6	5	19	1	\N
 \.
 
 
@@ -2082,8 +2093,8 @@ COPY public.whishbook (id, id_livro, id_user, id_whishlist) FROM stdin;
 -- Data for Name: whishlist; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.whishlist (id, nome_lista, id_user, descricao, capa) FROM stdin;
-1	J  li	19	\N	\N
+COPY public.whishlist (id, nome_lista, id_user, descricao, visibilidade, tipo_capa, capa_url, data_criacao) FROM stdin;
+1	J  li	19	\N	publica	automatica	\N	2026-10-15 17:36:10.73042
 \.
 
 
@@ -2546,6 +2557,30 @@ ALTER TABLE ONLY public.salvos
 
 
 --
+-- Name: curtida unique_curtida; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.curtida
+    ADD CONSTRAINT unique_curtida UNIQUE (id_user, categoria_curtido, id_coisocurtido);
+
+
+--
+-- Name: follow unique_follow; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.follow
+    ADD CONSTRAINT unique_follow UNIQUE (id_follower, id_following);
+
+
+--
+-- Name: follow_autor unique_follow_autor; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.follow_autor
+    ADD CONSTRAINT unique_follow_autor UNIQUE (id_follower, id_autor);
+
+
+--
 -- Name: livros_lidos user_livro_lido; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -2997,5 +3032,5 @@ ALTER TABLE ONLY public.autor
 -- PostgreSQL database dump complete
 --
 
-\unrestrict EufuD9jDZ2ntyUVvwp3MtJl4Z8XSanyGfbU3srdkkdf4fo0Z6U7j55MB6AEOQIr
+\unrestrict 6fIR9iEduYZtjrzzm4wCgmpQxWSPFXhdPrQz0o7c1mxCjrPfNR6hPZpySd0zj2e
 
