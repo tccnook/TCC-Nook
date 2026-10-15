@@ -22,6 +22,9 @@ $qntd_listas = $qntd_listas ?? 0;
     </div>
 
     <!-- listagem da lista de livros -->
+    <?php if (!$listas): ?>
+        <p class="aba-vazia">Você ainda não criou ou seguiu nenhuma lista.</p>
+    <?php else: ?>
     <div class="listas-grid">
         <?php foreach($listas as $lista): ?>
             <?php $capas = array_slice(json_decode($lista['capas'], true) ?? [], 0, 3); ?>
@@ -31,6 +34,9 @@ $qntd_listas = $qntd_listas ?? 0;
                     <div class="lista-topo">
                         <h3><?= htmlspecialchars($lista['nome_lista']) ?></h3>
                         <p><?= htmlspecialchars($lista['descricao']) ?></p>
+                        <?php if ((int) $lista['id_dono'] !== (int) $id_user): ?>
+                            <small class="lista-dono">Por @<?= htmlspecialchars($lista['username_dono']) ?></small>
+                        <?php endif; ?>
                         <i data-lucide="bookmark" class="lista-salvar"></i>
                     </div>
 
@@ -52,182 +58,205 @@ $qntd_listas = $qntd_listas ?? 0;
             </article>
         <?php endforeach; ?>
     </div>
+    <?php endif; ?>
 
 </section>
 
 <!-- modal para criar lista -->
-<dialog id="modal_lista">
-    <button type="button" id="fechar_lista" aria-label="Fechar">X</button>
+<dialog id="modal_lista" class="modal-criar-lista" <?= !empty($erro_lista) ? 'data-abrir' : '' ?>>
+    <header class="modal-lista-cabecalho">
+        <div><i data-lucide="library-big"></i><div><h2>Criar nova lista de leitura</h2><p>Organize seus livros favoritos em uma coleção.</p></div></div>
+        <button type="button" id="fechar_lista" class="modal-lista-fechar" aria-label="Fechar"><i data-lucide="x"></i></button>
+    </header>
 
-    <h2>Criar nova lista de livros</h2>
-    <p>Dê um nome à sua lista e escolha os livros que vão fazer parte dela.</p>
+    <?php if (!empty($erro_lista)): ?><p class="lista-feedback" role="alert"><?= htmlspecialchars($erro_lista) ?></p><?php endif; ?>
 
-    <form action="" method="POST" enctype="multipart/form-data" id="form-criar-lista" class="form-editar">
-
-        <fieldset>
-            <legend>Capa da lista</legend>
-            <p>Adicione uma capa à sua lista</p>
-
-            <label>
-                <input type="radio" name="tipo_capa" value="manual"> Capa manual
+    <form action="" method="POST" enctype="multipart/form-data" id="form-criar-lista" class="form-criar-lista">
+        <section class="lista-form-secao">
+            <h3>Capa da lista</h3>
+            <div class="lista-capa-opcoes">
+                <input class="sr-only" type="radio" name="tipo_capa" value="manual" id="capaManual">
+                <label class="lista-capa-opcao" for="capaManual"><i data-lucide="image-plus"></i><span>Capa da<br>lista</span></label>
+                <span class="lista-ou">OU</span>
+                <input class="sr-only" type="radio" name="tipo_capa" value="automatica" id="capaAutomatica" checked>
+                <label class="lista-capa-opcao" for="capaAutomatica"><i data-lucide="wand-sparkles"></i><span>Adicionar capa<br>automática</span></label>
+                <p>A capa automática será criada com base nas capas dos livros adicionados à lista.</p>
+            </div>
+            <label id="campo-capa-manual" class="campo-capa-manual" hidden for="arquivoCapaLista">Imagem da capa
+                <input type="file" id="arquivoCapaLista" name="capa_manual" accept="image/jpeg,image/png,image/webp">
             </label>
+        </section>
 
-            <label id="campo-capa-manual" hidden>
-                Imagem da capa
-                <input type="file" name="capa_manual" accept="image/jpeg,image/png">
-            </label>
+        <label class="lista-campo-label" for="nome_lista">Nome da Lista</label>
+        <div class="lista-contador-campo"><input type="text" id="nome_lista" name="nome_lista" maxlength="50" placeholder="Ex.: Lista irada!" required><span id="contadorNomeLista">0/50</span></div>
 
-            <label>
-                <input type="radio" name="tipo_capa" value="automatica" checked> Capa automática
-            </label>
+        <label class="lista-campo-label" for="descricao">Descrição (opcional)</label>
+        <div class="lista-contador-campo lista-descricao-campo"><textarea id="descricao" name="descricao" maxlength="255" placeholder="Ex.: Lista irada!"></textarea><span id="contadorDescricaoLista">0/255</span></div>
+
+        <fieldset class="lista-visibilidade-opcoes">
+            <legend class="sr-only">Visibilidade da lista</legend>
+            <label class="lista-visibilidade-card is-selected"><input type="radio" name="visibilidade" value="publica" checked><i data-lucide="globe-2"></i><strong>Pública</strong><span>Qualquer pessoa pode ver e adicionar essa lista.</span></label>
+            <label class="lista-visibilidade-card"><input type="radio" name="visibilidade" value="privada"><i data-lucide="lock-keyhole"></i><strong>Privada</strong><span>Qualquer pessoa pode ver e adicionar essa lista.</span></label>
         </fieldset>
 
-        <label for="nome_lista">Nome da lista</label>
-        <input type="text" id="nome_lista" name="nome_lista" required>
+        <section class="lista-form-secao lista-selecao-livros">
+            <h3>Adicionar livros à lista</h3>
+            <label class="sr-only" for="pesquisa-livros-lista">Pesquisar livros</label>
+            <div class="lista-busca"><i data-lucide="search"></i><input type="search" id="pesquisa-livros-lista" placeholder="Pesquisar"></div>
+            <div id="resultados-livros" class="lista-resultados" aria-live="polite"></div>
+            <div id="lista-selecionados" class="lista-selecionados"></div>
+        </section>
 
-        <label for="descricao">Descrição (opcional)</label>
-        <textarea id="descricao" name="descricao"></textarea>
-
-        <fieldset>
-            <legend>Visibilidade</legend>
-            <label><input type="radio" name="visibilidade" value="publica" checked> Pública</label>
-            <label><input type="radio" name="visibilidade" value="privada"> Privada</label>
-        </fieldset>
+        <footer class="lista-form-acoes">
+            <button type="submit" name="criar_lista" value="1" class="button-perfil"><i data-lucide="check"></i> Criar Lista</button>
+        </footer>
     </form>
-
-    <!-- fica fora do form porque um form não pode ficar dentro de outro -->
-    <section class="busca-livros">
-        <h3>Adicionar livros à lista</h3>
-
-        <form method="GET" id="form-pesquisa-livros">
-            <label for="nome-livro" class="sr-only">Nome do livro</label>
-            <input type="text" name="nome" id="nome-livro" placeholder="Digite o nome do livro">
-            <button type="submit" class="button-perfil">Pesquisar</button>
-        </form>
-
-        <div id="resultados-livros"></div>
-
-        <h3>Livros selecionados</h3>
-        <div id="lista-selecionados"></div>
-    </section>
-
-    <button type="submit" name="criar_lista" value="Criar Lista" form="form-criar-lista" class="button-perfil">
-        Criar Lista
-    </button>
 </dialog>
 
 <script>
     const btnLista = document.getElementById("btnLista");
     const btnFecharLista = document.getElementById("fechar_lista");
     const modalLista = document.getElementById("modal_lista");
-
-    btnLista.addEventListener("click", function () {
-        modalLista.showModal();
-    });
-
-    btnFecharLista.addEventListener("click", function () {
-        modalLista.close();
-    });
-
-    // mostra o campo de capa manual só quando "Capa manual" estiver marcado
-    const campoCapaManual = document.getElementById("campo-capa-manual");
-
-    document.querySelectorAll('input[name="tipo_capa"]').forEach(function (radio) {
-        radio.addEventListener("change", function () {
-            campoCapaManual.hidden = this.value !== "manual";
-        });
-    });
-
-    // evita injetar html vindo do banco na tela
-    function escaparHtml(texto) {
-        return String(texto ?? "").replace(/[&<>"']/g, function (c) {
-            return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
-        });
-    }
-
-    // pesquisa de livros
-
-    const formPesquisa = document.getElementById("form-pesquisa-livros");
+    const formLista = document.getElementById("form-criar-lista");
     const resultadosLivros = document.getElementById("resultados-livros");
-
-    formPesquisa.addEventListener("submit", function (event) {
-        // impede o formulário de recarregar a página e fechar o modal
-        event.preventDefault();
-
-        const nome = document.getElementById("nome-livro").value;
-
-        resultadosLivros.innerHTML = "<p>Pesquisando...</p>";
-
-        fetch("pesquisa_livros_lista.php?nome=" + encodeURIComponent(nome))
-            .then(response => response.text())
-            .then(html => {
-                // coloca os resultados da pesquisa na tela
-                resultadosLivros.innerHTML = html;
-            })
-            .catch(error => {
-                console.error("Erro na pesquisa:", error);
-                resultadosLivros.innerHTML = "<p>Erro ao pesquisar livros.</p>";
-            });
-    });
-
-    // função para mostrar livros escolhidos
-
     const listaSelecionados = document.getElementById("lista-selecionados");
+    const pesquisaLivros = document.getElementById("pesquisa-livros-lista");
+    const livrosSelecionados = new Map();
+    let temporizadorPesquisa;
 
-    function mostrarLivros(livros) {
-        listaSelecionados.innerHTML = "";
+    btnLista.addEventListener("click", () => modalLista.showModal());
+    btnFecharLista.addEventListener("click", () => modalLista.close());
+    modalLista.addEventListener("click", (evento) => {
+        if (evento.target === modalLista) modalLista.close();
+    });
+    if (modalLista.hasAttribute("data-abrir")) modalLista.showModal();
 
-        livros.forEach(function (livro) {
-            listaSelecionados.innerHTML += `
-                <div class="livro-selecionado">
-                    <img src="${escaparHtml(livro.capa_url)}" width="100" alt="Capa de ${escaparHtml(livro.titulo_livro)}">
+    const nomeLista = document.getElementById("nome_lista");
+    const descricaoLista = document.getElementById("descricao");
+    nomeLista.addEventListener("input", () => {
+        document.getElementById("contadorNomeLista").textContent = `${nomeLista.value.length}/50`;
+    });
+    descricaoLista.addEventListener("input", () => {
+        document.getElementById("contadorDescricaoLista").textContent = `${descricaoLista.value.length}/255`;
+    });
 
-                    <strong>${escaparHtml(livro.titulo_livro)}</strong>
-                    <span>${escaparHtml(livro.nome_autor)}</span>
-
-                    <button type="button" class="btn-remover" data-id="${escaparHtml(livro.id_livro)}" aria-label="Remover ${escaparHtml(livro.titulo_livro)}">
-                        X
-                    </button>
-                </div>
-            `;
+    const campoCapaManual = document.getElementById("campo-capa-manual");
+    document.querySelectorAll('input[name="tipo_capa"]').forEach((radio) => {
+        radio.addEventListener("change", () => {
+            campoCapaManual.hidden = radio.value !== "manual";
+            campoCapaManual.querySelector("input").required = radio.value === "manual";
         });
-    }
+    });
 
-    // adicionar e remover usam o mesmo processar_livros_lista.php
-    function enviarAcao(acao, idLivro) {
-        fetch("processar_livros_lista.php", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/x-www-form-urlencoded"
-            },
-            body: "acao=" + acao + "&id_livro=" + encodeURIComponent(idLivro)
-        })
-            .then(response => response.json())
-            .then(data => {
-                if (data.sucesso) {
-                    mostrarLivros(data.livros);
-                }
-            })
-            .catch(error => {
-                console.error("Erro:", error);
+    document.querySelectorAll(".lista-visibilidade-card input").forEach((radio) => {
+        radio.addEventListener("change", () => {
+            document.querySelectorAll(".lista-visibilidade-card").forEach((card) => {
+                card.classList.toggle("is-selected", card.contains(radio) && radio.checked);
             });
+        });
+    });
+
+    function renderizarSelecionados() {
+        listaSelecionados.replaceChildren();
+        formLista.querySelectorAll("input[name='ids_livros[]']").forEach((input) => input.remove());
+
+        livrosSelecionados.forEach((livro) => {
+            const linha = document.createElement("div");
+            linha.className = "lista-livro-selecionado";
+            if (livro.capa_url) {
+                const capa = document.createElement("img");
+                capa.src = livro.capa_url;
+                capa.alt = "";
+                linha.append(capa);
+            }
+            const detalhes = document.createElement("div");
+            const titulo = document.createElement("strong");
+            titulo.textContent = livro.titulo_livro;
+            const autor = document.createElement("small");
+            autor.textContent = livro.nome_autor || "Autor não informado";
+            detalhes.append(titulo, autor);
+            const remover = document.createElement("button");
+            remover.type = "button";
+            remover.className = "lista-livro-remover";
+            remover.dataset.removerLivro = livro.id_livro;
+            remover.setAttribute("aria-label", `Remover ${livro.titulo_livro}`);
+            remover.innerHTML = '<i data-lucide="x"></i>';
+            linha.append(detalhes, remover);
+            listaSelecionados.append(linha);
+
+            const id = document.createElement("input");
+            id.type = "hidden";
+            id.name = "ids_livros[]";
+            id.value = livro.id_livro;
+            formLista.append(id);
+        });
+        if (window.lucide) lucide.createIcons();
     }
 
-    // adiciona livros
-    resultadosLivros.addEventListener("click", function (event) {
-        const botao = event.target.closest(".btn-adicionar");
+    async function pesquisarLivros() {
+        const termo = pesquisaLivros.value.trim();
+        resultadosLivros.replaceChildren();
+        if (termo.length < 2) return;
+        const carregando = document.createElement("p");
+        carregando.textContent = "Buscando livros...";
+        resultadosLivros.append(carregando);
+        try {
+            const resposta = await fetch(`buscar_livros_lista.php?q=${encodeURIComponent(termo)}`);
+            const dados = await resposta.json();
+            resultadosLivros.replaceChildren();
+            if (!dados.livros.length) {
+                const vazio = document.createElement("p");
+                vazio.textContent = "Nenhum livro encontrado.";
+                resultadosLivros.append(vazio);
+                return;
+            }
+            dados.livros.forEach((livro) => {
+                const linha = document.createElement("div");
+                linha.className = "lista-livro-resultado";
+                if (livro.capa_url) {
+                    const capa = document.createElement("img");
+                    capa.src = livro.capa_url;
+                    capa.alt = "";
+                    linha.append(capa);
+                }
+                const detalhes = document.createElement("div");
+                const titulo = document.createElement("strong");
+                titulo.textContent = livro.titulo_livro;
+                const autor = document.createElement("small");
+                autor.textContent = livro.nome_autor || "Autor não informado";
+                detalhes.append(titulo, autor);
+                const adicionar = document.createElement("button");
+                adicionar.type = "button";
+                adicionar.textContent = livrosSelecionados.has(String(livro.id_livro)) ? "Adicionado" : "Adicionar";
+                adicionar.disabled = livrosSelecionados.has(String(livro.id_livro));
+                adicionar.addEventListener("click", () => {
+                    livrosSelecionados.set(String(livro.id_livro), livro);
+                    renderizarSelecionados();
+                    adicionar.textContent = "Adicionado";
+                    adicionar.disabled = true;
+                });
+                linha.append(detalhes, adicionar);
+                resultadosLivros.append(linha);
+            });
+        } catch (erro) {
+            resultadosLivros.replaceChildren();
+            const falha = document.createElement("p");
+            falha.textContent = "Não foi possível buscar livros agora.";
+            resultadosLivros.append(falha);
+        }
+    }
 
+    listaSelecionados.addEventListener("click", function (event) {
+        const botao = event.target.closest("[data-remover-livro]");
         if (botao) {
-            enviarAcao("adicionar", botao.dataset.id);
+            livrosSelecionados.delete(botao.dataset.removerLivro);
+            renderizarSelecionados();
+            if (pesquisaLivros.value.trim().length >= 2) pesquisarLivros();
         }
     });
 
-    // remove livros
-    listaSelecionados.addEventListener("click", function (event) {
-        const botao = event.target.closest(".btn-remover");
-
-        if (botao) {
-            enviarAcao("remover", botao.dataset.id);
-        }
+    pesquisaLivros.addEventListener("input", () => {
+        clearTimeout(temporizadorPesquisa);
+        temporizadorPesquisa = setTimeout(pesquisarLivros, 250);
     });
 </script>

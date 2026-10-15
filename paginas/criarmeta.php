@@ -12,6 +12,38 @@ if (!isset($_SESSION['id_user'])){
 
 $id_user = $_SESSION['id_user'];
 
+if (($_POST['origem'] ?? '') === 'metas') {
+    $nome_meta = trim($_POST['nomemeta'] ?? '');
+    $num_livros = filter_var($_POST['quantidade'] ?? null, FILTER_VALIDATE_INT, [
+        'options' => ['min_range' => 1]
+    ]);
+    $periodo = $_POST['periodo'] ?? '';
+    $prazos = ['semanal' => 7, 'mensal' => 30, 'anual' => 365];
+
+    if ($nome_meta === '' || mb_strlen($nome_meta) > 100 || $num_livros === false || !isset($prazos[$periodo])) {
+        $_SESSION['meta_feedback'] = 'Preencha os campos da meta com valores válidos.';
+    } else {
+        try {
+            $insert = 'insert into meta_leitura (id_user, periodo, num_livros, expiracao, nome_meta) values (:id_user, :periodo, :num_livros, CURRENT_DATE + CAST(:prazo AS INTEGER), :nome_meta);';
+            $stmt = $conn->prepare($insert);
+            $stmt->execute([
+                ':id_user' => $id_user,
+                ':periodo' => $periodo,
+                ':num_livros' => $num_livros,
+                ':prazo' => $prazos[$periodo],
+                ':nome_meta' => $nome_meta
+            ]);
+            $_SESSION['meta_feedback'] = 'Meta criada com sucesso.';
+        } catch (PDOException $e) {
+            error_log($e->getMessage());
+            $_SESSION['meta_feedback'] = 'Não foi possível criar a meta. Tente novamente.';
+        }
+    }
+
+    header('Location: perfil.php?aba=visao-geral&metas=1');
+    exit();
+}
+
 if(isset($_GET['atualizar'])){
     $id_atualizacao = $_GET['atualizar'];
 

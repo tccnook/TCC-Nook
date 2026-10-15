@@ -51,6 +51,7 @@
     <link rel="stylesheet" href="/TCC-Nook/front-end/css/main.css">
     <link rel="stylesheet" href="/TCC-Nook/front-end/css/pages/perfil.css">
     <link rel="stylesheet" href="/TCC-Nook/front-end/css/pages/header-perfil.css">
+    <link rel="stylesheet" href="/TCC-Nook/front-end/css/pages/visão-geral.css">
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -98,9 +99,14 @@
                     echo '<p class="aba-vazia">tem que colocar essa porra aqui ainda (eu não tenho e não sei se foi feito)</p>';
                     break;
             }
+            
             ?>
         </div>
     </main>
+
+    <?php
+        require_once('footer.php');
+    ?>
 
     <script>
         // roda por último para pegar os ícones de todas as abas

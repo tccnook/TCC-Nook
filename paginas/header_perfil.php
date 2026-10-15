@@ -1,4 +1,6 @@
 <?php
+
+ require_once('header.php');
     // Incluído pelo perfil.php ($conn, $id_user e $aba já existem)
 
     function contar($conn, $sql, $id_user){
@@ -125,9 +127,9 @@
 
     <section class="perfil-banner">
         <?php if(empty($conta['banner_url'])): ?>
-            <section class="sem-banner"></section>
+            <section class="sem-banner" aria-label="Banner do perfil"></section>
         <?php else: ?>
-            <img src="../<?= htmlspecialchars($conta['banner_url']) ?>" alt="Banner do perfil">
+            <img src="../<?= htmlspecialchars($conta['banner_url'], ENT_QUOTES, 'UTF-8') ?>" alt="Banner do perfil">
         <?php endif; ?>
     </section>
 
@@ -208,7 +210,7 @@
             <!-- prévia do perfil -->
             <aside class="previa">
 
-                <section class="previa-banner" id="previaBanner" <?= empty($conta['banner_url'])?>>
+                <section class="previa-banner" id="previaBanner" style="<?= empty($conta['banner_url']) ? '' : 'background-image:url(&quot;../' . htmlspecialchars($conta['banner_url'], ENT_QUOTES, 'UTF-8') . '&quot;)' ?>">
                     <input type="file" id="banner" name="banner" accept="image/jpeg,image/png,image/webp" class="sr-only">
                     <label for="banner" class="btn-alterar"><i data-lucide="camera"></i> Alterar banner</label>
                 </section>
@@ -216,7 +218,7 @@
                 <section class="previa-foto">
                     <section class="previa-avatar">
                         <img id="previaFoto" class="avatar-previa" alt="Prévia da foto de perfil" <?= empty($conta['foto_perfil_url']) ? 'hidden' : 'src="../' . htmlspecialchars($conta['foto_perfil_url']) . '"' ?>>
-                        <section id="previaSemFoto" class="avatar-previa" <?= empty($conta['foto_perfil_url']) ? '' : 'hidden' ?>><i data-lucide="camera"></i></section>
+                        <section id="previaSemFoto" class="avatar-previa" <?= empty($conta['foto_perfil_url']) ? '' : 'hidden' ?>></section>
                     </section>
 
                     <input type="file" id="foto_perfil" name="foto_perfil" accept="image/jpeg,image/png,image/webp" class="sr-only">

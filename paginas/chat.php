@@ -1,243 +1,222 @@
 <?php
-
 session_start();
-
-if(!isset($_SESSION)){
-    header("location:login.php");
+if (!isset($_SESSION['id_user'])) {
+    header('Location: login.php');
+    exit();
+}
+$id_user = (int) $_SESSION['id_user'];
+$id_conversa = filter_var($_GET['id_conversa'] ?? null, FILTER_VALIDATE_INT);
+if (!$id_conversa) {
+    header('Location: conversas.php');
     exit();
 }
 
-$id_user = $_SESSION['id_user'];
-
-require_once('conexao.php');
-
-$db = new Database;
-$conn = $db->conectar();
-
-// if(!isset($_GET['id_conversa'])){
-//     header("location: paginasla.php");
-// } else{
-//     $idConversa = $_GET['id_conversa']
-// }
-
-if(!isset($_GET['id_conversa'])){
-    header("location:conversas.php");
+require_once __DIR__ . '/conexao.php';
+$conn = (new Database())->conectar();
+$stmt = $conn->prepare("SELECT c.id_conversa, c.tipo, c.nome_conversa, c.foto_conversa_url, c.id_dono, parceiro.username AS username_parceiro, parceiro.nome_completo AS nome_parceiro, parceiro.foto_perfil_url AS foto_parceiro FROM conversa c INNER JOIN conversa_participante eu ON eu.id_conversa = c.id_conversa AND eu.id_user = :id_user LEFT JOIN LATERAL (SELECT u.username, u.nome_completo, conta.foto_perfil_url FROM conversa_participante cp INNER JOIN usuario u ON u.id_user = cp.id_user LEFT JOIN conta ON conta.id_user = u.id_user WHERE cp.id_conversa = c.id_conversa AND cp.id_user <> :id_parceiro ORDER BY cp.joinet_at LIMIT 1) parceiro ON true WHERE c.id_conversa = :id_conversa");
+$stmt->execute([':id_user' => $id_user, ':id_parceiro' => $id_user, ':id_conversa' => $id_conversa]);
+$conversa = $stmt->fetch(PDO::FETCH_ASSOC);
+if (!$conversa) {
+    header('Location: conversas.php');
+    exit();
 }
 
-$id_conversa = $_GET['id_conversa'];
-
-$buscar_informacoes_grupo = "select 
-id_conversa, tipo, nome_conversa, foto_conversa_url, id_dono
-from conversa 
-where id_conversa = :id_conversa";
-
-$stmt_grupo = $conn->prepare($buscar_informacoes_grupo);
-$stmt_grupo->execute([
-    ":id_conversa" => $id_conversa
-]);
-$informacoes_grupo = $stmt_grupo->fetch(PDO::FETCH_ASSOC);
-
-$select_participantes_grupo = "
-select p.id_user, p.cargo, p.joinet_at, u.username, cu.foto_perfil_url
-from conversa_participante p
-inner join usuario u on u.id_user = p.id_user
-inner join conta cu on cu.id_user = u.id_user
-where p.id_conversa = :id_conversa
-";
-$stmt_participantes = $conn->prepare($select_participantes_grupo);
-$stmt_participantes->execute([
-    ":id_conversa" => $informacoes_grupo['id_conversa']
-]);
-$participantes_grupo = $stmt_participantes->fetchAll(PDO::FETCH_ASSOC);
-
+$stmt = $conn->prepare('SELECT u.id_user, u.username, u.nome_completo FROM conversa_participante cp INNER JOIN usuario u ON u.id_user = cp.id_user WHERE cp.id_conversa = :id_conversa AND cp.id_user <> :id_user ORDER BY cp.joinet_at');
+$stmt->execute([':id_conversa' => $id_conversa, ':id_user' => $id_user]);
+$participantes = $stmt->fetchAll(PDO::FETCH_ASSOC);
+$isGrupo = $conversa['tipo'] === 'grupo';
+$tituloConversa = $isGrupo ? ($conversa['nome_conversa'] ?: 'Grupo') : ($conversa['username_parceiro'] ?: 'Conversa direta');
+$fotoConversa = $isGrupo ? ($conversa['foto_conversa_url'] ?? '') : ($conversa['foto_parceiro'] ?? '');
+$esc = static fn($valor) => htmlspecialchars((string) ($valor ?? ''), ENT_QUOTES, 'UTF-8');
+$imagemUrl = static function ($caminho) use ($esc) {
+    $caminho = trim((string) ($caminho ?? ''));
+    if ($caminho === '') return '';
+    if (preg_match('~^(https?:)?//|^/~i', $caminho) || str_starts_with($caminho, '../')) return $esc($caminho);
+    return $esc('../' . ltrim($caminho, './'));
+};
 ?>
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title> Document </title>
+    <link rel="stylesheet" href="/TCC-Nook/front-end/css/main.css">
+    <link rel="stylesheet" href="/TCC-Nook/front-end/css/pages/chat.css">
+    <link rel="shortcut icon" href="/TCC-Nook/img/icons/ico-nook/ico-nook.ico" type="image/x-icon">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Lora:wght@400;500;600;700&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <title><?= $esc($tituloConversa) ?> · Mensagens Nook</title>
 </head>
 <body>
-    <?php
-    if ($informacoes_grupo['tipo'] == 'grupo'){
-     echo '<a href="gerenciar_grupo.php?id_conversa='.htmlspecialchars($id_conversa).'>';
-    } else {
-        echo '<a href="gerenciar_conversa.php?id_conversa='.htmlspecialchars($id_conversa).'';
-    } 
-    ?>
-    <header>
-        <img src="<?= $informacoes_grupo['foto_conversa_url']?>" width="80px" height="auto">
-        <span> <?= $informacoes_grupo['nome_conversa']?> </span>
-        <small>
-        <?php
-        foreach($participantes_grupo as $participante_grupo){
-            echo $participante_grupo['username'];
-        } 
-       ?>
-        </small>
-    </header>
-    </a>
-    <section id="mensagens-conversa">
+<?php require_once __DIR__ . '/header.php'; ?>
+<main class="chat-page">
+    <aside class="chat-sidebar">
+        <header><div><p>NOOK DIRECT</p><h1>Mensagens</h1></div><a href="conversas.php" aria-label="Ver todas as conversas"><i data-lucide="square-pen"></i></a></header>
+        <label class="inbox-search"><i data-lucide="search"></i><input type="search" id="busca-conversa-chat" placeholder="Pesquisar conversas"></label>
+        <div id="lista-conversas-chat" class="inbox-list"></div>
+    </aside>
 
-    </section>
-    <section id="escrever-mensagem">
-        <form name="escrever" method="POST" action="#" id="form-mensagem">
-            <textarea name="mensagem" placeholder="digite sua mensagem" id="input-mensagem"> </textarea>
-            <button type="submit"> Enviar </button>
+    <section class="chat-window" data-conversa="<?= $id_conversa ?>" data-user="<?= $id_user ?>">
+        <header class="chat-topbar">
+            <a href="<?= $isGrupo ? 'gerenciar_grupo.php?id_conversa=' . $id_conversa : 'perfil_user_terceiro.php?id_user=' . (int) ($participantes[0]['id_user'] ?? 0) ?>" class="chat-contact">
+                <?php if ($fotoConversa): ?><img src="<?= $imagemUrl($fotoConversa) ?>" alt="">
+                <?php else: ?><span class="chat-avatar-fallback"><?= $esc(mb_strtoupper(mb_substr($tituloConversa, 0, 1))) ?></span><?php endif; ?>
+                <span><strong><?= $esc($tituloConversa) ?></strong><small><?= $isGrupo ? count($participantes) + 1 . ' participantes' : 'Conversa direta' ?></small></span>
+            </a>
+            <button type="button" class="chat-info-button" aria-label="Informações da conversa"><i data-lucide="ellipsis"></i></button>
+        </header>
+        <div class="chat-messages" id="mensagens-conversa" aria-live="polite"><p class="chat-loading">Carregando mensagens...</p></div>
+        <p class="chat-status" id="status-mensagem" role="status" aria-live="polite"></p>
+        <form class="chat-composer" id="form-mensagem">
+            <label class="sr-only" for="input-mensagem">Escreva uma mensagem</label>
+            <textarea id="input-mensagem" name="mensagem" rows="1" placeholder="Escreva uma mensagem..." required></textarea>
+            <button type="submit" aria-label="Enviar mensagem"><i data-lucide="send"></i></button>
         </form>
-
     </section>
+</main>
+<?php require_once __DIR__ . '/footer.php'; ?>
 <script>
-
-    const id_conversa = <?= $id_conversa ?>;
-    const id_user = <?= $id_user ?>;
-    console.log(id_user);
-    const container = document.getElementById('mensagens-conversa');
-    var inputMensagem = document.getElementById('input-mensagem');
-    let mensagens = [];
+    const idConversa = <?= json_encode($id_conversa) ?>;
+    const idUsuarioAtual = <?= json_encode($id_user) ?>;
+    const mensagensContainer = document.getElementById('mensagens-conversa');
+    const formMensagem = document.getElementById('form-mensagem');
+    const campoMensagem = document.getElementById('input-mensagem');
+    const statusMensagem = document.getElementById('status-mensagem');
+    let mensagensCarregadas = [];
     let idMensagemEditando = null;
-    let timeoutPesquisa;
 
-
-    async function buscarMensagens(){
-    const dados = new URLSearchParams();
-    dados.append('id_conversa', id_conversa);
-    const resposta = await fetch('buscarmensagens.php', {
-        method: 'POST',
-        body: dados
-    });
-    const resultado = await resposta.json();
-    console.log(resultado);
-
-    mensagens = resultado.mensagens;
-    container.innerHTML = '';
-    mensagens.forEach(mensagem => {
-        let data;
-        if(mensagem.editado_em != null){
-            data = `Editado em ${mensagem.editado_em}`;
-        } else{
-            data = `Enviado em ${mensagem.criacao}`;
-        }
-        let origem;
-        if(mensagem.id_envio == id_user){
-            origem = 'minha-mensagem';
-        } else{
-            origem = 'mensagem-outro'
-        }
-        container.innerHTML+= `
-        <div class="${origem}"> 
-        <h3> ${mensagem.username} </h3>
-        <p> ${mensagem.conteudo} </p>
-        <p> ${data} </p>
-        ${
-        Number(mensagem.id_envio) === Number(id_user) ? 
-        `<button type="button" class="btn-edit-mensagem" data-id="${mensagem.id_mensagem}" >
-        Editar </button>`
-        : ''
-        }
-        ${
-        Number(mensagem.id_envio) === Number(id_user) ?
-        `<button type="button" class="btn-delete-mensagem" data-id="${mensagem.id_mensagem}">
-        Deletar </button>`
-        :''
-        }
-        </div>
-        `;
-    });
+    function textoSeguro(valor) {
+        return String(valor ?? '').replace(/[&<>"']/g, (caractere) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[caractere]);
     }
-    container.addEventListener('click', (event) => {
-        if(event.target.classList.contains('btn-edit-mensagem')){
-            const idMensagem = Number(event.target.dataset.id);
-            const mensagemEditar = mensagens.find(m => Number(m.id_mensagem) == idMensagem);
 
-            idMensagemEditando = idMensagem;
-            inputMensagem.value = mensagemEditar.conteudo;
-            inputMensagem.focus();
-        }
-    });
-    container.addEventListener('click', async (event) => {
-        if(event.target.classList.contains('btn-delete-mensagem')){
-            const idMensagem = Number(event.target.dataset.id);
-            const confirmar = confirm('Deseja excluir esta mensagem?');
-
-            if(!confirmar){
+    async function buscarMensagens() {
+        const estavaNoFim = mensagensContainer.scrollHeight - mensagensContainer.scrollTop - mensagensContainer.clientHeight < 140;
+        const dados = new URLSearchParams({ id_conversa: String(idConversa) });
+        try {
+            const resposta = await fetch('buscarmensagens.php', { method: 'POST', body: dados, headers: { Accept: 'application/json' } });
+            const resultado = await resposta.json();
+            if (!resposta.ok || !resultado.sucesso) throw new Error(resultado.mensagem || 'Falha ao buscar mensagens.');
+            const novas = resultado.mensagens || [];
+            const assinatura = novas.map((mensagem) => mensagem.id_mensagem).join(',');
+            if (assinatura === mensagensCarregadas.map((mensagem) => mensagem.id_mensagem).join(',')) return;
+            mensagensCarregadas = novas;
+            mensagensContainer.replaceChildren();
+            if (!novas.length) {
+                const vazio = document.createElement('p');
+                vazio.className = 'chat-loading';
+                vazio.textContent = 'Essa conversa começa com você.';
+                mensagensContainer.append(vazio);
                 return;
             }
-
-            const deletar = new URLSearchParams();
-
-            deletar.append('id_mensagem', idMensagem);
-            deletar.append('id_conversa', id_conversa);
-
-            try{
-                const respostaDelete = await fetch('deletar_mensagem.php', {
-                    method: 'POST',
-                    body: deletar
-                });
-                const resultadoDelete = await respostaDelete.json();
-
-                if(resultadoDelete.sucesso){
-                    await buscarMensagens();
-                    alert(resultadoDelete.mensagem)
-                } else{
-                    alert(resultadoDelete.mensagem);
+            novas.forEach((mensagem) => {
+                const minha = Number(mensagem.id_envio) === Number(idUsuarioAtual);
+                const item = document.createElement('article');
+                item.className = `chat-message ${minha ? 'is-mine' : 'is-theirs'}`;
+                item.dataset.id = mensagem.id_mensagem;
+                const bubble = document.createElement('div');
+                bubble.className = 'chat-bubble';
+                const autor = document.createElement('strong');
+                autor.textContent = minha ? 'Você' : `@${mensagem.username}`;
+                const conteudo = document.createElement('p');
+                conteudo.textContent = mensagem.conteudo;
+                const hora = document.createElement('time');
+                hora.textContent = new Date(mensagem.criacao.replace(' ', 'T')).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+                bubble.append(autor, conteudo, hora);
+                item.append(bubble);
+                if (minha) {
+                    const acoes = document.createElement('div');
+                    acoes.className = 'chat-message-actions';
+                    const editar = document.createElement('button');
+                    editar.type = 'button';
+                    editar.dataset.editarMensagem = mensagem.id_mensagem;
+                    editar.textContent = 'Editar';
+                    const excluir = document.createElement('button');
+                    excluir.type = 'button';
+                    excluir.dataset.excluirMensagem = mensagem.id_mensagem;
+                    excluir.textContent = 'Excluir';
+                    acoes.append(editar, excluir);
+                    item.append(acoes);
                 }
-            } catch(erro){
-                console.error(erro);
-                alert('Erro ao deletar mensagem');
-            }
-        }
-    })
-    buscarMensagens();
-
-    setInterval(function(){
-        buscarMensagens();
-    }, 1000);
-
-    const envio = document.getElementById('form-mensagem');
-    inputMensagem = document.getElementById('input-mensagem');
-    envio.addEventListener('submit', async (event) => {
-        event.preventDefault();
-        var mensagem = inputMensagem.value.trim();
-
-        if(mensagem === ''){
-            alert('Mensagem vazia');
-            return;
-        }
-
-        const cadastro = new URLSearchParams();
-
-        cadastro.append('id_conversa', id_conversa);
-        cadastro.append('tipo', 'texto');
-        cadastro.append('conteudo', mensagem);
-
-        if(idMensagemEditando !== null){
-            cadastro.append('id_mensagem', idMensagemEditando);
-        }
-
-        try{
-            const respostaCadastro = await fetch('enviar_mensagem.php', {
-                method: 'POST',
-                body: cadastro
+                mensagensContainer.append(item);
             });
-            const resultadoCadastro = await respostaCadastro.json();
-            console.log(resultadoCadastro);
+            if (estavaNoFim) mensagensContainer.scrollTop = mensagensContainer.scrollHeight;
+        } catch (erro) {
+            statusMensagem.textContent = erro.message;
+        }
+    }
 
-            if(resultadoCadastro.sucesso){
-                inputMensagem.value = '';
-                idMensagemEditando = null;
-                await buscarMensagens();
-                alert(resultadoCadastro.mensagem);
-            } else{
-                alert(resultadoCadastro.mensagem);
+    mensagensContainer.addEventListener('click', async (evento) => {
+        const editar = evento.target.closest('[data-editar-mensagem]');
+        const excluir = evento.target.closest('[data-excluir-mensagem]');
+        if (editar) {
+            const mensagem = mensagensCarregadas.find((item) => Number(item.id_mensagem) === Number(editar.dataset.editarMensagem));
+            if (mensagem) {
+                idMensagemEditando = mensagem.id_mensagem;
+                campoMensagem.value = mensagem.conteudo;
+                campoMensagem.focus();
+                statusMensagem.textContent = 'Editando mensagem. Envie para salvar ou limpe o campo para cancelar.';
             }
-        } catch(erro){
-            console.error(erro);
-            alert('Mensagem não enviada!');
+        }
+        if (excluir && window.confirm('Deseja excluir esta mensagem?')) {
+            const dados = new URLSearchParams({ id_mensagem: excluir.dataset.excluirMensagem, id_conversa: String(idConversa) });
+            try {
+                const resposta = await fetch('deletar_mensagem.php', { method: 'POST', body: dados, headers: { Accept: 'application/json' } });
+                const resultado = await resposta.json();
+                if (!resultado.sucesso) throw new Error(resultado.mensagem || 'Não foi possível excluir.');
+                await buscarMensagens();
+            } catch (erro) { statusMensagem.textContent = erro.message; }
         }
     });
 
+    formMensagem.addEventListener('submit', async (evento) => {
+        evento.preventDefault();
+        const conteudo = campoMensagem.value.trim();
+        if (!conteudo) return;
+        const dados = new URLSearchParams({ id_conversa: String(idConversa), tipo: 'texto', conteudo });
+        if (idMensagemEditando !== null) dados.append('id_mensagem', String(idMensagemEditando));
+        const botao = formMensagem.querySelector('button[type="submit"]');
+        botao.disabled = true;
+        try {
+            const resposta = await fetch('enviar_mensagem.php', { method: 'POST', body: dados, headers: { Accept: 'application/json' } });
+            const resultado = await resposta.json();
+            if (!resposta.ok || !resultado.sucesso) throw new Error(resultado.mensagem || 'Não foi possível enviar.');
+            campoMensagem.value = '';
+            idMensagemEditando = null;
+            statusMensagem.textContent = '';
+            await buscarMensagens();
+        } catch (erro) { statusMensagem.textContent = erro.message; }
+        finally { botao.disabled = false; campoMensagem.focus(); }
+    });
+
+    const buscaConversaChat = document.getElementById('busca-conversa-chat');
+    const listaConversasChat = document.getElementById('lista-conversas-chat');
+    let temporizadorConversa;
+    async function carregarListaConversas() {
+        const resposta = await fetch(`buscarconversas.php?nome=${encodeURIComponent(buscaConversaChat.value.trim())}`);
+        const dados = await resposta.json();
+        if (!dados.sucesso) return;
+        listaConversasChat.replaceChildren();
+        dados.conversas.forEach((conversa) => {
+            const link = document.createElement('a');
+            link.className = `inbox-conversation ${Number(conversa.id_conversa) === Number(idConversa) ? 'is-active' : ''}`;
+            link.href = `chat.php?id_conversa=${encodeURIComponent(conversa.id_conversa)}`;
+            const foto = document.createElement(conversa.foto_conversa_url ? 'img' : 'span');
+            foto.className = 'inbox-avatar';
+            if (conversa.foto_conversa_url) { foto.src = conversa.foto_conversa_url.startsWith('../') ? conversa.foto_conversa_url : `../${conversa.foto_conversa_url}`; foto.alt = ''; }
+            else foto.textContent = (conversa.nome_conversa || 'N').slice(0, 1).toUpperCase();
+            const detalhes = document.createElement('span');
+            detalhes.className = 'inbox-conversation-details';
+            const nome = document.createElement('strong'); nome.textContent = conversa.nome_conversa || 'Conversa';
+            const resumo = document.createElement('small'); resumo.textContent = conversa.conteudo || 'Inicie a conversa';
+            detalhes.append(nome, resumo); link.append(foto, detalhes); listaConversasChat.append(link);
+        });
+    }
+    buscaConversaChat.addEventListener('input', () => { clearTimeout(temporizadorConversa); temporizadorConversa = setTimeout(carregarListaConversas, 250); });
+    carregarListaConversas();
+    buscarMensagens();
+    setInterval(buscarMensagens, 5000);
+    if (window.lucide) lucide.createIcons();
 </script>
 </body>
 </html>

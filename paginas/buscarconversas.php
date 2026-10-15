@@ -1,46 +1,56 @@
 <?php
-
 session_start();
+header('Content-Type: application/json; charset=UTF-8');
 
-if(!isset($_SESSION['id_user'])){
-    header("location:login.php");
+if (!isset($_SESSION['id_user'])) {
+    http_response_code(401);
+    echo json_encode(['sucesso' => false, 'mensagem' => 'Faça login para ver conversas.']);
     exit();
 }
 
-$id_user = $_SESSION['id_user'];
+require_once __DIR__ . '/conexao.php';
+$conn = (new Database())->conectar();
+$id_user = (int) $_SESSION['id_user'];
+$termo = trim($_GET['nome'] ?? '');
 
-require_once('conexao.php');
-
-$db = new Database;
-$conn = $db->conectar();
-
-$nome = $_GET['nome'] ?? null;
-
-$select_conversas = "
-select * from (
-select distinct_on (c.id_conversa)
-c.id_conversa, c.nome_conversa, c.tipo, c.foto_conversa_url, m.id_mensagem, m.id_envio, m.conteudo, m.criacao, u.username
-from conversa c
-inner join conversa_participante cp on cp.id_conversa = c.id_conversa and cp.id_user = :id_user
-left join mensagem m on m.id_conversa = c.id_conversa
-left join usuario u on u.id_user = m.id_envio
-order by c.id_conversa, m.criacao desc
-) as ultimas 
-order by criacao desc
+$sql = "
+    WITH conversas_usuario AS (
+        SELECT DISTINCT ON (c.id_conversa)
+            c.id_conversa,
+            c.nome_conversa,
+            c.tipo,
+            c.foto_conversa_url,
+            c.criacao,
+            mensagem.id_mensagem,
+            mensagem.id_envio,
+            mensagem.conteudo,
+            mensagem.criacao AS ultima_mensagem,
+            emissor.username AS username_ultimo
+        FROM conversa c
+        INNER JOIN conversa_participante participante
+            ON participante.id_conversa = c.id_conversa
+            AND participante.id_user = :id_user
+        LEFT JOIN LATERAL (
+            SELECT m.id_mensagem, m.id_envio, m.conteudo, m.criacao
+            FROM mensagem m
+            WHERE m.id_conversa = c.id_conversa
+              AND m.delatado_em IS NULL
+            ORDER BY m.criacao DESC
+            LIMIT 1
+        ) mensagem ON true
+        LEFT JOIN usuario emissor ON emissor.id_user = mensagem.id_envio
+        ORDER BY c.id_conversa, mensagem.criacao DESC NULLS LAST
+    )
+    SELECT * FROM conversas_usuario
+    WHERE (:busca_vazia = '' OR nome_conversa ILIKE :busca_nome OR username_ultimo ILIKE :busca_usuario)
+    ORDER BY ultima_mensagem DESC NULLS LAST, criacao DESC
 ";
-$stmt_conversas = $conn->prepare($select_conversas);
-$stmt_conversas->execute([
-    ":id_user" => $id_user,
-    ":nome" => '%'.$nome.'%'
+$stmt = $conn->prepare($sql);
+$stmt->execute([
+    ':id_user' => $id_user,
+    ':busca_vazia' => $termo,
+    ':busca_nome' => '%' . $termo . '%',
+    ':busca_usuario' => '%' . $termo . '%'
 ]);
 
-$conversas = $stmt_conversas->fetchAll(PDO:: FETCH_ASSOC);
-
-header('Content-Type: application/json; charset=UTF-8');
-
-echo json_encode([
-    'sucesso' => true,
-    'conversas' => $conversas
-]);
-
-?>
+echo json_encode(['sucesso' => true, 'conversas' => $stmt->fetchAll(PDO::FETCH_ASSOC)], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);

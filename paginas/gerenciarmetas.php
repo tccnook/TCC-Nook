@@ -6,6 +6,23 @@
    EXCLUIR META
 ========================== */
 
+if (isset($_POST['excluir_meta_concluida'])) {
+    $delete = "
+        DELETE FROM meta_leitura
+        WHERE id_user = :id_user
+          AND id = :id_exclusao
+          AND status = 'concluida'
+    ";
+
+    executar_sql($conn, $delete, [
+        ':id_user' => $id_user,
+        ':id_exclusao' => $_POST['excluir_meta_concluida']
+    ]);
+
+    header('Location: perfil.php?aba=visao-geral&metas=1');
+    exit();
+}
+
 if (isset($_GET['exc_meta'])) {
 
     $delete = "
@@ -37,12 +54,12 @@ $params = [
     ':id_user' => $id_user
 ];
 
-$filtro_nome = trim($_POST['nome_meta'] ?? '');
-$filtro_periodo = $_POST['periodo'] ?? '';
+$filtro_nome = trim($_GET['nome_meta'] ?? '');
+$filtro_periodo = $_GET['periodo'] ?? '';
 
 if (!empty($filtro_nome)) {
 
-    $select .= " AND nome_meta LIKE :nome_meta";
+    $select .= " AND nome_meta ILIKE :nome_meta";
 
     $params[':nome_meta'] = '%' . $filtro_nome . '%';
 }
@@ -55,6 +72,8 @@ if (!empty($filtro_periodo)) {
 }
 
 $metas_modal = buscar_dados($conn, $select, $params, true);
+$meta_feedback = $_SESSION['meta_feedback'] ?? '';
+unset($_SESSION['meta_feedback']);
 
 $nomes_status = [
     'andamento' => 'Em andamento',
@@ -72,7 +91,13 @@ $nomes_status = [
     </button>
 </header>
 
-<form name="pesquisarmeta" method="POST" action="?aba=visao-geral" class="filtro-metas">
+<?php if ($meta_feedback !== ''): ?>
+    <p class="meta-feedback" role="status"><?= htmlspecialchars($meta_feedback) ?></p>
+<?php endif; ?>
+
+<form name="pesquisarmeta" method="GET" action="perfil.php" class="filtro-metas" id="formFiltroMetas">
+    <input type="hidden" name="aba" value="visao-geral">
+    <input type="hidden" name="metas" value="1">
 
     <div class="campo-icone">
         <i data-lucide="search"></i>
@@ -87,8 +112,6 @@ $nomes_status = [
         <label><input type="radio" name="periodo" value="mensal" class="sr-only" <?= $filtro_periodo === 'mensal' ? 'checked' : '' ?>> Mensal</label>
         <label><input type="radio" name="periodo" value="anual" class="sr-only" <?= $filtro_periodo === 'anual' ? 'checked' : '' ?>> Anual</label>
     </fieldset>
-
-    <button type="submit" name="filtrar" class="button-perfil">Filtrar</button>
 
     <?php if ($filtro_nome !== '' || $filtro_periodo !== ''): ?>
         <a href="?aba=visao-geral&metas=1" class="link-card">Remover filtro</a>
@@ -131,6 +154,12 @@ $nomes_status = [
                     <span class="status status-<?= htmlspecialchars($m['status']) ?>">
                         <?= $nomes_status[$m['status']] ?? htmlspecialchars($m['status']) ?>
                     </span>
+                    <?php if ($m['status'] === 'concluida'): ?>
+                        <form method="POST" action="perfil.php?aba=visao-geral&metas=1" class="meta-concluir-form">
+                            <input type="hidden" name="excluir_meta_concluida" value="<?= (int) $m['id'] ?>">
+                            <button type="submit" class="meta-concluir" onclick="return confirm('Excluir esta meta concluída?')">Concluir Meta!</button>
+                        </form>
+                    <?php endif; ?>
                 </section>
 
                 <p class="meta-periodo">Sua meta <?= htmlspecialchars($m['periodo']) ?> · válida até <?= $prazo ?></p>
@@ -166,7 +195,10 @@ $nomes_status = [
 
 <?php endif; ?>
 
+<button type="button" class="button-perfil meta-criar-trigger" data-abrir-criar-meta>
+    <i data-lucide="plus"></i> Criar meta
+</button>
+
 <footer class="form-acoes">
     <button type="button" class="btn-cancelar" data-fechar>Fechar metas</button>
-    <a href="criarmeta.php" class="button-perfil"><i data-lucide="plus"></i> Criar meta</a>
 </footer>

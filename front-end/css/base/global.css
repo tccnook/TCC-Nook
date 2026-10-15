@@ -5,6 +5,23 @@ body {
     min-height: 100vh;
 }
 
+html,
+body,
+*,
+*::before,
+*::after {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+
+*::-webkit-scrollbar,
+*::-webkit-scrollbar-thumb,
+*::-webkit-scrollbar-track {
+    display: none;
+    width: 0;
+    height: 0;
+}
+
 a {
     text-decoration: none;
     color: var(--color-accent2);

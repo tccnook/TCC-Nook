@@ -20,6 +20,13 @@
             w.nome_lista,
             w.descricao,
             w.visibilidade,
+            w.id_user AS id_dono,
+            dono.username AS username_dono,
+            (w.id_user = :id_dono) AS sou_dono,
+            EXISTS (
+                SELECT 1 FROM whishlist_seguida ws
+                WHERE ws.id_whishlist = w.id AND ws.id_user = :id_seguidor
+            ) AS seguindo,
             (
                 SELECT COUNT(*)
                 FROM whishbook wb
@@ -44,17 +51,27 @@
                 AND c.categoria_curtido = 'whishlist'
             ) AS curtidas
         FROM whishlist w
-        WHERE w.id_user = :id_user
+        INNER JOIN usuario dono ON dono.id_user = w.id_user
+        WHERE w.id_user = :id_lista_propria
+           OR EXISTS (
+                SELECT 1 FROM whishlist_seguida ws
+                WHERE ws.id_whishlist = w.id AND ws.id_user = :id_lista_seguida
+           )
         ORDER BY w.data_criacao DESC
     ";
 
     $stmt = $conn->prepare($select_listas);
-    $stmt->execute([':id_user' => $id_user]);
+    $stmt->execute([
+        ':id_dono' => $id_user,
+        ':id_seguidor' => $id_user,
+        ':id_lista_propria' => $id_user,
+        ':id_lista_seguida' => $id_user
+    ]);
 
     $listas = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-    $select_qntd_listas = 'select count(*) as quantidade_listas from whishlist where id_user = :id_user;';
+    $select_qntd_listas = 'SELECT COUNT(DISTINCT w.id) FROM whishlist w WHERE w.id_user = :id_proprio OR EXISTS (SELECT 1 FROM whishlist_seguida ws WHERE ws.id_whishlist = w.id AND ws.id_user = :id_seguida);';
     $stmt = $conn->prepare($select_qntd_listas);
-    $stmt->execute([':id_user' => $id_user]);
+    $stmt->execute([':id_proprio' => $id_user, ':id_seguida' => $id_user]);
     $qntd_listas = $stmt->fetchColumn();
 ?>

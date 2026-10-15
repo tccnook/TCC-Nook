@@ -1,9 +1,19 @@
 <?php
 
-$select = 'select l.id_livro, l.titulo_livro, l.nome_autor, l.capa_url, pr.ultima_leitura, c.nota_avaliacao, c.comentario
+$select = 'select l.id_livro, l.titulo_livro, l.nome_autor, l.capa_url, pr.ultima_leitura, r.titulo_resenha, r.sinopse as resenha, r.nota_avaliacao
 from progresso_leitura pr
 inner join livro l on l.id_livro = pr.id_livro
-left join comentario_livro c on c.id_livro = pr.id_livro and c.id_user = pr.id_user
+left join lateral (
+        select r.titulo_resenha, r.sinopse, c.nota_avaliacao
+        from resenha r
+        left join comentario c on c.id_coisocurtido = r.id_resenha
+            and c.id_user = r.id_user
+            and c.categoria_curtida = \'resenha\'
+        where r.id_livro = pr.id_livro
+            and r.id_user = pr.id_user
+        order by r.data_publi desc, r.id_resenha desc
+        limit 1
+) r on true
 where pr.porcentagem_progresso = 100 and pr.id_user = :id_user
 order by pr.ultima_leitura desc;
 ';
@@ -40,6 +50,9 @@ $total_lidos = count($livros_lidos);
         <div class="livros-grid">
             <?php foreach($livros_lidos as $livro_lido): ?>
                 <article class="card livro-lido">
+                    <a class="livro-lido-overlay"
+                       href="visao_livro.php?id_livro=<?= urlencode($livro_lido['id_livro']) ?>"
+                       aria-label="Abrir página de <?= htmlspecialchars($livro_lido['titulo_livro']) ?>"></a>
 
                     <div class="livro-capa">
                         <?php if(!empty($livro_lido['capa_url'])): ?>
@@ -53,7 +66,7 @@ $total_lidos = count($livros_lidos);
                         <?php if($livro_lido['nota_avaliacao'] !== null): ?>
                             <?= estrelas($livro_lido['nota_avaliacao']) ?>
                         <?php else: ?>
-                            <a href="comentario_livro.php?id_livro=<?= urlencode($livro_lido['id_livro']) ?>" aria-label="Avaliar este livro">
+                            <a href="visao_livro.php?id_livro=<?= urlencode($livro_lido['id_livro']) ?>" aria-label="Avaliar este livro">
                                 <?= estrelas(0) ?>
                             </a>
                         <?php endif; ?>
@@ -65,10 +78,13 @@ $total_lidos = count($livros_lidos);
 
                         <i data-lucide="quote"></i>
 
-                        <?php if($livro_lido['comentario'] !== null): ?>
-                            <p class="livro-comentario"><?= htmlspecialchars($livro_lido['comentario']) ?></p>
+                        <?php if($livro_lido['resenha'] !== null): ?>
+                            <?php if(!empty($livro_lido['titulo_resenha'])): ?>
+                                <h4 class="livro-resenha-titulo"><?= htmlspecialchars($livro_lido['titulo_resenha']) ?></h4>
+                            <?php endif; ?>
+                            <p class="livro-comentario"><?= nl2br(htmlspecialchars($livro_lido['resenha'])) ?></p>
                         <?php else: ?>
-                            <a href="comentario_livro.php?id_livro=<?= urlencode($livro_lido['id_livro']) ?>" class="sem-resenha">
+                            <a href="visao_livro.php?id_livro=<?= urlencode($livro_lido['id_livro']) ?>" class="sem-resenha">
                                 Escreva uma resenha sobre este livro!
                             </a>
                         <?php endif; ?>
