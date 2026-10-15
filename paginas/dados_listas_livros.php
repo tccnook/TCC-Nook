@@ -41,7 +41,7 @@
                 SELECT COUNT(*)
                 FROM curtida c
                 WHERE c.id_coisocurtido = w.id
-                AND c.categoria_curtido = 'whishlist'
+                AND c.categoria_curtido = 'lista'
             ) AS curtidas
         FROM whishlist w
         WHERE w.id_user = :id_user

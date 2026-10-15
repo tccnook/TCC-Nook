@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict hs44SmMbZkOLKfC2b6oDqgibAUdexO9fcLamdyISGKhrCHHcIGtU0nUHZLWGQ9R
+\restrict boxVilRbCtaNPaJJTM52SNw3RTjq3T2cQXUraHza1kl94YRgizyZ1nlkood14Cb
 
 -- Dumped from database version 18.4
 -- Dumped by pg_dump version 18.4
@@ -1098,6 +1098,9 @@ COPY public.curtida (id_curtida, id_user, categoria_curtido, id_coisocurtido) FR
 1	19	post	1
 2	19	post	2
 3	19	post	3
+41	30	lista	21
+42	30	lista	20
+43	30	lista	23
 \.
 
 
@@ -1934,7 +1937,7 @@ SELECT pg_catalog.setval('public.conversa_id_conversa_seq', 1, false);
 -- Name: curtida_id_curtida_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.curtida_id_curtida_seq', 3, true);
+SELECT pg_catalog.setval('public.curtida_id_curtida_seq', 43, true);
 
 
 --
@@ -2278,6 +2281,14 @@ ALTER TABLE ONLY public.recuperacao_senha
 
 ALTER TABLE ONLY public.resenha
     ADD CONSTRAINT resenha_pkey PRIMARY KEY (id_resenha);
+
+
+--
+-- Name: curtida unique_curtida; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.curtida
+    ADD CONSTRAINT unique_curtida UNIQUE (id_user, categoria_curtido, id_coisocurtido);
 
 
 --
@@ -2708,5 +2719,5 @@ ALTER TABLE ONLY public.progresso_leitura
 -- PostgreSQL database dump complete
 --
 
-\unrestrict hs44SmMbZkOLKfC2b6oDqgibAUdexO9fcLamdyISGKhrCHHcIGtU0nUHZLWGQ9R
+\unrestrict boxVilRbCtaNPaJJTM52SNw3RTjq3T2cQXUraHza1kl94YRgizyZ1nlkood14Cb
 

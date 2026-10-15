@@ -17,8 +17,6 @@
 
     require_once('dados_listas_livros.php');
 
-    echo '<br> ID do mano: '.$id_user_terceiro;
-
     $select_listas = " select
             w.id,
             w.nome_lista,
@@ -45,7 +43,7 @@
                 SELECT COUNT(*)
                 FROM curtida c
                 WHERE c.id_coisocurtido = w.id
-                AND c.categoria_curtido = 'whishlist'
+                AND c.categoria_curtido = 'lista'
             ) AS curtidas
         FROM whishlist w
         WHERE w.id_user = :id_user_terceiro
@@ -62,6 +60,42 @@
     $stmt = $conn->prepare($select_qntd_listas);
     $stmt->execute([':id_user_terceiro' => $id_user_terceiro]);
     $qntd_listas = $stmt->fetchColumn();
+
+    if (isset($_POST['curtir']) || isset($_POST['descurtir'])) {
+        $id_lista_curtida = (int) $_POST['id_lista'];
+
+        if (isset($_POST['curtir'])) {
+            $insert = "insert into curtida (id_user, categoria_curtido, id_coisocurtido)
+                    select :id_user, 'lista', :id_lista
+                    WHERE NOT EXISTS (
+                        SELECT 1
+                        FROM curtida
+                        WHERE id_user = :id_user2
+                        AND categoria_curtido = 'lista'
+                        AND id_coisocurtido = :id_lista2
+                    )";
+
+            $stmt = $conn->prepare($insert);
+            $stmt->execute([
+                ':id_user' => $id_user,
+                ':id_lista' => $id_lista_curtida,
+                ':id_user2' => $id_user,
+                ':id_lista2' => $id_lista_curtida
+            ]);
+        }
+
+        if (isset($_POST['descurtir'])) {
+            $delete = "delete from curtida where id_user = :id_user and categoria_curtido = 'lista' and id_coisocurtido = :id_lista";
+            $stmt = $conn->prepare($delete);
+            $stmt->execute([
+                ':id_user' => $id_user,
+                ':id_lista' => $id_lista_curtida
+            ]);
+        }
+
+    header('Location: perfil_user_terceiro.php?id_user=' . $id_user_terceiro);
+    exit();
+}
 ?>
 <!DOCTYPE html>
 <html lang="pt-br">
@@ -79,23 +113,38 @@
     <section>
         <?php
             foreach($listas as $lista):
-                $capas = json_decode($lista['capas'], true);    
+                $capas = json_decode($lista['capas'], true);
+
+                $select_curtida = "select * from curtida where id_user = :id_user and categoria_curtido = 'lista' and id_coisocurtido = :id_lista";
+
+                $stmt = $conn->prepare($select_curtida);
+                $stmt->execute([
+                    ':id_user' => $id_user,
+                    ':id_lista' => $lista['id']
+                ]);
+
+                $curtida = $stmt->fetch(PDO::FETCH_ASSOC);
+                $name = empty($curtida) ? 'curtir' : 'descurtir';
             ?>
-                <a href="ver_lista_terceiros.php?id=<?= $lista['id']?>" style="text-decoration:none">
-                    <h3><?= $lista['nome_lista']?></h3>
-                    <p><?= $lista['descricao']?></p>
+                <section>
+                    <a href="ver_lista_terceiros.php?id=<?= $lista['id']?>" style="text-decoration:none">
+                        <h3><?= $lista['nome_lista']?></h3>
+                        <p><?= $lista['descricao']?></p>
 
-                    <div class="capas">
-                        <?php foreach ($capas as $capa) { ?>
-                            <img src="<?= $capa ?>" alt="Capa do livro">
-                        <?php } ?>
-                    </div>
-
-                    <span><?= htmlspecialchars($lista['quantidade_livros']) ?> Livros</span>
-                    <span><?= htmlspecialchars($lista['curtidas']) ?> Curtidas</span>
-                    <span>Salvar</span>
-                    <span><?= $lista['visibilidade']?></span>
-                </a>
+                        <div class="capas">
+                            <?php foreach ($capas as $capa) { ?>
+                                <img src="<?= $capa ?>" alt="Capa do livro">
+                            <?php } ?>
+                        </div>
+                    </a>
+                        <span><?= htmlspecialchars($lista['quantidade_livros']) ?> Livros</span>
+                        <form action="#" method="POST">
+                            <input type="hidden" name="id_lista" value="<?= (int) $lista['id'] ?>">
+                            <button type="submit" name="<?= $name ?>"><span><?= htmlspecialchars($lista['curtidas']) ?> Curtidas</span></button>
+                            <span>Salvar</span>
+                        </form>
+                        <span><?= ucfirst($lista['visibilidade']) ?></span>
+                </section>
         <?php endforeach ?>
     </section>    
 </body>

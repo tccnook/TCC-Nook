@@ -38,21 +38,22 @@
             foreach($listas as $lista):
                 $capas = json_decode($lista['capas'], true);    
             ?>
-                <a href="ver_lista.php?id=<?= $lista['id']?>" style="text-decoration:none">
-                    <h3><?= $lista['nome_lista']?></h3>
-                    <p><?= $lista['descricao']?></p>
+                <section>    
+                    <a href="ver_lista.php?id=<?= $lista['id']?>" style="text-decoration:none">
+                        <h3><?= $lista['nome_lista']?></h3>
+                        <p><?= $lista['descricao']?></p>
 
-                    <div class="capas">
-                        <?php foreach ($capas as $capa) { ?>
-                            <img src="<?= $capa ?>" alt="Capa do livro">
-                        <?php } ?>
-                    </div>
-
-                    <span><?= htmlspecialchars($lista['quantidade_livros']) ?> Livros</span>
-                    <span><?= htmlspecialchars($lista['curtidas']) ?> Curtidas</span>
-                    <span>Salvar</span>
-                    <span><?= $lista['visibilidade']?></span>
-                </a>
+                        <div class="capas">
+                            <?php foreach ($capas as $capa) { ?>
+                                <img src="<?= $capa ?>" alt="Capa do livro">
+                            <?php } ?>
+                        </div>
+                    </a>
+                        <span><?= htmlspecialchars($lista['quantidade_livros']) ?> Livros</span>
+                        <span><?= htmlspecialchars($lista['curtidas']) ?> Curtidas</span>
+                        <span>Salvar</span>
+                        <span><?= ucfirst($lista['visibilidade']) ?></span>
+                </section>
         <?php endforeach ?>
     </section>
 

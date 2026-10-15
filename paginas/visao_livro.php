@@ -368,9 +368,12 @@ echo '<section class="livro-externo">';
         </button></a>';
     }
 
-    $select_lido = "select * from livros_lidos where id_livro = :id_livro";
+    $select_lido = "select * from livros_lidos where id_livro = :id_livro and id_user = :id_user";
     $stmt  = $conn->prepare($select_lido);
-    $stmt->execute([':id_livro' => $id_livro]);
+    $stmt->execute([
+        ':id_livro' => $id_livro,
+        ':id_user' => $id_user
+    ]);
     $lido = $stmt->fetch(PDO::FETCH_ASSOC);
 
     if(empty($lido)){
