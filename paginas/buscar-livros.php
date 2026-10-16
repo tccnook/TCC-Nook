@@ -30,6 +30,7 @@ $sql = "
         l.idioma,
         l.class_ind,
         l.data_publi,
+        l.google_books_id,
         avaliacao.media,
         avaliacao.total
     FROM livro l
@@ -59,4 +60,74 @@ if ($genero !== false && $genero !== '') {
 $sql .= ' ORDER BY ' . $orderBy . ' LIMIT 60';
 $stmt = $conn->prepare($sql);
 $stmt->execute($params);
-echo json_encode(['livros' => $stmt->fetchAll(PDO::FETCH_ASSOC)], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+$livros = $stmt->fetchAll(PDO::FETCH_ASSOC);
+$idsGoogleExistentes = array_column($livros, 'google_books_id');
+$avisoGoogle = null;
+
+if ($nome !== '' && ($genero === false || $genero === '') && function_exists('curl_init')) {
+    require_once __DIR__ . '/config_api_ex.php';
+
+    $parametrosApi = [
+        'q' => $nome,
+        'langRestrict' => 'pt',
+        'maxResults' => 20,
+        'printType' => 'books'
+    ];
+    if ($chave_api !== '') {
+        $parametrosApi['key'] = $chave_api;
+    }
+
+    $ch = curl_init('https://www.googleapis.com/books/v1/volumes?' . http_build_query($parametrosApi));
+    curl_setopt_array($ch, [
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_TIMEOUT => 10,
+        CURLOPT_USERAGENT => 'Nook/1.0'
+    ]);
+    $resposta = curl_exec($ch);
+    $codigoHttp = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    curl_close($ch);
+
+    if ($resposta !== false && $codigoHttp === 200) {
+        try {
+            $dadosGoogle = json_decode($resposta, true, 512, JSON_THROW_ON_ERROR);
+        } catch (JsonException $erro) {
+            $dadosGoogle = [];
+            $avisoGoogle = 'A busca externa está temporariamente indisponível.';
+        }
+
+        foreach ($dadosGoogle['items'] ?? [] as $itemGoogle) {
+            $googleId = $itemGoogle['id'] ?? '';
+            $infoGoogle = $itemGoogle['volumeInfo'] ?? [];
+            if ($googleId === '' || in_array($googleId, $idsGoogleExistentes, true) || empty($infoGoogle['title'])) {
+                continue;
+            }
+
+            $capa = $infoGoogle['imageLinks']['thumbnail'] ?? null;
+            if ($capa !== null) {
+                $capa = preg_replace('/^http:/i', 'https:', $capa);
+            }
+
+            $livros[] = [
+                'id_livro' => null,
+                'google_books_id' => $googleId,
+                'titulo_livro' => $infoGoogle['title'],
+                'nome_autor' => implode(', ', $infoGoogle['authors'] ?? []),
+                'capa_url' => $capa,
+                'paginas' => $infoGoogle['pageCount'] ?? null,
+                'idioma' => $infoGoogle['language'] ?? null,
+                'class_ind' => null,
+                'data_publi' => $infoGoogle['publishedDate'] ?? null,
+                'media' => $infoGoogle['averageRating'] ?? null,
+                'total' => $infoGoogle['ratingsCount'] ?? 0
+            ];
+            $idsGoogleExistentes[] = $googleId;
+        }
+    } else {
+        $avisoGoogle = 'A busca externa está temporariamente indisponível.';
+    }
+}
+
+echo json_encode([
+    'livros' => $livros,
+    'aviso_google' => $avisoGoogle
+], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);

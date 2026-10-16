@@ -28,8 +28,9 @@ $qntd_listas = $qntd_listas ?? 0;
     <div class="listas-grid">
         <?php foreach($listas as $lista): ?>
             <?php $capas = array_slice(json_decode($lista['capas'], true) ?? [], 0, 3); ?>
+            <?php $ehListaDoUsuario = (int) $lista['id_dono'] === (int) $id_user; ?>
 
-            <article class="lista-card">
+            <article class="lista-card <?= $ehListaDoUsuario ? 'lista-card--usuario' : 'lista-card--outro' ?>">
                 <a href="ver_lista.php?id=<?= urlencode($lista['id']) ?>">
                     <div class="lista-topo">
                         <h3><?= htmlspecialchars($lista['nome_lista']) ?></h3>

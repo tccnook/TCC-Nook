@@ -129,8 +129,11 @@ $generos = $stmt_generos->fetchAll(PDO::FETCH_ASSOC);
             const imagem = livro.capa_url
                 ? `<img src="${escaparHtml(urlCapa(livro.capa_url))}" alt="Capa de ${escaparHtml(livro.titulo_livro)}" loading="lazy">`
                 : '<span class="catalog-cover-empty">Capa indisponível</span>';
+            const urlLivro = livro.id_livro
+                ? `visao_livro.php?id_livro=${encodeURIComponent(livro.id_livro)}`
+                : `visao_livro.php?google_books_id=${encodeURIComponent(livro.google_books_id)}`;
             return `<article class="catalog-book">
-                <a href="visao_livro.php?id_livro=${encodeURIComponent(livro.id_livro)}" class="catalog-book-link">
+                <a href="${escaparHtml(urlLivro)}" class="catalog-book-link">
                     <div class="catalog-cover">${imagem}<span class="catalog-book-open"><i data-lucide="arrow-up-right"></i></span></div>
                     <div class="catalog-book-meta">
                         <p>${escaparHtml(livro.nome_autor || 'Autor não informado')}</p>

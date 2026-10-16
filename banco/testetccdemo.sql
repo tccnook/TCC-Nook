@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict gqFd3uBI1mEfk7zaGpGZ2mZOLaMDffLeeqzj2xM76oRf6QCj9Hxr4KKYWwNE4UB
+\restrict 6fIR9iEduYZtjrzzm4wCgmpQxWSPFXhdPrQz0o7c1mxCjrPfNR6hPZpySd0zj2e
 
 -- Dumped from database version 18.4
 -- Dumped by pg_dump version 18.4
@@ -24,6 +24,35 @@ SET default_tablespace = '';
 SET default_table_access_method = heap;
 
 --
+-- Name: admin; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.admin (
+    id_admin integer NOT NULL,
+    nome_completo character varying(100),
+    email character varying(100),
+    criacao_conta timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
+    senha character varying(250)
+);
+
+
+ALTER TABLE public.admin OWNER TO postgres;
+
+--
+-- Name: admin_id_admin_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+ALTER TABLE public.admin ALTER COLUMN id_admin ADD GENERATED ALWAYS AS IDENTITY (
+    SEQUENCE NAME public.admin_id_admin_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1
+);
+
+
+--
 -- Name: autor; Type: TABLE; Schema: public; Owner: postgres
 --
 
@@ -32,7 +61,8 @@ CREATE TABLE public.autor (
     nome_autor character varying(90),
     autor character varying(90) NOT NULL,
     bio text,
-    foto_url character varying(250)
+    foto_url character varying(250),
+    id_user integer
 );
 
 
@@ -71,6 +101,36 @@ ALTER TABLE public.autor_user OWNER TO postgres;
 
 ALTER TABLE public.autor_user ALTER COLUMN id ADD GENERATED ALWAYS AS IDENTITY (
     SEQUENCE NAME public.autor_user_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1
+);
+
+
+--
+-- Name: avaliacao; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.avaliacao (
+    id_avaliacao integer NOT NULL,
+    id_user integer,
+    categoria_avaliada character varying(40),
+    id_avaliado integer,
+    nota_avaliacao numeric(3,1),
+    criado_em timestamp without time zone DEFAULT CURRENT_TIMESTAMP
+);
+
+
+ALTER TABLE public.avaliacao OWNER TO postgres;
+
+--
+-- Name: avaliacao_id_avaliacao_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+ALTER TABLE public.avaliacao ALTER COLUMN id_avaliacao ADD GENERATED ALWAYS AS IDENTITY (
+    SEQUENCE NAME public.avaliacao_id_avaliacao_seq
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
@@ -219,7 +279,7 @@ CREATE TABLE public.conta (
     bio text,
     visibilidade character varying(20) DEFAULT 'publico'::character varying NOT NULL,
     banner_url character varying(250),
-    CONSTRAINT conta_visibilidade_check CHECK (((visibilidade)::text = ANY (ARRAY[('publico'::character varying)::text, ('privado'::character varying)::text])))
+    CONSTRAINT conta_visibilidade_check CHECK (((visibilidade)::text = ANY ((ARRAY['publico'::character varying, 'privado'::character varying])::text[])))
 );
 
 
@@ -349,14 +409,29 @@ ALTER TABLE public.follow OWNER TO postgres;
 --
 
 CREATE TABLE public.follow_autor (
+    id integer NOT NULL,
     id_follower integer NOT NULL,
     id_autor integer NOT NULL,
-    status_follow character varying(50),
+    status character varying(50),
     data_follow timestamp without time zone DEFAULT CURRENT_TIMESTAMP
 );
 
 
 ALTER TABLE public.follow_autor OWNER TO postgres;
+
+--
+-- Name: follow_autor_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+ALTER TABLE public.follow_autor ALTER COLUMN id ADD GENERATED ALWAYS AS IDENTITY (
+    SEQUENCE NAME public.follow_autor_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1
+);
+
 
 --
 -- Name: livro; Type: TABLE; Schema: public; Owner: postgres
@@ -366,24 +441,24 @@ CREATE TABLE public.livro (
     id_livro integer CONSTRAINT livro_id_not_null NOT NULL,
     titulo_livro character varying(100) NOT NULL,
     resumo_livro text,
-    class_ind integer,
+    class_ind integer NOT NULL,
     nome_autor character varying(100),
     id_user integer,
     sinopse_livro text,
-    capa_url text,
     data_publi timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
     idioma character varying(90),
     visibilidade character varying(20) DEFAULT 'publico'::character varying NOT NULL,
+    origem character varying(20),
+    interacao_de character varying(20) DEFAULT 'todos'::character varying,
+    capa_url text,
     google_books_id character varying(50),
-    origem character varying(30) DEFAULT 'usuario'::character varying,
     link_leitura text,
     link_compra text,
     nota_google numeric(2,1),
-    avaliacoes_google integer,
     paginas integer,
     isbn10 character varying(10),
     isbn13 character varying(13),
-    CONSTRAINT livro_visibilidade_check CHECK (((visibilidade)::text = ANY (ARRAY[('publico'::character varying)::text, ('privado'::character varying)::text])))
+    CONSTRAINT livro_visibilidade_check CHECK (((visibilidade)::text = ANY ((ARRAY['publico'::character varying, 'privado'::character varying])::text[])))
 );
 
 
@@ -472,6 +547,38 @@ ALTER TABLE public.meta_leitura OWNER TO postgres;
 
 ALTER TABLE public.meta_leitura ALTER COLUMN id ADD GENERATED ALWAYS AS IDENTITY (
     SEQUENCE NAME public.meta_leitura_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1
+);
+
+
+--
+-- Name: notificacao; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.notificacao (
+    id_notificacao integer NOT NULL,
+    id_user_recebido integer NOT NULL,
+    id_user_origem integer,
+    tipo character varying(50) NOT NULL,
+    id_referencia integer,
+    mensagem text,
+    lida boolean DEFAULT false,
+    criada_em timestamp without time zone DEFAULT CURRENT_TIMESTAMP
+);
+
+
+ALTER TABLE public.notificacao OWNER TO postgres;
+
+--
+-- Name: notificacao_id_notificacao_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+ALTER TABLE public.notificacao ALTER COLUMN id_notificacao ADD GENERATED ALWAYS AS IDENTITY (
+    SEQUENCE NAME public.notificacao_id_notificacao_seq
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
@@ -581,7 +688,8 @@ CREATE TABLE public.post (
     criado_em timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
     visibilidade character varying(20) DEFAULT 'publico'::character varying NOT NULL,
     legenda text,
-    CONSTRAINT post_visibilidade_check CHECK (((visibilidade)::text = ANY (ARRAY[('publico'::character varying)::text, ('privado'::character varying)::text])))
+    interacao_de character varying(20) DEFAULT 'todos'::character varying,
+    CONSTRAINT post_visibilidade_check CHECK (((visibilidade)::text = ANY ((ARRAY['publico'::character varying, 'privado'::character varying])::text[])))
 );
 
 
@@ -775,7 +883,8 @@ CREATE TABLE public.resenha (
     data_publi timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
     id_livro integer,
     visibilidade character varying(20) DEFAULT 'publico'::character varying NOT NULL,
-    CONSTRAINT resenha_visibilidade_check CHECK (((visibilidade)::text = ANY (ARRAY[('publico'::character varying)::text, ('privado'::character varying)::text])))
+    interacao_de character varying(20) DEFAULT 'todos'::character varying,
+    CONSTRAINT resenha_visibilidade_check CHECK (((visibilidade)::text = ANY ((ARRAY['publico'::character varying, 'privado'::character varying])::text[])))
 );
 
 
@@ -787,6 +896,34 @@ ALTER TABLE public.resenha OWNER TO postgres;
 
 ALTER TABLE public.resenha ALTER COLUMN id_resenha ADD GENERATED ALWAYS AS IDENTITY (
     SEQUENCE NAME public.resenha_id_resenha_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1
+);
+
+
+--
+-- Name: salvos; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.salvos (
+    id integer NOT NULL,
+    id_user integer,
+    categoria_salva character varying(30),
+    id_salvo integer
+);
+
+
+ALTER TABLE public.salvos OWNER TO postgres;
+
+--
+-- Name: salvos_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+ALTER TABLE public.salvos ALTER COLUMN id ADD GENERATED ALWAYS AS IDENTITY (
+    SEQUENCE NAME public.salvos_id_seq
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
@@ -878,13 +1015,11 @@ CREATE TABLE public.whishlist (
     id integer NOT NULL,
     nome_lista character varying(120),
     id_user integer,
-    descricao text,
-    visibilidade character varying(10) DEFAULT 'publica'::character varying NOT NULL,
-    tipo_capa character varying(15) DEFAULT 'automatica'::character varying NOT NULL,
+    descricao character varying(90),
+    visibilidade character varying(10) DEFAULT 'publica'::character varying,
+    tipo_capa character varying(15) DEFAULT 'automatica'::character varying,
     capa_url character varying(250),
-    data_criacao timestamp without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
-    CONSTRAINT whishlist_tipo_capa_check CHECK (((tipo_capa)::text = ANY ((ARRAY['manual'::character varying, 'automatica'::character varying])::text[]))),
-    CONSTRAINT whishlist_visibilidade_check CHECK (((visibilidade)::text = ANY ((ARRAY['publica'::character varying, 'privada'::character varying])::text[])))
+    data_criacao timestamp without time zone DEFAULT CURRENT_TIMESTAMP
 );
 
 
@@ -912,20 +1047,31 @@ ALTER TABLE ONLY public.progresso_leitura ALTER COLUMN id_progresso SET DEFAULT 
 
 
 --
+-- Data for Name: admin; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.admin (id_admin, nome_completo, email, criacao_conta, senha) FROM stdin;
+1	Anselmo Florentino	anselmo@gmail.com	2026-09-21 15:25:34.847507	$2y$10$k1QCqGZEFMIkI2l9XNrxKemJ3Zg7X9swg6ZCI3XGWzKaF51dgr2iK
+2	ADM Caio	admcaio@gmail.com	2026-09-30 19:17:53.985451	$2y$10$xDgH2TJ5yumvUJfQxuvPxuU1xcK59EvY8gtbtyXtWhR2GPuunDuYS
+3	adsadsa	dsadsadsad	2026-09-30 19:22:18.657022	$2y$10$V2M6tXWISPPox1Y.1kd/IOCjzDkbcgQX2d.yJY1hif7bj6V.TGxjK
+4	admteste	admteste@gmail.com	2026-09-30 19:24:34.696481	$2y$10$yNmIKDA31gN2zLbIaXK9eue5Z6CFYm/NV2HYwQmaiHgmh47Xj6Aeq
+\.
+
+
+--
 -- Data for Name: autor; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.autor (id_autor, nome_autor, autor, bio, foto_url) FROM stdin;
-1	Machado de Assis	machado	\N	\N
-2	Edgar Allan Paul	edgar	\N	\N
-4	Abel Ferreira	abel	\N	\N
-5	Rick Riordan	rick-riordan	\N	\N
-6	Agatha Christie	agatha-christie	\N	\N
-7	George Orwell	george-orwell	\N	\N
-8	Stephen King	stephen-king	\N	\N
-9	J.R.R. Tolkien	jrr-tolkien	\N	\N
-3	J.K Rowling	jk-rowling	\N	\N
-11	Ozzy Osbourne	principe_das_trevas	Amo comer morcegos hahahahah	img/foto_autor/foto_perfil_autor_ozzy_osbourne.jpg
+COPY public.autor (id_autor, nome_autor, autor, bio, foto_url, id_user) FROM stdin;
+1	Machado de Assis	machado	\N	\N	\N
+2	Edgar Allan Paul	edgar	\N	\N	\N
+4	Abel Ferreira	abel	\N	\N	\N
+5	Rick Riordan	rick-riordan	\N	\N	\N
+6	Agatha Christie	agatha-christie	\N	\N	\N
+7	George Orwell	george-orwell	\N	\N	\N
+8	Stephen King	stephen-king	\N	\N	\N
+9	J.R.R. Tolkien	jrr-tolkien	\N	\N	\N
+3	J.K Rowling	jk-rowling	\N	\N	\N
 \.
 
 
@@ -953,26 +1099,52 @@ COPY public.autor_user (id_user, id_autor, id) FROM stdin;
 29	4	20
 29	6	21
 29	8	22
-34	1	23
-34	2	24
-34	4	25
-34	5	26
-34	6	27
-35	1	28
-35	2	29
-35	7	30
-35	8	31
-35	3	32
-42	1	33
-42	2	34
-42	4	35
-42	5	36
-42	6	37
-43	1	68
-43	5	69
-43	7	70
-43	8	71
-43	9	72
+30	1	23
+30	2	24
+30	4	25
+30	5	26
+30	6	27
+31	2	28
+31	7	29
+31	8	30
+31	9	31
+31	3	32
+32	4	33
+32	6	34
+32	8	35
+32	9	36
+32	3	37
+33	1	38
+33	2	39
+33	4	40
+33	5	41
+33	7	42
+34	1	43
+34	4	44
+34	6	45
+34	8	46
+34	3	47
+\.
+
+
+--
+-- Data for Name: avaliacao; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.avaliacao (id_avaliacao, id_user, categoria_avaliada, id_avaliado, nota_avaliacao, criado_em) FROM stdin;
+1	19	livro	5	5.0	2026-10-03 00:49:53.690756
+2	30	livro	1	1.5	2026-10-05 11:51:32.877292
+5	30	resenha	3	4.5	2026-10-05 11:53:53.561511
+3	30	resenha	1	4.5	2026-10-05 11:53:53.537273
+4	30	resenha	4	4.5	2026-10-05 11:53:53.56
+7	19	livro	4	5.0	2026-10-08 22:42:56.372829
+9	19	livro	3	5.0	2026-10-08 23:31:32.498329
+8	19	livro	2	3.0	2026-10-08 23:31:23.620161
+10	19	resenha	2	5.0	2026-10-14 14:51:44.012627
+11	19	resenha	4	4.5	2026-10-15 15:00:21.978254
+12	19	resenha	3	4.5	2026-10-15 15:00:21.982316
+13	19	resenha	1	5.0	2026-10-15 15:00:21.983833
+6	19	livro	1	5.0	2026-10-08 20:21:46.690921
 \.
 
 
@@ -981,8 +1153,6 @@ COPY public.autor_user (id_user, id_autor, id) FROM stdin;
 --
 
 COPY public.bloqueio (id_bloqueador, id_bloqueado, status_bloqueio, data_bloqueio) FROM stdin;
-32	31	bloqueado	2026-08-25 17:50:47.567767
-32	31	bloqueado	2026-08-25 17:52:01.815923
 \.
 
 
@@ -1043,7 +1213,22 @@ COPY public.comentario (id_comentario, id_user, categoria_curtida, id_coisocurti
 11	19	post	3	\N	Agora ele subiu dnv	2026-08-18 17:07:11.280932
 12	19	post	3	\N	continua subindo	2026-08-18 17:07:29.271428
 13	19	post	3	\N	Olá Mundo	2026-08-18 17:12:44.883935
-14	38	lista	17	\N	essa lista ‚ maneira mesmo	2026-10-03 10:00:31.222269
+14	19	livro	2	\N	Livro Foda	2026-08-24 13:18:15.826824
+15	19	livro	2	\N	Livro Maneirasso	2026-08-24 13:18:39.532703
+16	19	livro	2	\N	Livro Super Bomb stico	2026-08-24 13:18:46.868897
+17	19	livro	2	\N	Livro Super Super Hiper Mega Blaster Ultra Stonks	2026-08-24 13:18:57.083883
+18	19	livro	2	\N	sdgdfgd	2026-08-24 14:00:46.299182
+19	19	livro	2	\N	fsdfsdfsad	2026-08-24 14:10:37.887971
+20	31	livro	2	\N	vou ler	2026-08-30 14:20:43.823762
+21	19	livro	2	\N	Comwntário 1	2026-09-10 18:57:02.465614
+22	33	livro	1	\N	Vou ler	2026-09-17 08:27:46.547945
+23	19	livro	2	\N	Estou Ansioso para ler este Livro	2026-09-21 15:02:42.178663
+24	19	resenha	3	\N	khgk	2026-10-15 15:32:54.39631
+25	19	resenha	3	\N	fsdfsdfsdfsd	2026-10-15 15:37:28.115446
+26	19	resenha	3	\N	hygregsgfsdg	2026-10-15 15:37:55.766752
+27	19	resenha	4	\N	fdsfds	2026-10-15 15:39:39.50867
+28	19	resenha	1	\N	fdsfsdafsdf	2026-10-15 15:39:48.342875
+29	19	resenha	3	\N	fsdfsdfsdafsdaf	2026-10-15 15:40:03.454618
 \.
 
 
@@ -1055,22 +1240,12 @@ COPY public.conta (id_user, foto_perfil_url, bio, visibilidade, banner_url) FROM
 3	foto_do_gomez	Zagueiro Paraguaio, dono da sele‡Æo paraguaia e maior capitÆo da hist¢ria do Palmeiras	publico	\N
 28	\N	\N	publico	\N
 29	\N	\N	publico	\N
+19	img/foto_perfil/4f3a97f338ba0c7c65039d97f02cc401.webp	Apenas um cara tranquilo que gosta do palmeiras	publico	img/banner_perfil/25cfe8fb7c9a8d15943d86263f962fda.webp
+30	\N	\N	publico	\N
 31	\N	\N	publico	\N
 32	\N	\N	publico	\N
 33	\N	\N	publico	\N
-34	img/foto_perfil/758b6f4f4c8d3508181eb200b7f4ddff.jpg		privado	img/banner_perfil/ca1fbd8519e973ba21005c873950ea81.jpg
-35	\N	\N	publico	\N
-36	\N	\N	publico	\N
-37	\N	\N	publico	\N
-38	\N	\N	publico	\N
-39	\N	\N	publico	\N
-40	\N	\N	publico	\N
-41	\N	\N	publico	\N
-42	\N	\N	publico	\N
-43	\N	\N	publico	\N
-44	\N	\N	publico	\N
-45	\N	\N	publico	\N
-30	\N	eu amo minha namorada	publico	img/banner_perfil/efb98f42439312ab63c43c32966d0dc6.png
+34	\N	\N	publico	\N
 \.
 
 
@@ -1079,6 +1254,11 @@ COPY public.conta (id_user, foto_perfil_url, bio, visibilidade, banner_url) FROM
 --
 
 COPY public.conversa (id_conversa, tipo, nome_conversa, foto_conversa_url, id_dono, criacao) FROM stdin;
+1	direct	user1-user2	\N	\N	2026-08-27 20:08:10.699724
+2	grupo	clube do livro 67	\N	19	2026-08-27 20:45:26.346048
+3	grupo	Grupo 67Resenha	../img/foto_grupo/6aabe09ee0fd1.	34	2026-09-17 09:44:14.92208
+4	grupo	Grupo Teste TCC	../img/foto_grupo/6ab172f1b5f87.	30	2026-09-21 15:09:53.746472
+5	grupo	grupo teste 1	\N	19	2026-10-15 16:01:52.504852
 \.
 
 
@@ -1087,6 +1267,12 @@ COPY public.conversa (id_conversa, tipo, nome_conversa, foto_conversa_url, id_do
 --
 
 COPY public.conversa_participante (id_conversa, id_user, cargo, joinet_at, last_read_message) FROM stdin;
+1	30	comum	2026-08-27 20:09:02.562336	2026-08-27 20:09:02.562336
+1	19	comum	2026-08-27 20:09:08.602164	2026-08-27 20:09:08.602164
+2	30	comum	2026-08-27 20:46:33.427347	\N
+3	34	admin	2026-09-17 09:44:14.926528	\N
+4	30	admin	2026-09-21 15:09:53.753392	\N
+5	19	admin	2026-10-15 16:01:52.509906	\N
 \.
 
 
@@ -1098,6 +1284,7 @@ COPY public.curtida (id_curtida, id_user, categoria_curtido, id_coisocurtido) FR
 1	19	post	1
 2	19	post	2
 3	19	post	3
+4	19	livro	4
 \.
 
 
@@ -1106,6 +1293,10 @@ COPY public.curtida (id_curtida, id_user, categoria_curtido, id_coisocurtido) FR
 --
 
 COPY public.denuncia (id_denuncia, tipo_denunciado, id_denunciado, id_denunciador, denuncia, status, emissao, resolvido) FROM stdin;
+1	livro	1	19	Livro Pornogr fico	pendente	2026-09-21 08:22:18.342363	\N
+2	usuario	20	19	Me chamou de bobao	pendente	2026-09-21 08:22:49.67354	\N
+3	\N	2	19	 O livro está apresentando erros de gramática nos acentos	pendente	2026-09-30 20:22:01.510916	\N
+4	\N	3	19	 fsdfdsfds	pendente	2026-09-30 21:19:45.914591	\N
 \.
 
 
@@ -1114,19 +1305,24 @@ COPY public.denuncia (id_denuncia, tipo_denunciado, id_denunciado, id_denunciado
 --
 
 COPY public.follow (id_follower, id_following, status_follow, data_follow) FROM stdin;
-31	29	seguindo	2026-08-22 17:19:36.41578
-31	19	seguindo	2026-08-22 17:20:48.835049
-31	21	seguindo	2026-08-22 17:22:28.731183
-31	3	seguindo	2026-08-22 17:22:43.563196
-32	3	seguindo	2026-08-25 17:50:22.111945
-32	31	seguindo	2026-08-25 18:09:17.65672
-33	29	seguindo	2026-08-27 18:22:42.741882
-33	14	seguindo	2026-08-27 19:29:03.980195
-34	32	seguindo	2026-08-29 15:29:04.286338
-34	30	seguindo	2026-08-29 15:38:21.305775
-38	34	seguindo	2026-09-30 18:38:39.150046
-39	30	seguindo	2026-09-30 18:39:28.806301
-30	33	seguindo	2026-09-30 18:40:18.189622
+19	3	\N	2026-09-18 15:26:01.174957
+19	9	\N	2026-09-18 15:26:04.545183
+19	14	\N	2026-09-18 15:26:07.209834
+19	16	\N	2026-09-18 15:26:08.785045
+3	19	\N	2026-09-18 15:26:13.924745
+9	19	\N	2026-09-18 15:26:20.422184
+14	19	\N	2026-09-18 15:26:24.056625
+16	19	\N	2026-09-18 15:26:26.516342
+19	30	\N	2026-10-15 16:00:13.690491
+19	31	\N	2026-10-15 16:00:15.506568
+19	32	\N	2026-10-15 16:00:17.506738
+19	33	\N	2026-10-15 16:00:19.114582
+19	34	\N	2026-10-15 16:00:20.924348
+30	19	\N	2026-10-15 16:00:26.827765
+31	19	\N	2026-10-15 16:00:28.987027
+32	19	\N	2026-10-15 16:00:31.171712
+33	19	\N	2026-10-15 16:00:33.35506
+34	19	\N	2026-10-15 16:00:35.453094
 \.
 
 
@@ -1134,8 +1330,7 @@ COPY public.follow (id_follower, id_following, status_follow, data_follow) FROM 
 -- Data for Name: follow_autor; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.follow_autor (id_follower, id_autor, status_follow, data_follow) FROM stdin;
-44	1	seguindo	2026-09-16 21:46:30.168311
+COPY public.follow_autor (id, id_follower, id_autor, status, data_follow) FROM stdin;
 \.
 
 
@@ -1143,14 +1338,12 @@ COPY public.follow_autor (id_follower, id_autor, status_follow, data_follow) FRO
 -- Data for Name: livro; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.livro (id_livro, titulo_livro, resumo_livro, class_ind, nome_autor, id_user, sinopse_livro, capa_url, data_publi, idioma, visibilidade, google_books_id, origem, link_leitura, link_compra, nota_google, avaliacoes_google, paginas, isbn10, isbn13) FROM stdin;
-2	A Cartomante	"A Cartomante", de Machado de Assis, conta a hist¢ria de Camilo e Rita, dois amigos que se envolvem em um relacionamento amoroso proibido, apesar de Rita ser casada com Vilela, amigo de Camilo. Com medo de que o marido descubra a trai‡Æo, Rita procura uma cartomante, que lhe garante que nada de ruim acontecer . Camilo inicialmente duvida desse tipo de previsÆo, mas, diante de acontecimentos que despertam seu medo e sua inseguran‡a, tamb‚m acaba recorrendo … cartomante. Ap¢s receber uma previsÆo tranquilizadora, ele segue confiante para encontrar Vilela, sem imaginar o destino que o aguarda. A narrativa combina suspense, ironia e cr¡tica … supersti‡Æo, mostrando como os personagens tentam encontrar seguran‡a em cren‡as diante da incerteza.	12	Machado de Assis	\N	"A Cartomante", de Machado de Assis, acompanha Camilo e Rita, dois amantes que vivem um relacionamento secreto, enquanto Vilela, marido de Rita e amigo de Camilo, come‡a a despertar preocupa‡Æo no casal. Em meio ao medo de serem descobertos, Rita procura uma cartomante em busca de respostas. A partir da¡, a hist¢ria conduz os personagens por uma sequˆncia de tensÆo e acontecimentos inesperados, marcada por suspense, ironia e uma reviravolta surpreendente.	../img/capas_livros/cartomante-capa.jpeg	2026-08-10 12:42:47.362398	Portugues-BR	publico	\N	usuario	\N	\N	\N	\N	\N	\N	\N
-3	A Semana	""A Semana", de Machado de Assis, re£ne uma s‚rie de cr“nicas publicadas originalmente em jornais, nas quais o autor observa acontecimentos cotidianos, pol¡ticos e sociais de seu tempo. Com uma escrita marcada pela ironia, pelo humor e pela reflexÆo, Machado transforma situa‡äes aparentemente simples em oportunidades para analisar o comportamento humano e as contradi‡äes da sociedade. Ao comentar fatos da vida p£blica e do dia a dia, o autor questiona costumes, valores e atitudes presentes na sociedade brasileira. A obra se destaca pela capacidade de unir cr¡tica social e entretenimento, apresentando uma visÆo inteligente e muitas vezes bem-humorada da realidade.	12	Machado de Assis	\N	""A Semana", de Machado de Assis, re£ne cr“nicas em que o autor aborda acontecimentos cotidianos e questäes sociais e pol¡ticas de sua ‚poca. Com ironia, humor e olhar cr¡tico, Machado transforma fatos comuns em reflexäes sobre a sociedade e o comportamento humano. A obra apresenta um retrato interessante e perspicaz do Brasil de seu tempo.	../img/capas_livros/semana-capa.jpeg	2026-08-10 12:53:45.173089	Portugues-BR	publico	\N	usuario	\N	\N	\N	\N	\N	\N	\N
-4	Mensagem	Mensagem, de Fernando Pessoa, ‚ uma obra po‚tica que revisita a hist¢ria e os s¡mbolos de Portugal, destacando figuras como reis, navegadores e her¢is nacionais. Dividido em trˆs partes, o livro apresenta a forma‡Æo, a realiza‡Æo e a queda simb¢lica do imp‚rio portuguˆs, relacionando o passado glorioso do pa¡s a um futuro de renova‡Æo. Por meio de poemas marcados pelo nacionalismo, pelo simbolismo e pelo misticismo, Pessoa reflete sobre o destino de Portugal e sobre a importƒncia de sua identidade hist¢rica. A obra tamb‚m aborda o sonho de um novo per¡odo de grandeza, representado pelo retorno simb¢lico de D. SebastiÆo e pelo surgimento de um novo imp‚rio, agora ligado … cultura e ao esp¡rito	10	JoÆo Pessoa	\N	Mensagem, de Fernando Pessoa, re£ne poemas que celebram e reinterpretam a hist¢ria, os her¢is e os mitos de Portugal. A obra percorre momentos fundamentais da trajet¢ria portuguesa e transforma o passado em uma reflexÆo sobre o destino e o futuro do pa¡s. Entre simbolismo, patriotismo e misticismo, Pessoa constr¢i uma visÆo po‚tica de renascimento e de uma nova grandeza portuguesa.	../img/capas_livros/mensagem-capa.jpeg	2026-08-10 13:06:38.938784	Portugues-BR	publico	\N	usuario	\N	\N	\N	\N	\N	\N	\N
-1	O Alienista	O Alienista, de Machado de Assis, conta a hist¢ria de SimÆo Bacamarte, um m‚dico que decide estudar a mente humana e compreender os limites entre a razÆo e a loucura. Para realizar suas pesquisas, ele cria a Casa Verde, onde come‡a a internar pessoas consideradas mentalmente desequilibradas. Com o passar do tempo, Bacamarte amplia tanto seus crit‚rios que grande parte da popula‡Æo de Itagua¡ acaba sendo considerada louca. Depois, ele muda sua teoria e passa a acreditar que aqueles que apresentam equil¡brio perfeito sÆo os verdadeiros anormais. No final, conclui que ele pr¢prio possui essa caracter¡stica e decide se internar na Casa Verde. A obra utiliza ironia e humor para criticar o abuso da ciˆncia, do poder e a dificuldade de definir o que ‚ realmente normal.	12	Machado de Assis	\N	O Alienista, de Machado de Assis, acompanha SimÆo Bacamarte, um m‚dico que se dedica a estudar a loucura e cria a Casa Verde, um local destinado … interna‡Æo de pessoas consideradas desequilibradas. Por‚m, sua busca pela defini‡Æo da normalidade faz com que cada vez mais habitantes de Itagua¡ sejam considerados loucos. A obra apresenta, de forma ir“nica e humor¡stica, uma cr¡tica ao excesso de poder, ao cientificismo e … dificuldade de determinar os limites entre a razÆo e a loucura.	../img/capas_livros/alienista-capa.jpeg	2026-08-10 11:37:10.803001	Portugues-BR	publico	\N	usuario	\N	\N	\N	\N	\N	\N	\N
-5	Guardador de Rebanhos	Guardador de Rebanhos, de Fernando Pessoa, escrito sob o heter“nimo Alberto Caeiro, ‚ um conjunto de poemas que apresenta uma visÆo simples, direta e profundamente ligada … natureza. O eu l¡rico rejeita interpreta‡äes filos¢ficas e metaf¡sicas do mundo e prefere observar as coisas exatamente como elas sÆo. Para Caeiro, pensar demais sobre a realidade pode afastar o ser humano da experiˆncia verdadeira de simplesmente ver, sentir e existir. A natureza, os animais, as  rvores, as flores, o c‚u e as sensa‡äes cotidianas tornam-se elementos centrais de sua poesia. O poema tamb‚m questiona conceitos tradicionais sobre Deus, espiritualidade e transcendˆncia, defendendo uma esp‚cie de rela‡Æo concreta e imediata com o mundo.	10	JoÆo Pessoa	\N	Guardador de Rebanhos acompanha o olhar de um eu l¡rico que se apresenta como um pastor que guarda rebanhos, embora esses rebanhos sejam, sobretudo, pensamentos e sensa‡äes. Ao observar a natureza, ele desenvolve uma filosofia baseada na simplicidade, recusando explica‡äes abstratas e procurando enxergar o mundo sem atribuir-lhe significados ocultos. Ao longo da obra, a natureza funciona como fonte de conhecimento e verdade, enquanto o pensamento excessivo ‚ visto como algo que complica aquilo que deveria ser simples. A obra constr¢i, assim, uma reflexÆo po‚tica sobre a existˆncia, a percep‡Æo e a rela‡Æo do ser humano com a realidade.	../img/capas_livros/rebanhos-capa.jpg	2026-08-10 13:21:21.325504	Portugues-BR	publico	\N	usuario	\N	\N	\N	\N	\N	\N	\N
-7	Harry Potter and the Chamber of Secrets	\N	0	J. K. Rowling	\N	Harry can't wait for his holidays with the dire Dursleys to end. But a small, self-punishing house-elf warns Harry of mortal danger awaiting him at Hogwarts School. Returning to the castle nevertheless, Harry hears a rumour about a chamber of secrets, holding unknown horrors to wizards of Muggle parentage. Now someone is casting spells that turn people to stone, and a terrible warning is found painted on the wall. The chief suspect - always in the wrong place - is Harry. But something much darker has yet to be unleashed.	http://books.google.com/books/content?id=nmXTy4FPfcwC&printsec=frontcover&img=1&zoom=1&imgtk=AFLRE72jWd_cxawEeLUMJm0NaKMsfVNjF7om5mh2E9UPR5xBUzpO9lyq_v8HMbv3fsoARcZcgy4PTFM0Tzak1mYQDAebHHZtNyrK8FK-dkfPACh-BS3f9Gsncu-7R6BEr5ysunudoHt4&source=gbs_api	1999-01-01 00:00:00	en	publico	nmXTy4FPfcwC	google_books	http://play.google.com/books/reader?id=nmXTy4FPfcwC&hl=&source=gbs_api	\N	5.0	1	251	1551922444	9781551922447
-8	The Witcher Library Edition Volume 1	\N	0	Paul Tobin	\N	<b>Multi-Eisner award-winning writer Paul Tobin pens a fantasy epic of the adventures of Geralt of Rivia, a witcher--one of the few remaining monster hunters from the critically acclaimed video game fantasy <i>The Witcher</i> by CD Projekt Red!</b><br><br>Featuring story art by Joe Querio, Piotr Kowalski, Max Bertolini, with a bonus sketchbook section and additional art by Dave Johnson (<i>100 Bullets</i>), Dan Panosian (<i>Slots</i>), Stan Sakai (<i>Usagi Yojimbo</i>), Duncan Fegredo (<i>MPH</i>), Simon Bisley (<i>Lobo</i>), and a cover by Mike Mignola (<i>Hellboy</i>). <br><br>Collects issues #1-#5 of the Witcher comic series <i>House of Glass</i>, <i>Fox Children</i>, <i>Curse of Crows</i>, and collected for the first time<i>, Killing Monster</i>s one-shot--and features annotations from the creators of the comics, as well as a sketchbook section.	http://books.google.com/books/publisher/content?id=AcJyDwAAQBAJ&printsec=frontcover&img=1&zoom=1&edge=curl&imgtk=AFLRE70kwh0u-twijrq-nRRe5kwLjlhTgGiWob31YoGGnDY281-vgBLIt9oXqyVKDwOuWDSP6TVjvt0XWNfVzqM24PUY6f1eMFZiyjISggVKoC8aAJRdJGTQpSSSq0ETQhBrC36Ln2ll&source=gbs_api	2018-11-13 00:00:00	en	publico	AcJyDwAAQBAJ	google_books	\N	\N	\N	\N	440	1506706827	9781506706825
+COPY public.livro (id_livro, titulo_livro, resumo_livro, class_ind, nome_autor, id_user, sinopse_livro, data_publi, idioma, visibilidade, origem, interacao_de, capa_url, google_books_id, link_leitura, link_compra, nota_google, paginas, isbn10, isbn13) FROM stdin;
+3	A Semana	""A Semana", de Machado de Assis, re£ne uma s‚rie de cr“nicas publicadas originalmente em jornais, nas quais o autor observa acontecimentos cotidianos, pol¡ticos e sociais de seu tempo. Com uma escrita marcada pela ironia, pelo humor e pela reflexÆo, Machado transforma situa‡äes aparentemente simples em oportunidades para analisar o comportamento humano e as contradi‡äes da sociedade. Ao comentar fatos da vida p£blica e do dia a dia, o autor questiona costumes, valores e atitudes presentes na sociedade brasileira. A obra se destaca pela capacidade de unir cr¡tica social e entretenimento, apresentando uma visÆo inteligente e muitas vezes bem-humorada da realidade.	12	Machado de Assis	\N	""A Semana", de Machado de Assis, re£ne cr“nicas em que o autor aborda acontecimentos cotidianos e questäes sociais e pol¡ticas de sua ‚poca. Com ironia, humor e olhar cr¡tico, Machado transforma fatos comuns em reflexäes sobre a sociedade e o comportamento humano. A obra apresenta um retrato interessante e perspicaz do Brasil de seu tempo.	2026-08-10 12:53:45.173089	Portugues-BR	publico	interna	todos	\N	\N	\N	\N	\N	\N	\N	\N
+4	Mensagem	Mensagem, de Fernando Pessoa, ‚ uma obra po‚tica que revisita a hist¢ria e os s¡mbolos de Portugal, destacando figuras como reis, navegadores e her¢is nacionais. Dividido em trˆs partes, o livro apresenta a forma‡Æo, a realiza‡Æo e a queda simb¢lica do imp‚rio portuguˆs, relacionando o passado glorioso do pa¡s a um futuro de renova‡Æo. Por meio de poemas marcados pelo nacionalismo, pelo simbolismo e pelo misticismo, Pessoa reflete sobre o destino de Portugal e sobre a importƒncia de sua identidade hist¢rica. A obra tamb‚m aborda o sonho de um novo per¡odo de grandeza, representado pelo retorno simb¢lico de D. SebastiÆo e pelo surgimento de um novo imp‚rio, agora ligado … cultura e ao esp¡rito	10	JoÆo Pessoa	\N	Mensagem, de Fernando Pessoa, re£ne poemas que celebram e reinterpretam a hist¢ria, os her¢is e os mitos de Portugal. A obra percorre momentos fundamentais da trajet¢ria portuguesa e transforma o passado em uma reflexÆo sobre o destino e o futuro do pa¡s. Entre simbolismo, patriotismo e misticismo, Pessoa constr¢i uma visÆo po‚tica de renascimento e de uma nova grandeza portuguesa.	2026-08-10 13:06:38.938784	Portugues-BR	publico	interna	todos	\N	\N	\N	\N	\N	\N	\N	\N
+2	A Cartomante	"A Cartomante", de Machado de Assis, conta a hist¢ria de Camilo e Rita, dois amigos que se envolvem em um relacionamento amoroso proibido, apesar de Rita ser casada com Vilela, amigo de Camilo. Com medo de que o marido descubra a trai‡Æo, Rita procura uma cartomante, que lhe garante que nada de ruim acontecer . Camilo inicialmente duvida desse tipo de previsÆo, mas, diante de acontecimentos que despertam seu medo e sua inseguran‡a, tamb‚m acaba recorrendo … cartomante. Ap¢s receber uma previsÆo tranquilizadora, ele segue confiante para encontrar Vilela, sem imaginar o destino que o aguarda. A narrativa combina suspense, ironia e cr¡tica … supersti‡Æo, mostrando como os personagens tentam encontrar seguran‡a em cren‡as diante da incerteza.	12	Machado de Assis	\N	"A Cartomante", de Machado de Assis, acompanha Camilo e Rita, dois amantes que vivem um relacionamento secreto, enquanto Vilela, marido de Rita e amigo de Camilo, come‡a a despertar preocupa‡Æo no casal. Em meio ao medo de serem descobertos, Rita procura uma cartomante em busca de respostas. A partir da¡, a hist¢ria conduz os personagens por uma sequˆncia de tensÆo e acontecimentos inesperados, marcada por suspense, ironia e uma reviravolta surpreendente.	2026-08-10 12:42:47.362398	Portugues-BR	publico	interna	todos	\N	\N	\N	\N	\N	\N	\N	\N
+1	O Alienista	O Alienista, de Machado de Assis, conta a hist¢ria de SimÆo Bacamarte, um m‚dico que decide estudar a mente humana e compreender os limites entre a razÆo e a loucura. Para realizar suas pesquisas, ele cria a Casa Verde, onde come‡a a internar pessoas consideradas mentalmente desequilibradas. Com o passar do tempo, Bacamarte amplia tanto seus crit‚rios que grande parte da popula‡Æo de Itagua¡ acaba sendo considerada louca. Depois, ele muda sua teoria e passa a acreditar que aqueles que apresentam equil¡brio perfeito sÆo os verdadeiros anormais. No final, conclui que ele pr¢prio possui essa caracter¡stica e decide se internar na Casa Verde. A obra utiliza ironia e humor para criticar o abuso da ciˆncia, do poder e a dificuldade de definir o que ‚ realmente normal.	12	Machado de Assis	\N	O Alienista, de Machado de Assis, acompanha SimÆo Bacamarte, um m‚dico que se dedica a estudar a loucura e cria a Casa Verde, um local destinado … interna‡Æo de pessoas consideradas desequilibradas. Por‚m, sua busca pela defini‡Æo da normalidade faz com que cada vez mais habitantes de Itagua¡ sejam considerados loucos. A obra apresenta, de forma ir“nica e humor¡stica, uma cr¡tica ao excesso de poder, ao cientificismo e … dificuldade de determinar os limites entre a razÆo e a loucura.	2026-08-10 11:37:10.803001	Portugues-BR	publico	interna	todos	\N	\N	\N	\N	\N	\N	\N	\N
+5	Guardador de Rebanhos	Guardador de Rebanhos, de Fernando Pessoa, escrito sob o heter“nimo Alberto Caeiro, ‚ um conjunto de poemas que apresenta uma visÆo simples, direta e profundamente ligada … natureza. O eu l¡rico rejeita interpreta‡äes filos¢ficas e metaf¡sicas do mundo e prefere observar as coisas exatamente como elas sÆo. Para Caeiro, pensar demais sobre a realidade pode afastar o ser humano da experiˆncia verdadeira de simplesmente ver, sentir e existir. A natureza, os animais, as  rvores, as flores, o c‚u e as sensa‡äes cotidianas tornam-se elementos centrais de sua poesia. O poema tamb‚m questiona conceitos tradicionais sobre Deus, espiritualidade e transcendˆncia, defendendo uma esp‚cie de rela‡Æo concreta e imediata com o mundo.	10	JoÆo Pessoa	\N	Guardador de Rebanhos acompanha o olhar de um eu l¡rico que se apresenta como um pastor que guarda rebanhos, embora esses rebanhos sejam, sobretudo, pensamentos e sensa‡äes. Ao observar a natureza, ele desenvolve uma filosofia baseada na simplicidade, recusando explica‡äes abstratas e procurando enxergar o mundo sem atribuir-lhe significados ocultos. Ao longo da obra, a natureza funciona como fonte de conhecimento e verdade, enquanto o pensamento excessivo ‚ visto como algo que complica aquilo que deveria ser simples. A obra constr¢i, assim, uma reflexÆo po‚tica sobre a existˆncia, a percep‡Æo e a rela‡Æo do ser humano com a realidade.	2026-08-10 13:21:21.325504	Portugues-BR	publico	interna	todos	\N	\N	\N	\N	\N	\N	\N	\N
 \.
 
 
@@ -1160,10 +1353,29 @@ COPY public.livro (id_livro, titulo_livro, resumo_livro, class_ind, nome_autor, 
 
 COPY public.livros_lidos (id_user, id_livro, atualizado_em) FROM stdin;
 19	1	2026-08-10 13:49:14.580055
-19	2	2026-08-10 13:49:21.595999
-19	3	2026-08-10 13:49:23.684314
 19	4	2026-08-10 13:49:26.221843
 19	5	2026-08-10 13:49:28.566783
+30	5	2026-08-25 22:12:47.098388
+30	2	2026-08-25 22:15:17.079871
+30	3	2026-08-27 19:29:31.765005
+30	1	2026-08-27 19:31:47.177067
+30	4	2026-08-27 19:32:46.433212
+31	2	2026-08-30 14:21:22.934148
+32	2	2026-09-10 18:50:54.014548
+32	3	2026-09-10 18:51:40.118059
+32	5	2026-09-10 18:52:03.931163
+32	4	2026-09-10 18:52:38.981492
+32	1	2026-09-10 18:53:09.506054
+33	1	2026-09-17 08:29:07.898566
+33	2	2026-09-17 08:29:57.339934
+33	3	2026-09-17 08:30:20.955738
+33	5	2026-09-17 08:30:45.051362
+33	4	2026-09-17 08:31:10.488405
+34	4	2026-09-17 09:40:38.145239
+34	3	2026-09-17 09:42:29.102553
+34	2	2026-09-17 09:43:05.872828
+19	2	2026-09-21 15:03:34.140158
+19	3	2026-09-21 15:04:17.686989
 \.
 
 
@@ -1172,6 +1384,39 @@ COPY public.livros_lidos (id_user, id_livro, atualizado_em) FROM stdin;
 --
 
 COPY public.mensagem (id_mensagem, id_conversa, id_envio, tipo, conteudo, criacao, editado_em, delatado_em) FROM stdin;
+9	1	30	texto	Ol  Mundo	2026-08-27 20:33:20.541968	\N	\N
+10	1	19	texto	Salve Tropinha	2026-08-27 20:33:46.213105	\N	\N
+11	1	19	texto	Como voce esta?	2026-08-27 20:33:55.894076	\N	\N
+12	1	30	texto	Bem, e voce?	2026-08-27 20:34:05.637821	\N	\N
+14	1	30	texto	Nicee	2026-08-27 20:34:23.675835	\N	\N
+13	1	19	texto	Bem tamb‚m	2026-08-27 20:34:14.524381	2026-08-27 20:38:31.690605	\N
+15	1	19	texto	SIX SEVEEN	2026-08-27 20:34:32.317812	\N	2026-08-27 20:39:35.939614
+16	2	19	texto	Salve Tropinha	2026-08-27 20:48:00.545473	\N	2026-09-21 15:08:28.314272
+17	2	30	texto	Sauda‡äes Geogr ficas	2026-08-27 20:48:16.248576	\N	2026-09-21 15:08:28.314272
+18	2	19	texto	Esses cara mano	2026-08-27 20:48:27.328694	\N	2026-09-21 15:08:28.314272
+19	2	30	texto	SIX SEVEENN	2026-08-27 20:48:41.273687	\N	2026-09-21 15:08:28.314272
+20	2	30	texto	Teste 1	2026-08-27 20:51:03.703862	\N	2026-09-21 15:08:28.314272
+23	2	19	texto	teste front end 1	2026-09-01 21:20:58.045978	2026-09-01 21:21:21.631498	2026-09-21 15:08:28.314272
+25	2	30	texto	teste síncrono	2026-09-01 21:26:00.611395	\N	2026-09-21 15:08:28.314272
+26	2	30	texto	olá mundo, teste síncrono	2026-09-01 21:28:13.19032	\N	2026-09-21 15:08:28.314272
+27	2	30	texto	teste síncrono 2	2026-09-01 21:30:08.766183	\N	2026-09-21 15:08:28.314272
+28	2	30	texto	teste síncrono 3	2026-09-01 21:30:18.198854	\N	2026-09-21 15:08:28.314272
+29	2	30	texto	ta funcionando poha	2026-09-01 21:30:29.788734	\N	2026-09-21 15:08:28.314272
+30	2	30	texto	mensagem 1	2026-09-01 21:31:28.144485	\N	2026-09-21 15:08:28.314272
+31	2	30	texto	menagem 2	2026-09-01 21:31:56.075382	\N	2026-09-21 15:08:28.314272
+32	2	19	texto	Eu sou o Caico	2026-09-01 21:37:25.954768	\N	2026-09-21 15:08:28.314272
+33	2	30	texto	eu sou o userteste1	2026-09-01 21:38:08.583555	\N	2026-09-21 15:08:28.314272
+34	2	30	texto	e eu continuo sendo o caico	2026-09-01 21:38:18.871322	\N	2026-09-21 15:08:28.314272
+35	2	19	texto	eu sou o caico	2026-09-01 21:41:45.973748	\N	2026-09-21 15:08:28.314272
+36	2	30	texto	e eu sou o userteste1	2026-09-01 21:41:57.645729	\N	2026-09-21 15:08:28.314272
+37	2	19	texto	abrindo em navegadores separados os IDs são preservados	2026-09-01 21:42:12.220211	\N	2026-09-21 15:08:28.314272
+38	2	30	texto	mas quando abre no mesmo navegador o último ID aberto predomina	2026-09-01 21:42:32.943205	\N	2026-09-21 15:08:28.314272
+41	2	19	texto	123	2026-09-01 21:49:30.551136	\N	2026-09-21 15:08:28.314272
+42	2	30	texto	123456	2026-09-01 21:49:45.498302	\N	2026-09-21 15:08:28.314272
+43	2	30	texto	oi	2026-09-03 08:45:51.457603	\N	2026-09-21 15:08:28.314272
+44	2	19	texto	Saudações de Hoje	2026-09-10 18:55:43.871256	\N	2026-09-21 15:08:28.314272
+45	2	19	texto	Mensagem 2	2026-09-10 18:56:00.22785	\N	2026-09-21 15:08:28.314272
+47	2	30	texto	Boa Tarde Mundo	2026-09-21 15:06:46.645086	2026-09-21 15:07:18.265303	2026-09-21 15:08:28.314272
 \.
 
 
@@ -1180,11 +1425,21 @@ COPY public.mensagem (id_mensagem, id_conversa, id_envio, tipo, conteudo, criaca
 --
 
 COPY public.meta_leitura (id, id_user, periodo, num_livros, criacao, status, expiracao, nome_meta) FROM stdin;
-5	19	mensal	20	2026-08-13 18:36:13.450308	andamento	2026-09-12	meta do mês
-6	19	anual	200	2026-08-13 18:36:50.420783	andamento	2027-08-13	meta do ano
-7	19	mensal	200	2026-08-16 20:34:51.764024	andamento	2026-09-15	Meta de agosto
-8	19	semanal	6	2026-08-16 21:43:51.885478	andamento	2026-08-23	meta de drama
-9	19	semanal	1	2026-08-17 13:32:04.349551	andamento	2026-08-24	Meta do Miguel
+8	19	semanal	6	2026-08-16 21:43:51.885478	expirado	2026-08-23	meta de drama
+9	19	semanal	1	2026-08-17 13:32:04.349551	concluida	2026-08-24	Meta do Miguel
+6	19	semanal	50	2026-08-13 18:36:50.420783	andamento	2027-08-13	meta do ano
+10	19	semanal	20	2026-08-24 09:10:52.388167	expirado	2026-08-31	meta xxxx
+11	32	mensal	4	2026-09-10 18:54:34.632162	andamento	2026-10-10	Meta de Setembro
+12	34	anual	2	2026-09-17 09:41:58.349238	concluida	2027-09-17	Metinha Bacana
+13	19	mensal	2	2026-09-21 15:01:23.690974	concluida	2026-10-21	meta do anselmo
+\.
+
+
+--
+-- Data for Name: notificacao; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.notificacao (id_notificacao, id_user_recebido, id_user_origem, tipo, id_referencia, mensagem, lida, criada_em) FROM stdin;
 \.
 
 
@@ -1562,6 +1817,21 @@ COPY public.paragrafo (id_paragrafo, texto_paragrafo, imagem_paragrafo_url, orde
 --
 
 COPY public.paragrafo_resenha (id_paragrafo_resenha, texto_paragrafo_resenha, id_resenha, ordem_paragrafo_resenha) FROM stdin;
+1	O Livro o Alienista escrito por Machado de Assis ‚ uma obra-prima cl ssica da literatura brasileira, mas o que ser  que ele quer dizer?	1	1
+2	Na hist¢ria, o Alienista que inicialmente julgava todos da cidade loucos, at‚ que uma hora ele pensa se na verdade o louco pode ser ele.	1	2
+3	Ele entÆo decide se trancar no hosp¡cio onde colocava os loucos at‚ que pudesse se autotratar.	1	3
+4	A reflexÆo sobre como as denomina‡äes humanas podem ser flu¡das e flex¡veis de acordo com o julgamento de cada um!	1	4
+5	O Livro a Cartomante ‚ bem maneiro	2	1
+6	Tem uns trechos bem interessantes	2	2
+7	Tem uns trechos bem eu achei muito bom	2	3
+8	O Livro O Alienista de Machado de Assis ‚ muito legal	3	1
+9	O Livro O Alienista de Machado de Assis ‚ muito legal	3	2
+10	O Livro O Alienista de Machado de Assis ‚ muito legal	3	3
+11	O Livro O Alienista de Machado de Assis ‚ muito legal	3	4
+12	O Livro O Alienista de Machado de Assis ‚ muito legal	4	1
+13	O Livro O Alienista de Machado de Assis ‚ muito legal	4	2
+14	O Livro O Alienista de Machado de Assis ‚ muito legal	4	3
+15	O Livro O Alienista de Machado de Assis ‚ muito legal	4	4
 \.
 
 
@@ -1577,9 +1847,9 @@ COPY public.personagem (id_personagem, nome_personagem, genero, idade, funcao, d
 -- Data for Name: post; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.post (id_post, titulo_post, id_user, url_imagem, conteudo, criado_em, visibilidade, legenda) FROM stdin;
-2	POST MANEIRO	19	\N	Hoje eu acordei e vi o Miguel dando a bunda	2026-08-17 13:54:58.379895	publico	ele tava rebolando lentinho
-3	POST TESTE	19	\N	esse post é um test	2026-08-18 16:59:40.151209	publico	vamos ver se funciona
+COPY public.post (id_post, titulo_post, id_user, url_imagem, conteudo, criado_em, visibilidade, legenda, interacao_de) FROM stdin;
+2	POST MANEIRO	19	\N	Hoje eu acordei e vi o Miguel dando a bunda	2026-08-17 13:54:58.379895	publico	ele tava rebolando lentinho	todos
+3	POST TESTE	19	\N	esse post é um test	2026-08-18 16:59:40.151209	publico	vamos ver se funciona	todos
 \.
 
 
@@ -1588,6 +1858,7 @@ COPY public.post (id_post, titulo_post, id_user, url_imagem, conteudo, criado_em
 --
 
 COPY public.preferencia (id_preferencia, nome_preferencia, preferencia) FROM stdin;
+1	Terror	terror
 2	Com‚dia	comedia
 3	Romance	romance
 6	Dark Romance	dark-romance
@@ -1612,8 +1883,6 @@ COPY public.preferencia (id_preferencia, nome_preferencia, preferencia) FROM std
 27	Poesia	poesia
 28	Gastronomia	gastronomia
 29	Mitologia	mitologia
-30	Romantasia	romantasia
-1	Terror	terror
 \.
 
 
@@ -1659,26 +1928,31 @@ COPY public.preferencia_user (id_user, id_preferencia, id) FROM stdin;
 29	12	20
 29	17	21
 29	26	22
-34	1	23
-34	2	24
-34	3	25
-34	6	26
-34	7	27
-35	1	28
-35	3	29
-35	8	30
-35	10	31
-35	13	32
-42	1	33
-42	2	34
-42	3	35
-42	6	36
-42	7	37
-43	8	53
-43	9	54
-43	10	55
-43	12	56
-43	13	57
+30	1	23
+30	2	24
+30	3	25
+30	6	26
+30	7	27
+31	7	28
+31	8	29
+31	10	30
+31	11	31
+31	29	32
+32	3	33
+32	10	34
+32	11	35
+32	13	36
+32	17	37
+33	1	38
+33	6	39
+33	12	40
+33	16	41
+33	18	42
+34	1	43
+34	6	44
+34	11	45
+34	12	46
+34	27	47
 \.
 
 
@@ -1687,6 +1961,31 @@ COPY public.preferencia_user (id_user, id_preferencia, id) FROM stdin;
 --
 
 COPY public.progresso_leitura (id_progresso, id_user, id_livro, capitulo_atual, porcentagem_progresso, ultima_leitura) FROM stdin;
+1	19	1	5	100.00	2026-08-24 08:26:56.264076
+4	19	5	3	100.00	2026-08-24 08:28:28.659305
+5	19	4	2	100.00	2026-08-24 08:28:57.71822
+19	33	2	1	100.00	2026-09-17 08:29:57.338285
+7	30	5	3	100.00	2026-08-25 22:12:47.091858
+8	30	2	1	100.00	2026-08-25 22:15:17.070437
+20	33	3	4	100.00	2026-09-17 08:30:20.93438
+21	33	5	3	100.00	2026-09-17 08:30:45.029828
+22	33	4	2	100.00	2026-09-17 08:31:10.466424
+23	34	4	2	100.00	2026-09-17 09:40:38.143299
+10	30	3	4	100.00	2026-08-27 19:29:31.757391
+24	34	3	4	100.00	2026-09-17 09:42:29.096129
+25	34	2	1	100.00	2026-09-17 09:43:05.870433
+6	30	1	5	100.00	2026-08-27 19:31:47.168934
+2	19	2	1	100.00	2026-09-21 15:03:34.115764
+9	30	4	2	100.00	2026-08-27 19:32:46.431264
+11	31	2	1	100.00	2026-08-30 14:21:22.9296
+12	31	1	1	0.00	2026-08-30 14:22:18.99065
+13	32	2	1	100.00	2026-09-10 18:50:54.010903
+14	32	3	4	100.00	2026-09-10 18:51:40.097764
+3	19	3	4	100.00	2026-09-21 15:04:17.663729
+15	32	5	3	100.00	2026-09-10 18:52:03.907356
+16	32	4	2	100.00	2026-09-10 18:52:38.978568
+17	32	1	5	100.00	2026-09-10 18:53:09.483657
+18	33	1	5	100.00	2026-09-17 08:29:07.87644
 \.
 
 
@@ -1714,7 +2013,19 @@ COPY public.rel_worldbuild (id_cena, id_cenario, id_personagem) FROM stdin;
 -- Data for Name: resenha; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.resenha (id_resenha, titulo_resenha, id_user, sinopse, class_ind, data_publi, id_livro, visibilidade) FROM stdin;
+COPY public.resenha (id_resenha, titulo_resenha, id_user, sinopse, class_ind, data_publi, id_livro, visibilidade, interacao_de) FROM stdin;
+1	An lise do Alienista	19	Nesta resenha pretende-se analisar o livro O Alienista	12	2026-08-20 13:41:58.747008	1	publico	todos
+2	Vendo A Cartomante	19	pretendo analisar o livro A Cartomante	14	2026-08-24 07:55:23.811656	2	publico	todos
+3	Alienistando o Alienista	19	Pretendo alienisar o alienista	10	2026-10-05 11:36:41.390062	1	publico	todos
+4	Alienista	19	Pretendo alienisar o alienista	10	2026-10-05 11:39:33.473146	1	publico	todos
+\.
+
+
+--
+-- Data for Name: salvos; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.salvos (id, id_user, categoria_salva, id_salvo) FROM stdin;
 \.
 
 
@@ -1723,11 +2034,18 @@ COPY public.resenha (id_resenha, titulo_resenha, id_user, sinopse, class_ind, da
 --
 
 COPY public.top5_livros (id_user, id_livro, posicao, atualizado_em) FROM stdin;
-19	1	2	2026-08-11 21:18:28.213477
-19	5	3	2026-08-12 10:51:44.127281
-19	4	5	2026-08-17 13:30:48.192147
-19	2	4	2026-08-16 20:33:08.892341
-19	3	1	2026-08-10 14:02:13.520825
+19	5	2	2026-08-11 21:18:28.213477
+19	1	3	2026-08-12 10:51:44.127281
+30	5	1	2026-09-09 11:58:11.761936
+30	3	2	2026-09-09 11:58:17.854696
+32	3	1	2026-09-10 18:54:09.380581
+33	5	1	2026-09-17 08:32:08.124103
+33	2	2	2026-09-17 08:32:13.442837
+33	1	3	2026-09-17 08:32:18.922046
+33	3	4	2026-09-17 08:32:25.210259
+19	4	4	2026-09-21 15:00:28.58097
+19	2	1	2026-08-10 14:02:13.520825
+19	3	5	2026-09-30 20:22:21.195765
 \.
 
 
@@ -1742,7 +2060,6 @@ COPY public.usuario (id_user, nome_completo, username, data_nascimento, email, s
 16	Pedro	podpedro	2001-09-11	pedro@gmail.com	$2y$10$OxRjZpneEul97RzqRrvsd.Cx/fLqgLz9IBk9pVMiwPgVGSXlhm9Yi	2026-08-06 11:15:00.456644	\N
 17	Nook	NOOKADMIN	2026-02-02	tccnook@gmail.com	$2y$10$edZ3VgguFJoAOX7zbZTWY.Ie05aWBEjhQ83TfH8rOt.raSUHm7McW	2026-08-06 11:16:14.282838	115543703945018518444
 18	Paulo	pauladentro	1967-07-12	paulo@gmail.com	$2y$10$U8sBW4gzzPpXLYn2pUNYY.Trzvz8eyge8br3b7TS3rKGBdq6csmW6	2026-08-06 11:17:13.697667	\N
-20	Jeuca	jeuquinha	1870-05-12	jeuca@gmail.com	$2y$10$662GeaJa96f.QPgjlImNJOG/1lu0GdUyJ.r9GimSBq8kermA5zZxW	2026-08-06 15:37:05.928915	\N
 21	Gabriel	gaybriel	2004-06-22	gabriel@gmail.com	$2y$10$kgtF.n/i.6lRjnBDUOapRelcJ89mlzhYUhRnPpSzN0U3ohbFA/6FK	2026-08-06 15:43:54.598026	\N
 22	Mirian	mii	1912-12-12	mirian@gmail.com	$2y$10$RJQzpg1wk5gYoBeOfPVa0eBeLoraIIeVYrX8V8Pbl/ad9N9i2aVx.	2026-08-06 15:45:03.121692	\N
 23	fsdf	fsdf	1999-09-21	fsdfsdfsdfsdfsdf	$2y$10$JEIPcLrkYrwip/Gl/n/tJO9utlt1RdnbIKzYyHrosCyNYHEnRdC5m	2026-08-06 15:46:16.596591	\N
@@ -1751,22 +2068,11 @@ COPY public.usuario (id_user, nome_completo, username, data_nascimento, email, s
 28	lucas passoli	Lucas P	2004-09-13	lucaspassoli1309@gmail.com	$2y$10$NOvNUh.2gtHJXV95U3uU/.B7tp3ETcQkNJzy0L0VVpik3MqUwwq8i	2026-08-16 20:20:39.23169	\N
 19	Caio Passoli	caico	2008-09-16	passolicaio@gmail.com	$2y$10$lKNJFtjCN0UedXL6R3mB9OrVqI.F7Zj0LnReH0YurYd5h71xAoTmK	2026-08-06 11:19:29.329523	114771290742095317837
 29	Anselmo Paulo Florentino	selmao	1980-06-09	anselmo@gmail.com	$2y$10$6f.Fv3fslTq5ss5iC91TkuFE16FAWKOIOWyHeH9J7V77vLk2aElfS	2026-08-17 13:28:22.52121	\N
-30	Miguel	Gsus0800	2026-08-04	mig@gmail.com	$2y$10$DiWsdtAXo3GpZDb7xRVGA.uMNM/BYwXYlZSGp56s41tl.SsRpF1i.	2026-08-19 22:10:59.937657	\N
-31	Algum Nome	algumnome	2026-08-11	algum@gmail.com	$2y$10$qjedvd05D8SV2BKASt.0/uvczb/vxqkYH5ISBZJ8iA0zxLUo/S.52	2026-08-22 15:30:52.864847	\N
-32	abcde	abc	2026-08-04	abc@gmail.com	$2y$10$Ahmj.G1LfAHVhZDYjfVrmeIALLQ47XEmtmRGUbINOMHdyuvdhB0ry	2026-08-25 17:45:23.212317	\N
-33	aaaaaaaaa	aaaaa	2026-07-28	aaa@gmail.com	$2y$10$L9HbF1QRNVcmebX72acDBuCETnLXP5HUXyCA9M/udfrZqBbclerD.	2026-08-27 18:11:04.984159	\N
-34	eita rapaz	hmmm	2026-08-04	sempre@gmail.com	$2y$10$QFnclxMScIosb/xkDTfKSeVbC5s8eV6JqG8eLkiaD5FAU2kLJSAQm	2026-08-29 15:08:34.980476	\N
-35	ahahahaha	hehehe	2026-07-28	haha@gmail.com	$2y$10$7susad0OljjuXYbu4jhVN.4aUr0NUZ7UMNax7ncuvXz/4C3l7UNaO	2026-08-29 16:35:35.705263	\N
-36	vamos lá dnv	imcjbro	2026-09-02	cj@gmail.com	$2y$10$sGdjan./kdvAULJqWy90iedK4bl0RTsVzJ6mk7UczIA3PMnNYpuqS	2026-09-03 18:35:24.982037	\N
-37	mais um dia	maisumdia	2026-09-02	mais@gmail.com	$2y$10$Nzar4DwJVMtdOF5cD/fL4eaVtEHh6Xfq9a1/RtliBQTy9tTDeDvam	2026-09-05 09:24:02.988331	\N
-38	tcccccc	tcc	2026-09-03	tcc@gmail.com	$2y$10$KQoLLWJhIQuVDoredjmNW.D2PKdmcvO0y683u.nMZyqyUseb6oRrm	2026-09-07 20:24:41.871848	\N
-39	tcc2	tcc2	2026-09-01	tcc2@gmail.com	$2y$10$A/ieBCnUlz/Rto3RzmupKOI0aVse8KnGXXCB/FUEwyxQLjK10gI8K	2026-09-08 16:51:42.308443	\N
-40	tcc3	tcc3	2026-09-09	tcc3@gmail.com	$2y$10$9xMu96c/QMtJu22urF89H.c4ctwusvH5VLTYu69VTxdWv97ksyYta	2026-09-09 19:19:50.730819	\N
-41	tcc4	tcc4	2026-09-09	tcc4@gmail.com	$2y$10$Tcpt1753VV.G6dTjjz7mm.YgZ/sPpjYePmXtOK5RSypuNWQRYvoee	2026-09-10 16:48:43.197208	\N
-42	tcc5	tcc5	2026-09-03	tcc5@gmail.com	$2y$10$EV3JD.PY0Vh2vUn3vOJq..Tjz1Ixp7Fh627jAEPKyy9Z//fuxmR5e	2026-09-14 20:48:43.189697	\N
-43	asdf	asdf	2026-09-09	asdf@gmail.com	$2y$10$hu7QJGXJKKTwYctgygsWQuzxh9uYUu14URzhGvHmLTBnxae7Wj9RW	2026-09-14 21:01:10.371425	\N
-44	tcc6	tcc6	2026-09-09	tcc6@gmail.com	$2y$10$cHtPaKEMK1Rso25MXYM1ceKSBIpN2HAqZVbEfE7HjV7mFILNzANYG	2026-09-16 19:25:41.840066	\N
-45	tcc7	tcc7	2026-09-09	tcc7@gmail.com	$2y$10$jxEUa.XtrJZMh1TlG6msWe50Z322C3m6DX2r.LD2LwfK2.JSsW8ci	2026-09-17 18:06:02.381225	\N
+30	Usuario Teste 1	userteste1	2026-08-25	userteste1@gmail.com	$2y$10$UlhPwFP2adrKH4iBG/8aPONB4xLrul4U1KD7puPbwe5RFw0Cx98YK	2026-08-25 21:48:06.885524	\N
+31	Solanjo	Solanjo_Pinho	1994-09-16	solanjo@gmail.com	$2y$10$q9PyG2wMDsljntArZ0Q7DuhskuW/dYY9G/Vp4kTh2ODQX7Eqik4OW	2026-08-30 14:18:33.65179	\N
+32	Rita Ventura	titita	1972-02-11	titita@gmail.com	$2y$10$4hhhlZ7ZGlxeKVI1jZo3ZeJBNHoa/3uILioOSTJNK8dPIiaWw38mO	2026-09-10 18:48:52.330746	\N
+33	Karen Bostas	kbostas	1967-12-12	kbostas@gmail.com	$2y$10$vve93R40kYXaIw.MrWsx8uRybCkNFWLzwmR.9JedU3P5PfqFfw2R2	2026-09-17 08:26:35.02236	\N
+34	José Fernandes	zezin do grau	1990-04-20	reideles@gmail.com	$2y$10$J2DORY38rUK.tX0Mb5wSDuxLvBZzkcBiHZJYlJGl2GlftyI4QNN8C	2026-09-17 09:38:23.549526	\N
 \.
 
 
@@ -1780,70 +2086,6 @@ COPY public.whishbook (id, id_livro, id_user, id_whishlist, ordem) FROM stdin;
 3	3	19	1	\N
 4	4	19	1	\N
 6	5	19	1	\N
-7	2	37	8	\N
-8	1	37	8	\N
-9	5	37	8	\N
-10	3	37	8	\N
-11	4	37	8	\N
-12	2	37	9	\N
-13	1	37	9	\N
-14	5	37	9	\N
-15	3	37	9	\N
-16	4	37	9	\N
-17	2	37	10	\N
-18	1	37	10	\N
-19	5	37	10	\N
-20	3	37	10	\N
-21	4	37	10	\N
-22	2	37	11	\N
-23	3	37	11	\N
-24	2	38	14	\N
-25	3	38	14	\N
-26	5	38	14	\N
-27	4	38	14	\N
-28	2	38	15	\N
-29	1	38	15	\N
-32	4	39	16	\N
-122	2	40	18	\N
-35	2	39	17	\N
-36	1	39	17	\N
-123	1	40	18	\N
-38	5	39	17	\N
-124	3	40	18	\N
-258	3	41	19	\N
-43	2	40	\N	\N
-44	1	40	\N	\N
-45	4	40	\N	\N
-46	5	40	\N	\N
-47	2	40	\N	\N
-48	1	40	\N	\N
-49	4	40	\N	\N
-50	5	40	\N	\N
-51	2	40	\N	\N
-52	1	40	\N	\N
-53	4	40	\N	\N
-54	5	40	\N	\N
-55	2	40	\N	\N
-56	1	40	\N	\N
-57	4	40	\N	\N
-58	5	40	\N	\N
-59	3	40	\N	\N
-259	5	41	19	\N
-260	2	41	19	\N
-261	1	41	19	\N
-264	2	30	21	\N
-265	1	30	21	\N
-266	4	30	21	\N
-269	2	30	22	\N
-270	3	30	22	\N
-271	5	30	22	\N
-272	4	30	22	\N
-100	2	40	\N	\N
-101	1	40	\N	\N
-177	1	41	20	\N
-178	4	41	20	\N
-179	2	41	20	\N
-180	3	41	20	\N
 \.
 
 
@@ -1852,36 +2094,36 @@ COPY public.whishbook (id, id_livro, id_user, id_whishlist, ordem) FROM stdin;
 --
 
 COPY public.whishlist (id, nome_lista, id_user, descricao, visibilidade, tipo_capa, capa_url, data_criacao) FROM stdin;
-1	J  li	19	\N	publica	automatica	\N	2026-09-01 14:57:30.281704
-7	sera q vai?	37	tomara q va	publica	automatica	\N	2026-09-05 10:40:00.383718
-8	agora deve ir	37	espero q funcione	publica	automatica	\N	2026-09-05 10:48:17.471894
-9	agora deve ir	37	espero q funcione	publica	automatica	img/capas_listas/capa_auto_lista_9.jpg	2026-09-05 11:02:55.763925
-10	agora deve ir	37	espero q funcione	publica	automatica	img/capas_listas/capa_auto_lista_10.jpg	2026-09-05 11:07:20.528274
-11	testeee	37	lets see	publica	automatica	../img/capas_livros/cartomante-capa.jpeg	2026-09-05 13:37:47.578521
-14	AHHHHHH	38	aaaaaaaaaaaahhhhhhh	publica	manual	img/capas_listas/capa_manual_lista_14.jpg	2026-09-07 20:40:22.741798
-15	funcionoou	38	uhuuuuuu	publica	automatica	../img/capas_livros/cartomante-capa.jpeg	2026-09-07 20:44:13.293684
-16	LISTA MT INCRIVEL	39	uma das melhores listas de todas	publica	automatica	img/capas_listas/capa_auto_lista_16.jpg	2026-09-08 16:52:55.331333
-17	Lista teste 2	39	uma lista de teste	publica	automatica	img/capas_listas/capa_auto_lista_17.jpg	2026-09-08 17:43:52.619201
-19	ja to fincando estressado	41	Falta pouco para ficar 100%	publica	automatica	img/capas_listas/capa_auto_lista_19.jpg	2026-09-10 16:49:54.657141
-21	lista de books	30	lista insana dms	publica	automatica	../img/capas_livros/cartomante-capa.jpeg	2026-09-30 19:14:35.965935
-20	asdas	41	asdasd	publica	automatica	img/capas_listas/capa_auto_lista_20.jpg	2026-09-10 17:04:18.763285
-22	Machado de Assis	30	lista com livros do machado assim	publica	automatica	img/capas_listas/capa_auto_lista_22.jpg	2026-10-05 20:01:46.59487
-18	Essa parte foi	40	tem q ver a capa e os livros agora	publica	automatica	../img/capas_livros/cartomante-capa.jpeg	2026-09-09 19:21:31.239319
+1	J  li	19	\N	publica	automatica	\N	2026-10-15 17:36:10.73042
 \.
+
+
+--
+-- Name: admin_id_admin_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.admin_id_admin_seq', 4, true);
 
 
 --
 -- Name: autor_id_autor_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.autor_id_autor_seq', 11, true);
+SELECT pg_catalog.setval('public.autor_id_autor_seq', 9, true);
 
 
 --
 -- Name: autor_user_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.autor_user_id_seq', 72, true);
+SELECT pg_catalog.setval('public.autor_user_id_seq', 47, true);
+
+
+--
+-- Name: avaliacao_id_avaliacao_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.avaliacao_id_avaliacao_seq', 13, true);
 
 
 --
@@ -1909,49 +2151,63 @@ SELECT pg_catalog.setval('public.cenario_id_cenario_seq', 1, false);
 -- Name: comentario_id_comentario_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.comentario_id_comentario_seq', 14, true);
+SELECT pg_catalog.setval('public.comentario_id_comentario_seq', 29, true);
 
 
 --
 -- Name: conversa_id_conversa_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.conversa_id_conversa_seq', 1, false);
+SELECT pg_catalog.setval('public.conversa_id_conversa_seq', 5, true);
 
 
 --
 -- Name: curtida_id_curtida_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.curtida_id_curtida_seq', 3, true);
+SELECT pg_catalog.setval('public.curtida_id_curtida_seq', 4, true);
 
 
 --
 -- Name: denuncia_id_denuncia_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.denuncia_id_denuncia_seq', 1, false);
+SELECT pg_catalog.setval('public.denuncia_id_denuncia_seq', 4, true);
+
+
+--
+-- Name: follow_autor_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.follow_autor_id_seq', 1, false);
 
 
 --
 -- Name: livro_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.livro_id_seq', 8, true);
+SELECT pg_catalog.setval('public.livro_id_seq', 5, true);
 
 
 --
 -- Name: mensagem_id_mensagem_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.mensagem_id_mensagem_seq', 1, false);
+SELECT pg_catalog.setval('public.mensagem_id_mensagem_seq', 47, true);
 
 
 --
 -- Name: meta_leitura_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.meta_leitura_id_seq', 9, true);
+SELECT pg_catalog.setval('public.meta_leitura_id_seq', 13, true);
+
+
+--
+-- Name: notificacao_id_notificacao_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.notificacao_id_notificacao_seq', 1, false);
 
 
 --
@@ -1965,7 +2221,7 @@ SELECT pg_catalog.setval('public.paragrafo_id_paragrafo_seq', 362, true);
 -- Name: paragrafo_resenha_id_paragrafo_resenha_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.paragrafo_resenha_id_paragrafo_resenha_seq', 1, false);
+SELECT pg_catalog.setval('public.paragrafo_resenha_id_paragrafo_resenha_seq', 15, true);
 
 
 --
@@ -1986,7 +2242,7 @@ SELECT pg_catalog.setval('public.post_id_post_seq', 4, true);
 -- Name: preferencia_id_preferencia_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.preferencia_id_preferencia_seq', 36, true);
+SELECT pg_catalog.setval('public.preferencia_id_preferencia_seq', 29, true);
 
 
 --
@@ -2000,14 +2256,14 @@ SELECT pg_catalog.setval('public.preferencia_livro_id_seq', 10, true);
 -- Name: preferencia_user_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.preferencia_user_id_seq', 57, true);
+SELECT pg_catalog.setval('public.preferencia_user_id_seq', 47, true);
 
 
 --
 -- Name: progresso_leitura_id_progresso_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.progresso_leitura_id_progresso_seq', 1, false);
+SELECT pg_catalog.setval('public.progresso_leitura_id_progresso_seq', 25, true);
 
 
 --
@@ -2021,28 +2277,43 @@ SELECT pg_catalog.setval('public.recuperacao_senha_id_recuperacao_seq', 6, true)
 -- Name: resenha_id_resenha_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.resenha_id_resenha_seq', 1, false);
+SELECT pg_catalog.setval('public.resenha_id_resenha_seq', 4, true);
+
+
+--
+-- Name: salvos_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.salvos_id_seq', 1, false);
 
 
 --
 -- Name: usuario_id_user_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.usuario_id_user_seq', 45, true);
+SELECT pg_catalog.setval('public.usuario_id_user_seq', 34, true);
 
 
 --
 -- Name: whishbook_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.whishbook_id_seq', 272, true);
+SELECT pg_catalog.setval('public.whishbook_id_seq', 6, true);
 
 
 --
 -- Name: whishlist_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.whishlist_id_seq', 22, true);
+SELECT pg_catalog.setval('public.whishlist_id_seq', 1, true);
+
+
+--
+-- Name: admin admin_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.admin
+    ADD CONSTRAINT admin_pkey PRIMARY KEY (id_admin);
 
 
 --
@@ -2067,6 +2338,22 @@ ALTER TABLE ONLY public.autor
 
 ALTER TABLE ONLY public.autor_user
     ADD CONSTRAINT autor_user_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: avaliacao avaliacao_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.avaliacao
+    ADD CONSTRAINT avaliacao_pkey PRIMARY KEY (id_avaliacao);
+
+
+--
+-- Name: avaliacao avaliacao_unica; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.avaliacao
+    ADD CONSTRAINT avaliacao_unica UNIQUE (id_user, categoria_avaliada, id_avaliado);
 
 
 --
@@ -2142,22 +2429,6 @@ ALTER TABLE ONLY public.follow_autor
 
 
 --
--- Name: follow follow_unico; Type: CONSTRAINT; Schema: public; Owner: postgres
---
-
-ALTER TABLE ONLY public.follow
-    ADD CONSTRAINT follow_unico UNIQUE (id_follower, id_following);
-
-
---
--- Name: livro livro_google_books_id_unique; Type: CONSTRAINT; Schema: public; Owner: postgres
---
-
-ALTER TABLE ONLY public.livro
-    ADD CONSTRAINT livro_google_books_id_unique UNIQUE (google_books_id);
-
-
---
 -- Name: livro livro_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -2179,6 +2450,14 @@ ALTER TABLE ONLY public.mensagem
 
 ALTER TABLE ONLY public.meta_leitura
     ADD CONSTRAINT meta_leitura_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: notificacao notificacao_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.notificacao
+    ADD CONSTRAINT notificacao_pkey PRIMARY KEY (id_notificacao);
 
 
 --
@@ -2270,11 +2549,43 @@ ALTER TABLE ONLY public.resenha
 
 
 --
--- Name: whishbook unique_livro_lista; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: salvos salvos_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
-ALTER TABLE ONLY public.whishbook
-    ADD CONSTRAINT unique_livro_lista UNIQUE (id_livro, id_whishlist);
+ALTER TABLE ONLY public.salvos
+    ADD CONSTRAINT salvos_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: curtida unique_curtida; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.curtida
+    ADD CONSTRAINT unique_curtida UNIQUE (id_user, categoria_curtido, id_coisocurtido);
+
+
+--
+-- Name: follow unique_follow; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.follow
+    ADD CONSTRAINT unique_follow UNIQUE (id_follower, id_following);
+
+
+--
+-- Name: follow_autor unique_follow_autor; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.follow_autor
+    ADD CONSTRAINT unique_follow_autor UNIQUE (id_follower, id_autor);
+
+
+--
+-- Name: livros_lidos user_livro_lido; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.livros_lidos
+    ADD CONSTRAINT user_livro_lido UNIQUE (id_user, id_livro);
 
 
 --
@@ -2406,6 +2717,14 @@ ALTER TABLE ONLY public.conta
 
 
 --
+-- Name: denuncia fk_denunciador; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.denuncia
+    ADD CONSTRAINT fk_denunciador FOREIGN KEY (id_denunciador) REFERENCES public.usuario(id_user) ON DELETE CASCADE;
+
+
+--
 -- Name: whishbook fk_livro_book; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -2422,6 +2741,22 @@ ALTER TABLE ONLY public.preferencia_livro
 
 
 --
+-- Name: notificacao fk_notificacao_user_final; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.notificacao
+    ADD CONSTRAINT fk_notificacao_user_final FOREIGN KEY (id_user_recebido) REFERENCES public.usuario(id_user) ON DELETE CASCADE;
+
+
+--
+-- Name: notificacao fk_notificacao_user_origem; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.notificacao
+    ADD CONSTRAINT fk_notificacao_user_origem FOREIGN KEY (id_user_origem) REFERENCES public.usuario(id_user) ON DELETE CASCADE;
+
+
+--
 -- Name: preferencia_user fk_preferencia; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -2435,14 +2770,6 @@ ALTER TABLE ONLY public.preferencia_user
 
 ALTER TABLE ONLY public.preferencia_livro
     ADD CONSTRAINT fk_preferencia_livro FOREIGN KEY (id_preferencia) REFERENCES public.preferencia(id_preferencia);
-
-
---
--- Name: recuperacao_senha fk_recuperacao_senha; Type: FK CONSTRAINT; Schema: public; Owner: postgres
---
-
-ALTER TABLE ONLY public.recuperacao_senha
-    ADD CONSTRAINT fk_recuperacao_senha FOREIGN KEY (id_user) REFERENCES public.usuario(id_user) ON DELETE CASCADE;
 
 
 --
@@ -2662,6 +2989,14 @@ ALTER TABLE ONLY public.resenha
 
 
 --
+-- Name: salvos salvo_user; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.salvos
+    ADD CONSTRAINT salvo_user FOREIGN KEY (id_user) REFERENCES public.usuario(id_user) ON DELETE CASCADE;
+
+
+--
 -- Name: top5_livros top5_livro; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -2686,8 +3021,16 @@ ALTER TABLE ONLY public.progresso_leitura
 
 
 --
+-- Name: autor usuario_autor; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.autor
+    ADD CONSTRAINT usuario_autor FOREIGN KEY (id_user) REFERENCES public.usuario(id_user);
+
+
+--
 -- PostgreSQL database dump complete
 --
 
-\unrestrict gqFd3uBI1mEfk7zaGpGZ2mZOLaMDffLeeqzj2xM76oRf6QCj9Hxr4KKYWwNE4UB
+\unrestrict 6fIR9iEduYZtjrzzm4wCgmpQxWSPFXhdPrQz0o7c1mxCjrPfNR6hPZpySd0zj2e
 

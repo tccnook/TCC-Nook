@@ -6,21 +6,318 @@ if (!isset($_SESSION['id_user'])) {
     exit();
 }
 
-$id_user = $_SESSION['id_user'];
-$id_livro = filter_var($_GET['id_livro'] ?? null, FILTER_VALIDATE_INT);
+$id_livro = $_GET['id_livro'] ?? null;
+$google_books_id = $_GET['google_books_id'] ?? null;
 
-if (!$id_livro) {
+if (($id_livro === null || $id_livro === '') && ($google_books_id === null || $google_books_id === '')) {
     header('Location: catalogo.php');
     exit();
 }
+
+$id_user = $_SESSION['id_user'];
+$info = [];
+$categorias_google = [];
+$livro = null;
 
 require_once __DIR__ . '/conexao.php';
 $db = new Database();
 $conn = $db->conectar();
 
-$stmt = $conn->prepare("SELECT * FROM livro WHERE id_livro = :id_livro AND visibilidade = 'publico'");
-$stmt->execute([':id_livro' => $id_livro]);
-$livro = $stmt->fetch(PDO::FETCH_ASSOC);
+
+function relacionarGeneros($conn, $id_livro, $categorias_google) {
+    // Tradução de categorias comuns da Google Books para o NOOK
+    $mapa_generos = [
+        'fiction' => 'ficcao',
+        'comedy' => 'comedia',
+        'romance' => 'romance',
+        'dark romance' => 'dark-romance',
+        'drama' => 'drama',
+        'thrillers' => 'suspense',
+        'suspense' => 'suspense',
+        'action' => 'acao',
+        'adventure' => 'aventura',
+        'fantasy' => 'fantasia',
+        'novels' => 'novela',
+        'manga' => 'manga',
+        'comics' => 'hq',
+        'graphic novels' => 'hq',
+        'webtoons' => 'webtoons',
+        'science fiction' => 'ficcao-cientifica',
+        'police procedurals' => 'policial',
+        'medical' => 'medico',
+        'biography' => 'biografia',
+        'documentary' => 'documentario',
+        'history' => 'historia',
+        'philosophy' => 'filosofia',
+        'psychology' => 'psicologia',
+        'politics' => 'politica',
+        'poetry' => 'poesia',
+        'cooking' => 'gastronomia',
+        'mythology' => 'mitologia',
+        'horror' => 'terror'
+    ];
+
+    // Prepara a consulta uma única vez
+    $sql_genero = "select id_preferencia from preferencia where LOWER(preferencia) = LOWER(:genero) LIMIT 1";
+    $stmt_genero = $conn->prepare($sql_genero);
+    $sql_relacao = "insert into preferencia_livro (id_livro, id_preferencia)
+        SELECT :id_livro, :id_preferencia
+        WHERE NOT EXISTS (
+            SELECT 1
+            FROM preferencia_livro
+            WHERE id_livro = :id_livro_verificar
+              AND id_preferencia = :id_preferencia_verificar
+        )";
+
+    $stmt_relacao = $conn->prepare($sql_relacao);
+
+    foreach ($categorias_google as $categoria) {
+        // Exemplo: "Fiction / Romance / Contemporary"
+        $partes = explode('/', $categoria);
+        foreach ($partes as $parte) {
+            $parte = trim($parte);
+            $chave = strtolower($parte);
+            // Traduz se houver correspondência; caso contrário, tenta o próprio nome
+            $genero_nook = $mapa_generos[$chave] ?? $chave;
+            $stmt_genero->execute([
+                ':genero' => $genero_nook
+            ]);
+            $id_preferencia = $stmt_genero->fetchColumn();
+            // Só relaciona gêneros que já existem no banco
+            if ($id_preferencia !== false) {
+                $stmt_relacao->execute([
+                    ':id_livro' => $id_livro,
+                    ':id_preferencia' => $id_preferencia,
+                    ':id_livro_verificar' => $id_livro,
+                    ':id_preferencia_verificar' => $id_preferencia
+                ]);
+            }
+        }
+    }
+}
+
+if($id_livro !== null){
+    $select_livro = "select * from livro where id_livro = :id_livro and visibilidade = 'publico' ";
+    $stmt = $conn->prepare($select_livro);
+    $stmt->execute([
+        ":id_livro" => $id_livro
+    ]);
+
+    $livro = $stmt->fetch(PDO::FETCH_ASSOC);
+}
+
+if($id_livro === null && $google_books_id !== null){
+    $select_livro_google = "select * from livro where google_books_id = :google_books_id";
+    $stmt = $conn->prepare($select_livro_google);
+    $stmt->execute([
+        ":google_books_id" => $google_books_id
+    ]);
+    $livro_google = $stmt->fetch(PDO::FETCH_ASSOC);
+
+    if(empty($livro_google)){
+        //puxar da API e cadastrar no banco
+        require_once __DIR__ . '/config_api_ex.php';
+
+        $parametros_api = $chave_api !== '' ? ['key' => $chave_api] : [];
+        $url = 'https://www.googleapis.com/books/v1/volumes/' . rawurlencode($google_books_id);
+        if ($parametros_api) {
+            $url .= '?' . http_build_query($parametros_api);
+        }
+
+        $ch = curl_init($url);
+        curl_setopt_array($ch, [
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_TIMEOUT => 10,
+            CURLOPT_USERAGENT => 'Nook/1.0'
+        ]);
+        $resposta = curl_exec($ch);
+
+        if ($resposta === false) {
+            curl_close($ch);
+            http_response_code(502);
+            exit('Não foi possível consultar a Google Books API.');
+        }
+
+        $codigo_http = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+
+        try {
+            $dados_google = json_decode($resposta, true, 512, JSON_THROW_ON_ERROR);
+        } catch (JsonException $erro) {
+            http_response_code(502);
+            exit('A Google Books API retornou uma resposta inválida.');
+        }
+
+        if ($codigo_http !== 200 || empty($dados_google['volumeInfo'])) {
+            http_response_code($codigo_http === 404 ? 404 : 502);
+            exit('Livro não encontrado na Google Books.');
+        }
+
+        $info = $dados_google['volumeInfo'];
+        $categorias_google = $info['categories'] ?? [];
+
+        $isbn10 = null;
+        $isbn13 = null;
+
+        if(isset($info['industryIdentifiers'])){
+            foreach($info['industryIdentifiers'] as $isbn){
+                if($isbn['type'] === 'ISBN_10'){
+                    $isbn10 = $isbn['identifier'];
+                }
+                if($isbn['type'] === 'ISBN_13'){
+                    $isbn13 = $isbn['identifier'];
+                }
+            }
+        }
+
+        $titulo = $info['title'] ?? 'sem titulo';
+
+        $autor = null;
+        if(isset($info['authors'])){
+            $autor = implode(', ', $info['authors']);
+        }
+
+        $sinopse = $info['description'] ?? null;
+        $idioma = $info['language'] ?? null;
+        $paginas = $info['pageCount'] ?? null;
+        $nota = $info['averageRating'] ?? null;
+        $qtd_avaliacoes = $info['ratingsCount'] ?? null;    
+
+        $capa = null;
+        if(isset($info['imageLinks']['thumbnail'])){
+            $capa = $info['imageLinks']['thumbnail'];
+        }
+
+        $data_publi = null;
+
+        if(isset($info['publishedDate'])){
+            $data = $info['publishedDate'];
+            if(preg_match('/^\d{4}$/', $data)){
+                $data_publi = $data . '-01-01 00:00:00';
+            }
+            elseif(preg_match('/^\d{4}-\d{2}$/', $data)){
+                $data_publi = $data . '-01 00:00:00';
+            }
+            elseif(preg_match('/^\d{4}-\d{2}-\d{2}$/', $data)){
+                $data_publi = $data . ' 00:00:00';
+            }
+        }
+        
+
+        $class_ind = null;
+        if(isset($info['maturityRating'])){
+            switch($info['maturityRating']){
+                case 'NOT_MATURE':
+                    $class_ind = 0;
+                    break;
+                case 'MATURE':
+                    $class_ind = 18;
+                    break;
+                default:
+                    $class_ind = null;
+                    break;
+            }
+        }
+
+        $access = $dados_google['accessInfo'] ?? [];
+        $sale = $dados_google['saleInfo'] ?? [];
+
+        $link_leitura = null;
+        $tipo_acesso = $access['accessViewStatus'] ?? null;
+
+        // verifica se existe alguma forma de leitura/prévia
+        if($tipo_acesso === 'FULL_READING' || $tipo_acesso === 'PARTIAL'){
+            $link_leitura = $access['webReaderLink'] ?? null;
+        }
+
+        $link_compra = $sale['buyLink'] ?? null;
+
+        try{            
+            $insert_livro = "insert into livro (
+                    titulo_livro,
+                    resumo_livro,
+                    class_ind,
+                    nome_autor,
+                    id_user,
+                    sinopse_livro,
+                    capa_url,
+                    data_publi,
+                    idioma,
+                    visibilidade,
+                    google_books_id,
+                    origem,
+                    link_leitura,
+                    link_compra,
+                    nota_google,
+                    avaliacoes_google,
+                    paginas,
+                    isbn10,
+                    isbn13
+
+                    ) values (
+
+                    :titulo_livro,
+                    :resumo_livro,
+                    :class_ind,
+                    :nome_autor,
+                    null,
+                    :sinopse_livro,
+                    :capa_url,
+                    :data_publi,
+                    :idioma,
+                    'publico',
+                    :google_books_id,
+                    'google_books',
+                    :link_leitura,
+                    :link_compra,
+                    :nota_google,
+                    :avaliacoes_google,
+                    :paginas,
+                    :isbn10,
+                    :isbn13
+                )
+                returning id_livro";
+
+            $stmt = $conn->prepare($insert_livro);
+            $stmt->execute([
+                ':titulo_livro' => $titulo,
+                ':resumo_livro' => null,
+                ':class_ind' => $class_ind,
+                ':nome_autor' => $autor,
+                ':sinopse_livro' => $sinopse,
+                ':capa_url' => $capa,
+                ':data_publi' => $data_publi,
+                ':idioma' => $idioma,
+                ':google_books_id' => $google_books_id,
+                ':link_leitura' => $link_leitura,
+                ':link_compra' => $link_compra,
+                ':nota_google' => $nota,
+                ':avaliacoes_google' => $qtd_avaliacoes,
+                ':paginas' => $paginas,
+                ':isbn10' => $isbn10,
+                ':isbn13' => $isbn13
+            ]);
+            $id_livro = $stmt->fetchColumn();
+
+            $select_livro = "select * from livro where id_livro = :id_livro and visibilidade = 'publico'";
+            $stmt = $conn->prepare($select_livro);
+            $stmt->execute([
+                ':id_livro' => $id_livro
+            ]);
+            $livro = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        } catch (PDOException $e){
+            echo "Erro ao cadastrar: " . $e->getMessage();
+        }
+    } else {
+        $livro = $livro_google;
+        $id_livro = $livro_google['id_livro'];
+    }
+}
+
+if ($categorias_google) {
+    relacionarGeneros($conn, $id_livro, $categorias_google);
+}
 
 if (!$livro) {
     header('Location: catalogo.php');
