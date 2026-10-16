@@ -1,4 +1,4 @@
-<?php //as vezes quando vai criar a lista, o primeiro livro da consulta add todos os outros
+<?php
     session_start();
     require_once('conexao.php');
 
@@ -184,7 +184,11 @@
                             ${livro.nome_autor}
                         </span>
 
-                        <button type="button" class="btn-remover" data-id="${livro.id_livro}">
+                        <button
+                            type="button"
+                            class="btn-remover"
+                            data-tipo="${livro.tipo}"
+                            data-id="${livro.tipo === 'google' ? livro.google_books_id : livro.id_livro}">
                             X
                         </button>
 
@@ -201,7 +205,21 @@
 
                     botao.addEventListener("click", function () {
 
+                        
+                        const tipo = this.dataset.tipo;
                         const idLivro = this.dataset.id;
+
+                        const parametros = new URLSearchParams();
+
+                        parametros.append("acao", "remover");
+                        parametros.append("tipo", tipo);
+
+                        if (tipo === "google") {
+                            parametros.append("google_books_id", idLivro);
+                        } else {
+                            parametros.append("id_livro", idLivro);
+                        }
+
 
                         fetch("processar_livros_lista.php", {
 
@@ -212,9 +230,7 @@
                                     "application/x-www-form-urlencoded"
                             },
 
-                            body:
-                                "acao=remover&id_livro=" +
-                                encodeURIComponent(idLivro)
+                            body: parametros.toString()
 
                         })
 
@@ -244,56 +260,56 @@
 
         }
 
-        // adiciona livros
-
+       
+        // adiciona livros locais ou da Google Books
         resultadosLivros.addEventListener("click", function (event) {
 
-            if (event.target.classList.contains("btn-adicionar")) {
+            const botao = event.target.closest(".btn-adicionar");
 
-                const botao = event.target;
-
-                const idLivro = botao.dataset.id;
-
-                fetch("processar_livros_lista.php", {
-
-                    method: "POST",
-
-                    headers: {
-                        "Content-Type":
-                            "application/x-www-form-urlencoded"
-                    },
-
-                    body:
-                        "acao=adicionar&id_livro=" +
-                        encodeURIComponent(idLivro)
-
-                })
-
-                .then(response => response.json())
-
-                .then(data => {
-
-                    if (data.sucesso) {
-
-                        console.log("Livro adicionado!");
-
-                        console.log(data.livros);
-
-                        mostrarLivros(data.livros);
-
-                    }
-
-                })
-
-                .catch(error => {
-
-                    console.error("Erro:", error);
-
-                });
-
+            if (!botao) {
+                return;
             }
 
+            const tipo = botao.dataset.tipo;
+            const idLivro = botao.dataset.id;
+
+            const parametros = new URLSearchParams();
+
+            parametros.append("acao", "adicionar");
+            parametros.append("tipo", tipo);
+
+            if (tipo === "google") {
+                parametros.append("google_books_id", idLivro);
+            } else {
+                parametros.append("id_livro", idLivro);
+            }
+
+            fetch("processar_livros_lista.php", {
+                method: "POST",
+                headers: {
+                    "Content-Type":
+                        "application/x-www-form-urlencoded"
+                },
+                body: parametros.toString()
+            })
+            .then(response => response.json())
+            .then(data => {
+
+                if (data.sucesso) {
+                    mostrarLivros(data.livros);
+                } else {
+                    console.error(
+                        "Erro ao adicionar livro:",
+                        data.mensagem
+                    );
+                }
+
+            })
+            .catch(error => {
+                console.error("Erro:", error);
+            });
         });
+
 
     </script>
 </body>

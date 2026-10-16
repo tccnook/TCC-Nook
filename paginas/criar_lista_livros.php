@@ -1,29 +1,51 @@
 <?php
 
+require_once('funcoes_livros_api.php');
+
 try {
 
-    $conn->beginTransaction();
+
 
     if (!isset($_SESSION['livros_lista'])) {
         $_SESSION['livros_lista'] = [];
     }
 
-    if(isset($_POST['criar_lista'])){
-        $nome_lista = $_POST['nome_lista'] ?? '';
+    if (isset($_POST['criar_lista'])) {;
+        $conn->beginTransaction();
+
+        $nome_lista = trim($_POST['nome_lista'] ?? '');
         $descricao = $_POST['descricao'] ?? '';
         $visibilidade = $_POST['visibilidade'] ?? 'publica';
         $tipo_capa = $_POST['tipo_capa'] ?? 'automatica';
 
-        if(empty(trim($nome_lista))){
-            echo '<script>alert("Dê um nome para sua lista!")</script>';
+        // Verifica se o nome foi preenchido
+        if ($nome_lista === '') {
             $conn->rollBack();
+            echo '<script>alert("Dê um nome para sua lista!");</script>';
             exit;
         }
 
-        $criar_lista = "insert into whishlist (nome_lista, id_user, descricao, visibilidade, tipo_capa)
-        values (:nome_lista, :id_user, :descricao, :visibilidade, :tipo_capa) returning id;";
+        // Cria a lista
+        $criar_lista = "
+            INSERT INTO whishlist (
+                nome_lista,
+                id_user,
+                descricao,
+                visibilidade,
+                tipo_capa
+            )
+            VALUES (
+                :nome_lista,
+                :id_user,
+                :descricao,
+                :visibilidade,
+                :tipo_capa
+            )
+            RETURNING id
+        ";
 
         $stmt = $conn->prepare($criar_lista);
+
         $stmt->execute([
             ':nome_lista' => $nome_lista,
             ':id_user' => $id_user,
@@ -33,100 +55,275 @@ try {
         ]);
 
         $id_whishlist = $stmt->fetchColumn();
-
-        //relacao entre lista e livros
+        
+        // Relaciona os livros com a lista
         $livros_lista = $_SESSION['livros_lista'];
-        foreach ($livros_lista as $id_livro){
-            $insert_livros = "insert into whishbook (id_livro, id_user, id_whishlist) values (:id_livro, :id_user, :id_whishlist);";
+        $ids_livros_internos = [];
+
+        foreach ($livros_lista as $item) {
+
+            if (
+                !is_array($item) ||
+                !isset($item['tipo'], $item['id'])
+            ) {
+                continue;
+            }
+
+            if ($item['tipo'] === 'local') {
+
+                // Livro que já existe no banco do NOOK
+                $id_livro_interno = (int) $item['id'];
+
+                // Confere se o livro realmente existe
+                $sql = "
+                    SELECT id_livro
+                    FROM livro
+                    WHERE id_livro = :id_livro
+                ";
+
+                $stmt = $conn->prepare($sql);
+                $stmt->execute([
+                    ':id_livro' => $id_livro_interno
+                ]);
+
+                $id_encontrado = $stmt->fetchColumn();
+
+                if ($id_encontrado === false) {
+                    continue;
+                }
+
+                $id_livro_interno = (int) $id_encontrado;
+
+            } elseif ($item['tipo'] === 'google') {
+
+                // Reutiliza o livro existente ou cadastra pela API
+                $id_livro_interno = cadastrarLivroGoogle(
+                    $conn,
+                    $item['id']
+                );
+
+            } else {
+                continue;
+            }
+
+            // Evita relacionar o mesmo livro duas vezes
+            if (in_array(
+                $id_livro_interno,
+                $ids_livros_internos,
+                true
+            )) {
+                continue;
+            }
+
+            $ids_livros_internos[] = $id_livro_interno;
+
+            $insert_livros = "
+                INSERT INTO whishbook (
+                    id_livro,
+                    id_user,
+                    id_whishlist
+                )
+                VALUES (
+                    :id_livro,
+                    :id_user,
+                    :id_whishlist
+                )
+            ";
+
             $stmt = $conn->prepare($insert_livros);
+
             $stmt->execute([
-                ':id_livro' => $id_livro,
+                ':id_livro' => $id_livro_interno,
                 ':id_user' => $id_user,
                 ':id_whishlist' => $id_whishlist
             ]);
         }
 
-        //parte da capa
-        if($tipo_capa === 'automatica'){
-            if (count($_SESSION['livros_lista']) > 0) {
-               $id_primeiro_livro = $_SESSION['livros_lista'][0];
+        // Configura a capa da lista
+        if ($tipo_capa === 'automatica') {
 
-                if(count($livros_lista) <= 3){
-                    
-                    $select_capa = "select capa_url from livro where id_livro = :id_livro;";
+            if (count($ids_livros_internos) > 0) {
+
+                if (count($ids_livros_internos) <= 3) {
+
+                    // Usa a capa do primeiro livro
+                    $id_primeiro_livro = $ids_livros_internos[0];
+
+                    $select_capa = "
+                        SELECT capa_url
+                        FROM livro
+                        WHERE id_livro = :id_livro
+                    ";
+
                     $stmt = $conn->prepare($select_capa);
-                    $stmt->execute([":id_livro" => $id_primeiro_livro]);
+
+                    $stmt->execute([
+                        ':id_livro' => $id_primeiro_livro
+                    ]);
+
                     $capa = $stmt->fetch(PDO::FETCH_ASSOC);
+                    $capa_url = $capa['capa_url'] ?? null;
 
-                    $capa_url = $capa['capa_url'];
+                    $update_capa = "
+                        UPDATE whishlist
+                        SET capa_url = :capa_url
+                        WHERE id = :id_whishlist
+                    ";
 
-                    $update_capa = "update whishlist set capa_url = :capa_url where id = :id_whishlist;";
                     $stmt = $conn->prepare($update_capa);
+
                     $stmt->execute([
                         ':capa_url' => $capa_url,
                         ':id_whishlist' => $id_whishlist
                     ]);
+
                 } else {
-                    //capa_lista = capa 4 primeiros livros
-                    $capa_livros = array_slice($livros_lista, 0, 4);
+
+                    // Usa os quatro primeiros livros na capa
+                    $capa_livros = array_slice(
+                        $ids_livros_internos,
+                        0,
+                        4
+                    );
+
                     require_once('gerar_capa_lista.php');
 
-                    if(count($capa_livros) > 0){
-                        $placeholders = implode(',', array_fill(0, count($capa_livros), '?')); //atribui ? para o id dos livros para evitar o sql injection
+                    $placeholders = implode(
+                        ',',
+                        array_fill(0, count($capa_livros), '?')
+                    );
 
-                        $select_livros = "select id_livro, capa_url from livro where id_livro in ($placeholders);";
-                        $stmt = $conn->prepare($select_livros);
-                        $stmt->execute($capa_livros); // o id dos livros entram no lugar dos ? do placeholder
+                    $select_livros = "
+                        SELECT id_livro, capa_url
+                        FROM livro
+                        WHERE id_livro IN ($placeholders)
+                    ";
 
-                        $capas = $stmt->fetchAll(PDO::FETCH_ASSOC);
+                    $stmt = $conn->prepare($select_livros);
+                    $stmt->execute($capa_livros);
 
-                        $capa_auto_url = gerarCapaLista($capas, $id_whishlist);
+                    $capas = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-                        $insert_capa_auto = "update whishlist set capa_url = :capa_url where id = :id_whishlist;";
-            
-                        $stmt = $conn->prepare($insert_capa_auto);
-                        $stmt->execute([
-                            ':capa_url' => $capa_auto_url,
-                            ':id_whishlist' => $id_whishlist
-                        ]);
-                    }
+                    $capa_auto_url = gerarCapaLista(
+                        $capas,
+                        $id_whishlist
+                    );
+
+                    $update_capa = "
+                        UPDATE whishlist
+                        SET capa_url = :capa_url
+                        WHERE id = :id_whishlist
+                    ";
+
+                    $stmt = $conn->prepare($update_capa);
+
+                    $stmt->execute([
+                        ':capa_url' => $capa_auto_url,
+                        ':id_whishlist' => $id_whishlist
+                    ]);
                 }
-            } else {
-                //capa padrao, tem q ver isso aq
             }
 
         } else {
-            //inserir capa anexada
-            if(isset($_FILES['capa_manual']) && $_FILES['capa_manual']['error'] === UPLOAD_ERR_OK){//verifica se há arquivo e se n houve erro no upload
+
+            // Upload da capa manual
+            if (
+                isset($_FILES['capa_manual']) &&
+                $_FILES['capa_manual']['error'] === UPLOAD_ERR_OK
+            ) {
+
                 $capa_manual = $_FILES['capa_manual'];
 
-                $extensao_capa_manual = strtolower(pathinfo($capa_manual['name'], PATHINFO_EXTENSION));
-                $nome_capa_manual = "capa_manual_lista_". $id_whishlist. "." . $extensao_capa_manual;
+                $extensao = strtolower(
+                    pathinfo(
+                        $capa_manual['name'],
+                        PATHINFO_EXTENSION
+                    )
+                );
+
+                // Valida extensões permitidas
+                $extensoes_permitidas = [
+                    'jpg',
+                    'jpeg',
+                    'png',
+                    'webp'
+                ];
+
+                if (!in_array($extensao, $extensoes_permitidas, true)) {
+                    throw new RuntimeException(
+                        'Formato de imagem não permitido.'
+                    );
+                }
+
+                $nome_capa = 'capa_manual_lista_'
+                    . $id_whishlist
+                    . '.'
+                    . $extensao;
+
                 $pasta_capa = __DIR__ . '/../img/capas_listas/';
-                $caminho_banco_capa = 'img/capas_listas/' . $nome_capa_manual;
-                $capa_manual_url = $caminho_banco_capa;
-                $caminho_completo_capa = $pasta_capa . $nome_capa_manual;
 
-                move_uploaded_file($capa_manual['tmp_name'], $caminho_completo_capa);
+                if (
+                    !is_dir($pasta_capa) &&
+                    !mkdir($pasta_capa, 0775, true)
+                ) {
+                    throw new RuntimeException(
+                        'Não foi possível criar a pasta das capas.'
+                    );
+                }
 
-                $insert_capa_manual = "update whishlist set capa_url = :capa_url where id = :id_whishlist;";
+                $caminho_completo = $pasta_capa . $nome_capa;
 
-                $stmt = $conn->prepare($insert_capa_manual);
+                $capa_url = 'img/capas_listas/' . $nome_capa;
+
+                if (
+                    !move_uploaded_file(
+                        $capa_manual['tmp_name'],
+                        $caminho_completo
+                    )
+                ) {
+                    throw new RuntimeException(
+                        'Não foi possível salvar a capa enviada.'
+                    );
+                }
+
+                $update_capa = "
+                    UPDATE whishlist
+                    SET capa_url = :capa_url
+                    WHERE id = :id_whishlist
+                ";
+
+                $stmt = $conn->prepare($update_capa);
+
                 $stmt->execute([
-                    ':capa_url' => $capa_manual_url,
+                    ':capa_url' => $capa_url,
                     ':id_whishlist' => $id_whishlist
                 ]);
             }
         }
-        header("Location: " . $_SERVER['PHP_SELF']);
-    }
-    $conn->commit();
 
-} catch (PDOException $e) {
-   if ($conn->inTransaction()) {
+        // Finaliza a criação da lista
+        $conn->commit();
+
+        // Limpa os livros selecionados
+        $_SESSION['livros_lista'] = [];
+
+        header('Location: ' . $_SERVER['PHP_SELF']);
+        exit;
+    }
+
+} catch (Throwable $e) {
+
+    if ($conn->inTransaction()) {
         $conn->rollBack();
     }
-    echo "Erro ao criar lista: " . $e->getMessage();
+
+    error_log(
+        'Erro ao criar lista: ' . $e->getMessage()
+    );
+
+    echo '<script>
+        alert("Não foi possível criar a lista. Tente novamente.");
+    </script>';
 }
 
 ?>

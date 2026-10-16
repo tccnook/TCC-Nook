@@ -131,6 +131,38 @@
             $caminho_capa = $capa_url;
         }
 
+        if (isset($_POST['excluir_lista'])) {
+            try {
+                $conn->beginTransaction();
+
+                $deleteLivros = "delete from whishbook where id_whishlist = :id_lista id_user = :id_user";
+
+                $stmt = $conn->prepare($deleteLivros);
+                $stmt->execute([
+                    ':id_lista' => $id_lista,
+                    ':id_user' => $id_user
+                ]);
+
+                $deleteLista = "delete from whishlist where id = :id_lista and id_user = :id_user";
+
+                $stmt = $conn->prepare($deleteLista);
+                $stmt->execute([
+                    ':id_lista' => $id_lista,
+                    ':id_user' => $id_user
+                ]);
+
+                $conn->commit();
+
+                header('Location: listas_livros.php');
+                exit;
+            } catch (Throwable $e) {
+                if ($conn->inTransaction()) {
+                    $conn->rollBack();
+                }
+                echo 'Não foi possível excluir a lista.';
+            }
+        }
+
         require_once('editar_lista_livros.php');
 ?>
 <!DOCTYPE html>
@@ -153,6 +185,10 @@
         <button type="button" id="editLista">
             Editar
         </button>
+
+        <form action="" method="POST">
+            <button type="submit" name="excluir_lista">Excluir Lista</button>
+        </form>
         <p>Avaliação</p>
     </section>
 
