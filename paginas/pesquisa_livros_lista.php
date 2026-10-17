@@ -9,6 +9,18 @@
     $nome = trim($_GET['nome'] ?? '');
     $id_lista = $_SESSION['id_lista'] ?? null;
 
+    // Identifica os livros que já foram selecionados.
+    $selecionados_local = [];
+    $selecionados_google = [];
+
+    foreach ($_SESSION['livros_lista'] ?? [] as $item) {
+        if ($item['tipo'] === 'local') {
+            $selecionados_local[] = (int) $item['id'];
+        } elseif ($item['tipo'] === 'google') {
+            $selecionados_google[] = (string) $item['id'];
+        }
+    }
+
     if ($nome === '') {
         exit;
     }
@@ -159,6 +171,9 @@
     // Exibe os livros do banco local.
     foreach ($livros as $livro) {
         $id = (int) $livro['id_livro'];
+        if (in_array($id, $selecionados_local, true)) {
+            continue;
+        }
         $titulo = htmlspecialchars($livro['titulo_livro'] ?? '');
         $autor = htmlspecialchars($livro['nome_autor'] ?? '');
         $capa = htmlspecialchars($livro['capa_url'] ?? '');
@@ -174,6 +189,9 @@
     // Exibe os livros encontrados na Google Books API.
     foreach ($livros_google as $livro) {
         $google_id = htmlspecialchars($livro['google_books_id']);
+        if (in_array($livro['google_books_id'], $selecionados_google, true)) {
+            continue;
+        }
         $titulo = htmlspecialchars($livro['titulo_livro']);
         $autor = htmlspecialchars($livro['nome_autor']);
         $capa = htmlspecialchars($livro['capa_url']);

@@ -54,7 +54,7 @@ $generos = $stmt_generos->fetchAll(PDO::FETCH_ASSOC);
         <script>
             const campoPesquisa = document.getElementById('campo-pesquisa');
             const resultados = document.getElementById('resultado-livros');
-
+            let requisicaoAtual = 0;
 
             // declarando o genero que a pessoa selecionar
             let generoSelecionado = '';
@@ -64,22 +64,44 @@ $generos = $stmt_generos->fetchAll(PDO::FETCH_ASSOC);
             let timeoutPesquisa;
 
             // precisa nem falar o que essa função faz
-            function pesquisarLivros(){
+            async function pesquisarLivros() {
                 const nome = campoPesquisa.value;
-                const parametros = new URLSearchParams();
+                const numeroRequisicao = ++requisicaoAtual;
 
+                const parametros = new URLSearchParams();
+                
                 parametros.append('nome', nome);
                 parametros.append('genero', generoSelecionado);
 
-                fetch('buscar-livros.php?'+ parametros.toString())
-                .then(response => response.text())
-                .then(data => {
+                try {
+                    const response = await fetch(
+                        'buscar-livros.php?' + parametros.toString()
+                    );
+
+                    const data = await response.text();
+
+                    // Ignora respostas de pesquisas anteriores.
+                    if (numeroRequisicao !== requisicaoAtual) {
+                        return;
+                    }
+
+                    if (!response.ok) {
+                        throw new Error('Erro HTTP: ' + response.status);
+                    }
+
                     resultados.innerHTML = data;
-                })
-                .catch(error => {
-                    console.error('Erro na pesquisa: ', error);
-                });
-            };
+
+                } catch (error) {
+                    if (numeroRequisicao !== requisicaoAtual) {
+                        return;
+                    }
+
+                    console.error('Erro na pesquisa:', error);
+                    resultados.innerHTML =
+                        '<p>Erro ao realizar a pesquisa. Tente novamente.</p>';
+                }
+            }
+
             
             // pega o que o usuário digita no campo de pesquisa
             campoPesquisa.addEventListener('input', function() {

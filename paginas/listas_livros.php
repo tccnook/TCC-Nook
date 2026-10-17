@@ -115,16 +115,39 @@
     </dialog>
     
     <script>
+        async function limparSelecao() {
+            try {
+                const resposta = await fetch("processar_livros_lista.php", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/x-www-form-urlencoded"
+                    },
+                    body: "acao=limpar"
+                });
+
+                const data = await resposta.json();
+
+                if (data.sucesso) {
+                    mostrarLivros([]);
+                    resultadosLivros.innerHTML = "";
+                    document.getElementById("nome-livro").value = "";
+                }
+            } catch (error) {
+                console.error("Erro ao limpar seleção:", error);
+            }
+        }
+
         const btnLista = document.getElementById("btnLista");
         const btnFechar = document.getElementById("fechar_lista");
         const modal = document.getElementById("modal_lista");
 
-        btnLista.addEventListener("click", function () {
-            console.log("Botão criar lista clicado");
+        btnLista.addEventListener("click", async function () {
+            await limparSelecao();
             modal.showModal();
         });
 
-        btnFechar.addEventListener("click", function () {
+        btnFechar.addEventListener("click", async function () {
+            await limparSelecao();
             modal.close();
         });
 
@@ -243,6 +266,20 @@
                                 console.log("Livro removido!");
 
                                 mostrarLivros(data.livros);
+                                const nome = document.getElementById("nome-livro").value.trim();
+
+                                if (nome !== "") {
+                                    resultadosLivros.innerHTML = "<p>Atualizando resultados...</p>";
+
+                                    fetch("pesquisa_livros_lista.php?nome=" + encodeURIComponent(nome))
+                                        .then(response => response.text())
+                                        .then(html => {
+                                            resultadosLivros.innerHTML = html;
+                                        })
+                                        .catch(error => {
+                                            console.error("Erro ao atualizar resultados:", error);
+                                        });
+                                }
 
                             }
 
@@ -297,6 +334,21 @@
 
                 if (data.sucesso) {
                     mostrarLivros(data.livros);
+                    const nome = document.getElementById("nome-livro").value.trim();
+
+                    if (nome !== "") {
+                        resultadosLivros.innerHTML = "<p>Atualizando resultados...</p>";
+
+                        fetch("pesquisa_livros_lista.php?nome=" + encodeURIComponent(nome))
+                            .then(response => response.text())
+                            .then(html => {
+                                resultadosLivros.innerHTML = html;
+                            })
+                            .catch(error => {
+                                console.error("Erro ao atualizar resultados:", error);
+                            });
+                    }
+
                 } else {
                     console.error(
                         "Erro ao adicionar livro:",

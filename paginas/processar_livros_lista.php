@@ -15,6 +15,18 @@
     if (isset($_POST['acao'])) {
         $acao = $_POST['acao'];
         
+        // LIMPAR LIVROS SELECIONADOS
+        if ($acao === 'limpar') {
+            $_SESSION['livros_lista'] = [];
+
+            echo json_encode([
+                'sucesso' => true,
+                'livros' => []
+            ]);
+
+            exit;
+        }
+        
         // ADICIONAR LIVRO
         if ($acao === 'adicionar') {
             $tipo = $_POST['tipo'] ?? 'local';
