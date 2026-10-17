@@ -56,7 +56,7 @@
                     <input type="hidden" name="id_bloqueado" value="<?=$bloq['id_bloqueado']?>">
                     <button type="submit" name="desbloquear">Desbloquear</button>
                 </form>
-            <?}?>
+            <?php } ?>
 
             <?php
                 if(isset($_POST['desbloquear'])){

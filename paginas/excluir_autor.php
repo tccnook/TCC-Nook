@@ -1,22 +1,20 @@
 <?php
-    session_start();
-
-    require_once('conexao.php');
+    require_once __DIR__ . '/admin-auth.php';
+    require_once __DIR__ . '/conexao.php';
 
     $db = new Database();
     $conn = $db->conectar();
 
-    /*if(!isset($_SESSION['id_adm'])){
-        header('location:login_adm.php');
-        exit();
+    if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+        http_response_code(405);
+        exit('Método não permitido.');
     }
 
-    $id_adm = $_SESSION['id_adm'];*/
+    $id_autor = filter_var($_POST['id_autor'] ?? null, FILTER_VALIDATE_INT);
 
-    $id_autor = $_GET['id_autor'] ?? null;
-
-    if(!$id_autor){
+    if (!$id_autor) {
         header('Location: crud_autores.php');
+        exit();
     }
 
     $exclusao = "delete from autor where id_autor = :id_autor;";
@@ -24,7 +22,9 @@
         $stmt = $conn->prepare($exclusao);
         $stmt->execute([':id_autor' => $id_autor]);
         header('Location: crud_autores.php');
+        exit();
     } catch(PDOException $e){
-        echo 'Erro ao excluir: '.$e->getMessage();
+        http_response_code(409);
+        echo 'Não foi possível excluir este autor porque ele ainda está associado a outros dados.';
     }
 ?>

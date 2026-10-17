@@ -12,7 +12,15 @@ require_once __DIR__ . '/conexao.php';
 $conn = (new Database())->conectar();
 $nome = trim($_GET['nome'] ?? '');
 $genero = filter_var($_GET['genero'] ?? '', FILTER_VALIDATE_INT);
+$inicio = filter_var($_GET['inicio'] ?? 0, FILTER_VALIDATE_INT);
+$inicio = $inicio !== false ? max(0, min(980, $inicio)) : 0;
 $ordem = $_GET['ordem'] ?? 'titulo';
+$generoNome = '';
+if ($genero !== false && $genero !== '' && $genero > 0) {
+    $stmtGenero = $conn->prepare('SELECT nome_preferencia FROM preferencia WHERE id_preferencia = :id');
+    $stmtGenero->execute([':id' => $genero]);
+    $generoNome = trim((string) $stmtGenero->fetchColumn());
+}
 $ordenacoes = [
     'titulo' => 'l.titulo_livro ASC',
     'recentes' => 'l.data_publi DESC NULLS LAST, l.titulo_livro ASC',
@@ -31,6 +39,12 @@ $sql = "
         l.class_ind,
         l.data_publi,
         l.google_books_id,
+        l.nota_google,
+        l.sinopse_livro,
+        l.resumo_livro,
+        l.link_leitura,
+        l.link_compra,
+        l.origem,
         avaliacao.media,
         avaliacao.total
     FROM livro l
@@ -57,20 +71,38 @@ if ($genero !== false && $genero !== '') {
     $params[':genero'] = $genero;
 }
 
-$sql .= ' ORDER BY ' . $orderBy . ' LIMIT 60';
-$stmt = $conn->prepare($sql);
-$stmt->execute($params);
-$livros = $stmt->fetchAll(PDO::FETCH_ASSOC);
-$idsGoogleExistentes = array_column($livros, 'google_books_id');
+$sql .= " ORDER BY CASE WHEN LOWER(COALESCE(l.idioma, '')) LIKE 'pt%' OR LOWER(COALESCE(l.idioma, '')) LIKE 'portugu%' THEN 0 ELSE 1 END, $orderBy LIMIT 60";
+$livros = [];
+if ($inicio === 0) {
+    $stmt = $conn->prepare($sql);
+    $stmt->execute($params);
+    $livros = $stmt->fetchAll(PDO::FETCH_ASSOC);
+}
+$indicesGoogleLocais = [];
+foreach ($livros as $indice => $livroLocal) {
+    if (!empty($livroLocal['google_books_id'])) {
+        $indicesGoogleLocais[(string) $livroLocal['google_books_id']] = $indice;
+    }
+}
 $avisoGoogle = null;
+$temMaisGoogle = false;
+$totalGoogle = 0;
 
-if ($nome !== '' && ($genero === false || $genero === '') && function_exists('curl_init')) {
+if (function_exists('curl_init')) {
     require_once __DIR__ . '/config_api_ex.php';
 
+    $consultaApi = $nome;
+    if ($generoNome !== '') {
+        $consultaApi = trim($consultaApi . ' subject:"' . str_replace('"', '', $generoNome) . '"');
+    }
+    if ($consultaApi === '') {
+        $consultaApi = 'fiction';
+    }
     $parametrosApi = [
-        'q' => $nome,
-        'langRestrict' => 'pt',
+        'q' => $consultaApi,
         'maxResults' => 20,
+        'startIndex' => $inicio,
+        'orderBy' => $ordem === 'recentes' ? 'newest' : 'relevance',
         'printType' => 'books'
     ];
     if ($chave_api !== '') {
@@ -78,6 +110,7 @@ if ($nome !== '' && ($genero === false || $genero === '') && function_exists('cu
     }
 
     $ch = curl_init('https://www.googleapis.com/books/v1/volumes?' . http_build_query($parametrosApi));
+    configurarCurlGoogleBooks($ch);
     curl_setopt_array($ch, [
         CURLOPT_RETURNTRANSFER => true,
         CURLOPT_TIMEOUT => 10,
@@ -95,39 +128,108 @@ if ($nome !== '' && ($genero === false || $genero === '') && function_exists('cu
             $avisoGoogle = 'A busca externa está temporariamente indisponível.';
         }
 
+        $totalGoogle = (int) ($dadosGoogle['totalItems'] ?? 0);
+        $temMaisGoogle = $inicio < 980 && !empty($dadosGoogle['items']) && $inicio + 20 < $totalGoogle;
+
         foreach ($dadosGoogle['items'] ?? [] as $itemGoogle) {
             $googleId = $itemGoogle['id'] ?? '';
             $infoGoogle = $itemGoogle['volumeInfo'] ?? [];
-            if ($googleId === '' || in_array($googleId, $idsGoogleExistentes, true) || empty($infoGoogle['title'])) {
+            if ($googleId === '' || empty($infoGoogle['title'])) {
                 continue;
             }
 
-            $capa = $infoGoogle['imageLinks']['thumbnail'] ?? null;
+            $capa = $infoGoogle['imageLinks']['extraLarge']
+                ?? $infoGoogle['imageLinks']['large']
+                ?? $infoGoogle['imageLinks']['medium']
+                ?? $infoGoogle['imageLinks']['thumbnail']
+                ?? null;
             if ($capa !== null) {
                 $capa = preg_replace('/^http:/i', 'https:', $capa);
             }
 
-            $livros[] = [
-                'id_livro' => null,
+            $descricaoGoogle = $infoGoogle['description'] ?? null;
+            if (is_string($descricaoGoogle)) {
+                $descricaoGoogle = preg_replace('/<br\s*\/?\s*>|<\/p>/i', "\n", $descricaoGoogle);
+                $descricaoGoogle = trim(html_entity_decode(strip_tags($descricaoGoogle), ENT_QUOTES | ENT_HTML5, 'UTF-8'));
+            }
+
+            $acessoGoogle = $itemGoogle['accessInfo'] ?? [];
+            $pdfUrl = $acessoGoogle['pdf']['downloadLink'] ?? null;
+            $pdfDisponivel = !empty($acessoGoogle['pdf']['isAvailable'])
+                && is_string($pdfUrl)
+                && filter_var($pdfUrl, FILTER_VALIDATE_URL)
+                && str_starts_with($pdfUrl, 'https://');
+            $statusAcesso = $acessoGoogle['accessViewStatus'] ?? 'NONE';
+            $readerUrl = $acessoGoogle['webReaderLink'] ?? $infoGoogle['previewLink'] ?? null;
+            $previewDisponivel = in_array($statusAcesso, ['FULL_READING', 'FULL_PUBLIC_DOMAIN', 'PARTIAL', 'SAMPLE'], true)
+                && is_string($readerUrl)
+                && filter_var($readerUrl, FILTER_VALIDATE_URL);
+            if ($previewDisponivel) {
+                $readerUrl = preg_replace('/^http:/i', 'https:', $readerUrl);
+            }
+            $livroGoogle = [
                 'google_books_id' => $googleId,
                 'titulo_livro' => $infoGoogle['title'],
+                'subtitulo' => $infoGoogle['subtitle'] ?? null,
                 'nome_autor' => implode(', ', $infoGoogle['authors'] ?? []),
                 'capa_url' => $capa,
                 'paginas' => $infoGoogle['pageCount'] ?? null,
                 'idioma' => $infoGoogle['language'] ?? null,
+                'descricao' => $descricaoGoogle,
+                'editora' => $infoGoogle['publisher'] ?? null,
+                'categorias' => $infoGoogle['categories'] ?? [],
+                'identificadores' => $infoGoogle['industryIdentifiers'] ?? [],
+                'preview_url' => $previewDisponivel ? $readerUrl : null,
+                'info_url' => $infoGoogle['infoLink'] ?? null,
+                'pdf_disponivel' => (bool) $pdfDisponivel,
+                'pdf_url' => $pdfDisponivel ? $pdfUrl : null,
+                'status_acesso' => $statusAcesso,
+                'link_leitura' => $pdfDisponivel ? $pdfUrl : ($previewDisponivel ? $readerUrl : null),
+                'link_compra' => $itemGoogle['saleInfo']['buyLink'] ?? null,
+                'modos_leitura' => $infoGoogle['readingModes'] ?? [],
+                'tipo_publicacao' => $infoGoogle['printType'] ?? null,
+                'classificacao_google' => $infoGoogle['maturityRating'] ?? null,
+                'descricao' => $descricaoGoogle,
                 'class_ind' => null,
                 'data_publi' => $infoGoogle['publishedDate'] ?? null,
                 'media' => $infoGoogle['averageRating'] ?? null,
                 'total' => $infoGoogle['ratingsCount'] ?? 0
             ];
-            $idsGoogleExistentes[] = $googleId;
+
+            if (isset($indicesGoogleLocais[$googleId])) {
+                $indiceLocal = $indicesGoogleLocais[$googleId];
+                $livros[$indiceLocal] = array_merge($livros[$indiceLocal], $livroGoogle);
+                continue;
+            }
+
+            $livros[] = array_merge([
+                'id_livro' => null,
+                'class_ind' => null
+            ], $livroGoogle);
+            $indicesGoogleLocais[$googleId] = array_key_last($livros);
         }
     } else {
         $avisoGoogle = 'A busca externa está temporariamente indisponível.';
     }
 }
 
+foreach ($livros as $ordemOriginal => $livro) {
+    $livros[$ordemOriginal] = ['livro' => $livro, 'ordem' => $ordemOriginal];
+}
+usort($livros, static function (array $livroA, array $livroB): int {
+    $idiomaA = strtolower((string) ($livroA['livro']['idioma'] ?? ''));
+    $idiomaB = strtolower((string) ($livroB['livro']['idioma'] ?? ''));
+    $portuguesA = str_starts_with($idiomaA, 'pt') || str_starts_with($idiomaA, 'portugu');
+    $portuguesB = str_starts_with($idiomaB, 'pt') || str_starts_with($idiomaB, 'portugu');
+    $prioridadeIdioma = (int) $portuguesB <=> (int) $portuguesA;
+    return $prioridadeIdioma !== 0 ? $prioridadeIdioma : $livroA['ordem'] <=> $livroB['ordem'];
+});
+$livros = array_column($livros, 'livro');
+
 echo json_encode([
     'livros' => $livros,
-    'aviso_google' => $avisoGoogle
+    'aviso_google' => $avisoGoogle,
+    'inicio' => $inicio,
+    'total_google' => $totalGoogle,
+    'tem_mais' => $temMaisGoogle
 ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);

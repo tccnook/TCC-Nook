@@ -1,17 +1,9 @@
 <?php
-    session_start();
-
-    require_once('conexao.php');
+    require_once __DIR__ . '/admin-auth.php';
+    require_once __DIR__ . '/conexao.php';
 
     $db = new Database();
     $conn = $db->conectar();
-
-    /*if(!isset($_SESSION['id_adm'])){
-        header('location:login_adm.php');
-        exit();
-    }
-
-    $id_adm = $_SESSION['id_adm'];*/
 
     $select_generos = "select * from preferencia order by id_preferencia;";
     $stmt = $conn->prepare($select_generos);
@@ -83,6 +75,7 @@
 <body>
     <main> <!--colocar em um modal dps-->
         <form action="#" method="POST">
+            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['admin_csrf_token'], ENT_QUOTES, 'UTF-8') ?>">
             <label for="nome_genero">Digite o nome do gênero:</label><br>
             <input type="text" name="nome_genero" required><br>
             <input type="submit" name="cadastrar" value="Cadastrar">
@@ -108,7 +101,7 @@
                             <td><?= $genero['nome_preferencia']?></td>
                             <td><?= $genero['preferencia'] ?></td>
                             <td><button class="btnEditar" data-id="<?= $genero['id_preferencia']?>" data-nome="<?= $genero['nome_preferencia'] ?>">Editar</button></td>
-                            <td><a href="excluir_genero.php?id_genero=<?= $genero['id_preferencia'] ?>">Excluir</a></td>
+                            <td><form action="excluir_genero.php" method="POST"><input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['admin_csrf_token'], ENT_QUOTES, 'UTF-8') ?>"><input type="hidden" name="id_genero" value="<?= (int) $genero['id_preferencia'] ?>"><button type="submit">Excluir</button></form></td>
                         </tr>
                     <?php endforeach ?>
                 </tbody>
@@ -119,6 +112,7 @@
                 X
             </button>
             <form action="#" method="POST">
+                <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['admin_csrf_token'], ENT_QUOTES, 'UTF-8') ?>">
                 <input type="hidden" name="id_preferencia" id="id_preferencia">
                 <label for="nome_genero">Digite o nome do genero:</label><br>
                 <input type="text" name="nome_genero" id="nome_genero"><br>

@@ -1,22 +1,20 @@
 <?php
-    session_start();
-
-    require_once('conexao.php');
+    require_once __DIR__ . '/admin-auth.php';
+    require_once __DIR__ . '/conexao.php';
 
     $db = new Database();
     $conn = $db->conectar();
 
-    /*if(!isset($_SESSION['id_adm'])){
-        header('location:login_adm.php');
-        exit();
+    if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+        http_response_code(405);
+        exit('Método não permitido.');
     }
 
-    $id_adm = $_SESSION['id_adm'];*/
+    $id_genero = filter_var($_POST['id_genero'] ?? null, FILTER_VALIDATE_INT);
 
-    $id_genero = $_GET['id_genero'] ?? null;
-
-    if(!$id_genero){
+    if (!$id_genero) {
         header('Location: crud_genero.php');
+        exit();
     }
 
     $exclusao = "delete from preferencia where id_preferencia = :id_preferencia;";
@@ -24,7 +22,9 @@
         $stmt = $conn->prepare($exclusao);
         $stmt->execute([':id_preferencia' => $id_genero]);
         header('Location: crud_genero.php');
+        exit();
     } catch(PDOException $e){
-        echo 'Erro ao excluir: '.$e->getMessage();
+        http_response_code(409);
+        echo 'Não foi possível excluir este gênero porque ele ainda está associado a livros ou preferências.';
     }
 ?>

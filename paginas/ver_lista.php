@@ -87,13 +87,7 @@ if (!$capasHero && !empty($lista['capa_url'])) $capasHero = [$lista['capa_url']]
             <div class="lista-hero-topo">
                 <p><i data-lucide="<?= $lista['visibilidade'] === 'privada' ? 'lock-keyhole' : 'globe-2' ?>"></i> <?= $lista['visibilidade'] === 'privada' ? 'Privada' : 'Pública' ?></p>
                 <?php if ($ehDono): ?>
-                    <label class="lista-visibilidade-control" aria-label="Alterar visibilidade da lista">
-                        <i data-lucide="chevron-down"></i>
-                        <select id="visibilidadeLista" aria-label="Visibilidade">
-                            <option value="publica" <?= $lista['visibilidade'] === 'publica' ? 'selected' : '' ?>>Pública</option>
-                            <option value="privada" <?= $lista['visibilidade'] === 'privada' ? 'selected' : '' ?>>Privada</option>
-                        </select>
-                    </label>
+                    <button type="button" class="lista-editar" id="abrirEditarLista"><i data-lucide="pencil"></i> Editar lista</button>
                 <?php endif; ?>
             </div>
             <h1><?= $esc($lista['nome_lista']) ?></h1>
@@ -146,20 +140,27 @@ if (!$capasHero && !empty($lista['capa_url'])) $capasHero = [$lista['capa_url']]
         </ol>
     </section>
 
-    <?php if ($ehDono && $sugestoes): ?>
+    <?php if ($ehDono): ?>
         <section class="lista-sugestoes-secao">
-            <h2>Livros que combinam com essa lista</h2>
-            <div class="lista-sugestoes-grid" id="listaSugestoes">
-                <?php foreach ($sugestoes as $sugestao): ?>
-                    <article class="lista-sugestao" data-sugestao="<?= (int) $sugestao['id_livro'] ?>">
-                        <a href="visao_livro.php?id_livro=<?= urlencode($sugestao['id_livro']) ?>">
-                            <?php if ($sugestao['capa_url']): ?><img src="<?= $imagemUrl($sugestao['capa_url']) ?>" alt="Capa de <?= $esc($sugestao['titulo_livro']) ?>" loading="lazy"><?php endif; ?>
-                            <span><strong><?= $esc($sugestao['titulo_livro']) ?></strong><small><?= $esc($sugestao['nome_autor'] ?: 'Autor não informado') ?></small></span>
-                        </a>
-                        <button type="button" data-adicionar-sugestao="<?= (int) $sugestao['id_livro'] ?>">Adicionar à lista</button>
-                    </article>
-                <?php endforeach; ?>
-            </div>
+            <header class="lista-sugestoes-cabecalho">
+                <div><h2>Adicionar livros à lista</h2><p>Escolha uma sugestão ou explore o catálogo completo.</p></div>
+                <a class="lista-explorar-catalogo" href="catalogo.php?lista=<?= $id_lista ?>"><i data-lucide="compass"></i> Explorar catálogo</a>
+            </header>
+            <?php if ($sugestoes): ?>
+                <div class="lista-sugestoes-grid" id="listaSugestoes">
+                    <?php foreach ($sugestoes as $sugestao): ?>
+                        <article class="lista-sugestao" data-sugestao="<?= (int) $sugestao['id_livro'] ?>">
+                            <a href="visao_livro.php?id_livro=<?= urlencode($sugestao['id_livro']) ?>">
+                                <?php if ($sugestao['capa_url']): ?><img src="<?= $imagemUrl($sugestao['capa_url']) ?>" alt="Capa de <?= $esc($sugestao['titulo_livro']) ?>" loading="lazy"><?php endif; ?>
+                                <span><strong><?= $esc($sugestao['titulo_livro']) ?></strong><small><?= $esc($sugestao['nome_autor'] ?: 'Autor não informado') ?></small></span>
+                            </a>
+                            <button type="button" data-adicionar-sugestao="<?= (int) $sugestao['id_livro'] ?>">Adicionar à lista</button>
+                        </article>
+                    <?php endforeach; ?>
+                </div>
+            <?php else: ?>
+                <p class="lista-sugestoes-vazia">Ainda não há sugestões. Explore o catálogo para encontrar livros.</p>
+            <?php endif; ?>
         </section>
     <?php endif; ?>
 
@@ -187,6 +188,25 @@ if (!$capasHero && !empty($lista['capa_url'])) $capasHero = [$lista['capa_url']]
 <?php require_once __DIR__ . '/footer.php'; ?>
 
 <?php if ($ehDono): ?>
+<dialog id="editarListaModal" class="lista-editar-modal" aria-labelledby="editarListaTitulo">
+    <form id="formEditarLista" class="lista-editar-form">
+        <header>
+            <div><p class="lista-editar-eyebrow">SUA COLEÇÃO</p><h2 id="editarListaTitulo">Editar lista</h2></div>
+            <button type="button" class="lista-modal-fechar" data-fechar-edicao aria-label="Fechar"><i data-lucide="x"></i></button>
+        </header>
+        <label for="editarNomeLista">Nome</label>
+        <input id="editarNomeLista" name="nome_lista" type="text" maxlength="120" value="<?= $esc($lista['nome_lista']) ?>" required>
+        <label for="editarDescricaoLista">Descrição</label>
+        <textarea id="editarDescricaoLista" name="descricao" maxlength="90"><?= $esc($lista['descricao']) ?></textarea>
+        <label for="editarVisibilidadeLista">Visibilidade</label>
+        <select id="editarVisibilidadeLista" name="visibilidade">
+            <option value="publica" <?= $lista['visibilidade'] === 'publica' ? 'selected' : '' ?>>Pública</option>
+            <option value="privada" <?= $lista['visibilidade'] === 'privada' ? 'selected' : '' ?>>Privada</option>
+        </select>
+        <p class="lista-editar-status" role="status" aria-live="polite"></p>
+        <footer><button type="button" class="lista-editar-cancelar" data-fechar-edicao>Cancelar</button><button type="submit" class="lista-editar-salvar">Salvar alterações</button></footer>
+    </form>
+</dialog>
 <dialog id="confirmarRemocaoLivro" class="lista-confirmar-modal">
     <h2>Remover livro da lista?</h2>
     <p>O livro <strong id="tituloLivroRemover"></strong> será removido desta lista.</p>
@@ -224,6 +244,28 @@ if (!$capasHero && !empty($lista['capa_url'])) $capasHero = [$lista['capa_url']]
             seguirLista.title = erro.message;
         }
     });
+
+    const editarListaModal = document.getElementById('editarListaModal');
+    const abrirEditarLista = document.getElementById('abrirEditarLista');
+    if (editarListaModal && abrirEditarLista) {
+        abrirEditarLista.addEventListener('click', () => editarListaModal.showModal());
+        editarListaModal.querySelectorAll('[data-fechar-edicao]').forEach((botao) => botao.addEventListener('click', () => editarListaModal.close()));
+        editarListaModal.addEventListener('click', (evento) => {
+            if (evento.target === editarListaModal) editarListaModal.close();
+        });
+        document.getElementById('formEditarLista').addEventListener('submit', async (evento) => {
+            evento.preventDefault();
+            const form = evento.currentTarget;
+            const status = form.querySelector('.lista-editar-status');
+            const campos = Object.fromEntries(new FormData(form));
+            try {
+                await acaoLista('editar', campos);
+                window.location.reload();
+            } catch (erro) {
+                status.textContent = erro.message;
+            }
+        });
+    }
 
     const visibilidadeLista = document.getElementById('visibilidadeLista');
     if (visibilidadeLista) visibilidadeLista.addEventListener('change', async () => {

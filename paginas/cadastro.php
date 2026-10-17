@@ -1,6 +1,10 @@
 <?php
     session_start();
 
+    if (empty($_SESSION['cadastro_csrf'])) {
+        $_SESSION['cadastro_csrf'] = bin2hex(random_bytes(32));
+    }
+
     if (isset($_SESSION['cadastro_concluido'])) {
         header("location:preferencia_gen.php");
         exit();
@@ -16,6 +20,99 @@
         $nome_completo_google = $cadGoogle['nome_completo'];
         $email_google = $cadGoogle['email'];
     }
+
+    if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['proximo'])) {
+        $email = trim((string) ($_POST['email'] ?? ''));
+        $nomeComp = trim((string) ($_POST['nome_comp'] ?? ''));
+        $dataNascimento = trim((string) ($_POST['data_nasc'] ?? ''));
+        $nomeUsuario = trim((string) ($_POST['nome_user'] ?? ''));
+        $senha = (string) ($_POST['senha'] ?? '');
+        $confirmarSenha = (string) ($_POST['confirmar_senha'] ?? '');
+        $_SESSION['dadosCadastrados'] = [
+            'email' => $email,
+            'nome_completo' => $nomeComp,
+            'data_nascimento' => $dataNascimento,
+            'username' => $nomeUsuario
+        ];
+
+        $redirecionarComErro = static function (string $mensagem): void {
+            $_SESSION['erro'] = $mensagem;
+            header('Location: cadastro.php');
+            exit();
+        };
+
+        if (!hash_equals($_SESSION['cadastro_csrf'], (string) ($_POST['csrf_token'] ?? ''))) {
+            $redirecionarComErro('A sessão expirou. Atualize a página e tente novamente.');
+        }
+        if (!filter_var($email, FILTER_VALIDATE_EMAIL) || $nomeComp === '' || $nomeUsuario === '' || $senha === '' || $confirmarSenha === '') {
+            $redirecionarComErro('Preencha os campos corretamente para continuar.');
+        }
+        if (!preg_match('/^[a-zA-Z0-9_.-]{3,30}$/', $nomeUsuario)) {
+            $redirecionarComErro('O nome de usuário deve ter de 3 a 30 caracteres e usar apenas letras, números, ponto, hífen ou sublinhado.');
+        }
+        $dataValida = DateTimeImmutable::createFromFormat('!Y-m-d', $dataNascimento);
+        if (!$dataValida || $dataValida->format('Y-m-d') !== $dataNascimento || $dataValida > new DateTimeImmutable('today')) {
+            $redirecionarComErro('Informe uma data de nascimento válida.');
+        }
+        if (strlen($senha) < 8) {
+            $redirecionarComErro('A senha deve ter pelo menos 8 caracteres.');
+        }
+        if ($senha !== $confirmarSenha) {
+            $redirecionarComErro('As senhas não coincidem.');
+        }
+
+        require_once __DIR__ . '/conexao.php';
+        $conn = (new Database())->conectar();
+        $stmt = $conn->prepare('SELECT EXISTS (SELECT 1 FROM usuario WHERE LOWER(email) = LOWER(:email))');
+        $stmt->execute([':email' => $email]);
+        if ($stmt->fetchColumn()) {
+            $redirecionarComErro('Este e-mail já está cadastrado.');
+        }
+        $stmt = $conn->prepare('SELECT EXISTS (SELECT 1 FROM usuario WHERE LOWER(username) = LOWER(:username))');
+        $stmt->execute([':username' => $nomeUsuario]);
+        if ($stmt->fetchColumn()) {
+            $redirecionarComErro('Este nome de usuário já está em uso.');
+        }
+
+        try {
+            $conn->beginTransaction();
+            $sqlUsuario = isset($idGoogle)
+                ? 'INSERT INTO usuario (nome_completo, username, data_nascimento, email, senha, google_id) VALUES (:nome, :username, :nascimento, :email, :senha, :google_id) RETURNING id_user'
+                : 'INSERT INTO usuario (nome_completo, username, data_nascimento, email, senha) VALUES (:nome, :username, :nascimento, :email, :senha) RETURNING id_user';
+            $parametrosUsuario = [
+                ':nome' => $nomeComp,
+                ':username' => $nomeUsuario,
+                ':nascimento' => $dataNascimento,
+                ':email' => $email,
+                ':senha' => password_hash($senha, PASSWORD_DEFAULT)
+            ];
+            if (isset($idGoogle)) {
+                $parametrosUsuario[':google_id'] = $idGoogle;
+            }
+            $stmt = $conn->prepare($sqlUsuario);
+            $stmt->execute($parametrosUsuario);
+            $idUsuario = (int) $stmt->fetchColumn();
+            $stmt = $conn->prepare('INSERT INTO conta (id_user) VALUES (:id_user)');
+            $stmt->execute([':id_user' => $idUsuario]);
+            $conn->commit();
+
+            session_regenerate_id(true);
+            $_SESSION['id_user'] = $idUsuario;
+            $_SESSION['cadastro_concluido'] = true;
+            unset($_SESSION['dadosCadastrados'], $_SESSION['cadastro_google'], $_SESSION['cadastro_csrf']);
+            header('Location: preferencia_gen.php');
+            exit();
+        } catch (Throwable $erro) {
+            if ($conn->inTransaction()) {
+                $conn->rollBack();
+            }
+            $redirecionarComErro('Não foi possível concluir o cadastro. Confira os dados e tente novamente.');
+        }
+    }
+
+    $dadosCadastrados = $_SESSION['dadosCadastrados'] ?? [];
+    $erroCadastro = (string) ($_SESSION['erro'] ?? '');
+    unset($_SESSION['erro']);
 
     ?>
     <!DOCTYPE html>
@@ -46,17 +143,19 @@
                 <img src="/TCC-Nook/img/logos/logo-deitada.png" alt="">
             </div>
             <h1>Criar conta</h1>
+        <?php if ($erroCadastro !== ''): ?><p role="alert"><?= htmlspecialchars($erroCadastro, ENT_QUOTES, 'UTF-8') ?></p><?php endif; ?>
         <form name="cadastro" method="POST" action="">
+    <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['cadastro_csrf'], ENT_QUOTES, 'UTF-8') ?>">
 
     <section class="step active  step-one" data-step="1">
         <label for="email">Email</label>
-        <input type="email" name="email" id="email" value="<?php if(isset($email_google)){ echo $email_google; }  ?>">
+        <input type="email" name="email" id="email" value="<?= htmlspecialchars($email_google ?? ($dadosCadastrados['email'] ?? ''), ENT_QUOTES, 'UTF-8') ?>" required>
 
         <label for="nome_comp">Nome Completo</label>
-        <input type="text" name="nome_comp" id="nome_comp" value="<?php if(isset($nome_completo_google)){ echo $nome_completo_google; }  ?>">
+        <input type="text" name="nome_comp" id="nome_comp" value="<?= htmlspecialchars($nome_completo_google ?? ($dadosCadastrados['nome_completo'] ?? ''), ENT_QUOTES, 'UTF-8') ?>" maxlength="100" required>
 
         <label for="nome_user">Nome de Usuário</label>
-        <input type="text" name="nome_user" id="nome_user">
+        <input type="text" name="nome_user" id="nome_user" value="<?= htmlspecialchars($dadosCadastrados['username'] ?? '', ENT_QUOTES, 'UTF-8') ?>" minlength="3" maxlength="30" required>
         
         <p>Já possui uma conta? <a href="login.php">Entre agora! </a></p>
 
@@ -78,13 +177,13 @@
 
     <section class="step" data-step="2">
         <label for="data_nasc">Data de Nascimento</label>
-        <input type="date" name="data_nasc" id="data_nasc" value="<?php echo htmlspecialchars($_SESSION['dadosCadastrados']['data_nascimento'] ?? ''); ?>">
+        <input type="date" name="data_nasc" id="data_nasc" value="<?= htmlspecialchars($dadosCadastrados['data_nascimento'] ?? '', ENT_QUOTES, 'UTF-8') ?>" required>
 
         <label for="senha">Senha</label>
-        <input type="password" name="senha" id="senha">
+        <input type="password" name="senha" id="senha" minlength="8" autocomplete="new-password" required>
 
         <label for="confirmar_senha">Confirmar Senha</label>
-        <input type="password" name="confirmar_senha" id="confirmar_senha">
+        <input type="password" name="confirmar_senha" id="confirmar_senha" minlength="8" autocomplete="new-password" required>
 
         <p>Já possui uma conta? <a href="login.php">Entre agora! </a></p>
 
@@ -103,7 +202,7 @@
             Voltar
         </button>
 
-        <button type="submit" name="proximo" class="button-action button-next" onclick="window.location.href='preferencia_gen.php'">
+        <button type="submit" name="proximo" class="button-action button-next">
             Finalizar cadastro
         </button>
     </section>
@@ -124,141 +223,5 @@
             
 
 </main>
-        
-    </body>
-    </html>
-
-
-<?php
-
-    //caso a senha estiver errada, preencher os campos com os dados que ja foram digitados usando o session para o user n fazer tudo dnv
-    if(isset($_POST['proximo'])){
-        $email = trim($_POST['email']);
-        $nome_comp = trim($_POST['nome_comp']);
-        $data_nasc = $_POST['data_nasc'];
-        $nome_user = trim($_POST['nome_user']);
-        $senha = $_POST['senha'];
-        $confirmar_senha = $_POST['confirmar_senha'];
-
-        $_SESSION["dadosCadastrados"] = [
-            "email" => $email,
-            "nome_completo" => $nome_comp,
-            "data_nascimento" => $data_nasc,
-            "username" => $nome_user         
-        ];
-        
-        if(empty($email) || empty($nome_comp) || empty($data_nasc) || empty($nome_user) || empty($senha) || empty($confirmar_senha)){
-            echo "<script>alert('Preencha todos os campos para prosseguir')</script>";
-            exit();
-        } 
-
-        if($senha !== $confirmar_senha){
-            $_SESSION["erro"] = "As senhas não coincidem, tente novamente";
-            header('location:cadastro.php');
-            exit();
-        }
-        
-        include("conexao.php");
-        $db = new Database;
-        $conn = $db->conectar();
-
-        $verif_email = "SELECT * FROM usuario WHERE email=:email";
-        $stmt = $conn->prepare($verif_email);
-        $stmt ->execute([":email" => $email]);
-
-        if($stmt->fetch()){
-            $_SESSION["erro"] = "Email já cadastrado!";
-            header("location:cadastro.php");
-            exit();
-        }
-
-        $verif_username = "SELECT * FROM usuario WHERE username=:username";
-        $stmt = $conn->prepare($verif_username);
-        $stmt ->execute([":username" => $nome_user]);
-
-        if($stmt->fetch()){
-            $_SESSION["erro"] = "Este username já existe!";
-            header("location:cadastro.php");
-            exit();
-        }
-
-        $senha_cripto = password_hash($senha, PASSWORD_DEFAULT);
-
-        if(isset($idGoogle)){
-            $insert = "insert into usuario (nome_completo, username, data_nascimento, email, senha, google_id) values (:nome_completo, :username, :data_nascimento, :email, :senha, :google_id);";
-        
-            try {
-                $stmt = $conn->prepare($insert);
-                $stmt->execute([
-                    ":nome_completo" => $nome_comp,
-                    ":username" => $nome_user,
-                    ":data_nascimento" => $data_nasc,
-                    ":email" => $email,
-                    ":senha" => $senha_cripto,
-                    ":google_id" => $idGoogle
-                ]);
-
-                $idUser = $conn->lastInsertId();
-
-                $insert = "insert into conta (id_user) values (:id_user);";
-                try{
-                    $stmt = $conn->prepare($insert);
-                    $stmt->execute([
-                        ":id_user" => $idUser
-                    ]);
-                } catch(PDOException $e){
-
-                }
-                $_SESSION['id_user'] = $idUser;
-                unset($_SESSION["dadosCadastrados"]);
-                unset($_SESSION["cadastro_google"]);
-                $_SESSION['cadastro_concluido'] = true;
-
-                header("location:preferencia_gen.php");
-
-                exit();
-
-                } catch (PDOException $e){
-                echo "Erro ao cadastrar: ". $e->getMessage();
-            }
-        }
-
-        $insert = "INSERT INTO usuario (nome_completo, username, data_nascimento, email, senha) VALUES (:nome_completo, :username, :data_nascimento, :email, :senha);"; 
-
-        try {
-        $stmt = $conn->prepare($insert);
-        $stmt->execute([
-            ":nome_completo" => $nome_comp,
-            ":username" => $nome_user,
-            ":data_nascimento" => $data_nasc,
-            ":email" => $email,
-            ":senha" => $senha_cripto
-        ]);
-        $idUser = $conn->lastInsertId();
-
-        $insert = "INSERT INTO conta (id_user) VALUES (:id_user);";
-        try{
-            $stmt = $conn->prepare($insert);
-            $stmt->execute([
-                ":id_user" => $idUser
-            ]);
-        } catch (PDOException $e){
-            echo 'Erro ao cadastrar: '.$e->getMessage();
-        }
-
-        $_SESSION['id_user'] = $idUser;
-
-
-        unset($_SESSION["dadosCadastrados"]);
-        unset($_SESSION["cadastro_google"]);
-
-        $_SESSION['cadastro_concluido'] = true;
-
-        header("location:preferencia_gen.php");
-
-        exit();
-
-        } catch (PDOException $e){
-            echo "Erro ao cadastrar: ". $e->getMessage();
-        }
-    }
+</body>
+</html>

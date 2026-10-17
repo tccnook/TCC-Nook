@@ -13,19 +13,6 @@ $stmt = $conn->prepare('SELECT u.nome_completo, u.username, c.foto_perfil_url FR
 $stmt->execute([':id_user' => $id_user]);
 $usuario = $stmt->fetch(PDO::FETCH_ASSOC) ?: [];
 
-$stmt = $conn->prepare("SELECT l.id_livro, l.titulo_livro, l.nome_autor, l.capa_url, pr.capitulo_atual, pr.porcentagem_progresso, pr.ultima_leitura, (SELECT COUNT(*) FROM capitulo cp WHERE cp.id_livro = l.id_livro) AS total_capitulos FROM progresso_leitura pr INNER JOIN livro l ON l.id_livro = pr.id_livro WHERE pr.id_user = :id_user AND pr.porcentagem_progresso > 0 AND pr.porcentagem_progresso < 100 ORDER BY pr.ultima_leitura DESC LIMIT 3");
-$stmt->execute([':id_user' => $id_user]);
-$continuar_lendo = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-$stmt = $conn->prepare("SELECT l.id_livro, l.titulo_livro, l.nome_autor, l.capa_url, l.class_ind, COUNT(DISTINCT pl.id_preferencia) AS preferencias_em_comum FROM livro l INNER JOIN preferencia_livro pl ON pl.id_livro = l.id_livro INNER JOIN preferencia_user pu ON pu.id_preferencia = pl.id_preferencia WHERE l.visibilidade = 'publico' AND pu.id_user = :id_user AND NOT EXISTS (SELECT 1 FROM progresso_leitura pr WHERE pr.id_user = :id_user_excluir AND pr.id_livro = l.id_livro AND pr.porcentagem_progresso = 100) GROUP BY l.id_livro, l.titulo_livro, l.nome_autor, l.capa_url, l.class_ind ORDER BY preferencias_em_comum DESC, l.titulo_livro LIMIT 8");
-$stmt->execute([':id_user' => $id_user, ':id_user_excluir' => $id_user]);
-$livros_recomendados = $stmt->fetchAll(PDO::FETCH_ASSOC);
-if (!$livros_recomendados) {
-    $stmt = $conn->prepare("SELECT l.id_livro, l.titulo_livro, l.nome_autor, l.capa_url, l.class_ind FROM livro l WHERE l.visibilidade = 'publico' ORDER BY l.data_publi DESC NULLS LAST LIMIT 8");
-    $stmt->execute();
-    $livros_recomendados = $stmt->fetchAll(PDO::FETCH_ASSOC);
-}
-
 $stmt = $conn->prepare("
     SELECT p.id_post, p.titulo_post, p.conteudo, p.legenda, p.url_imagem, p.criado_em, p.visibilidade,
            u.id_user AS autor_id, u.nome_completo, u.username, c.foto_perfil_url,
@@ -86,7 +73,7 @@ $stmt->execute([
 $usuarios_sugeridos = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 $stmt = $conn->prepare("
-    SELECT w.id, w.nome_lista, w.descricao, w.capa_url, u.username AS username_dono,
+    SELECT w.id, w.id_user AS id_dono, w.nome_lista, w.descricao, w.capa_url, u.username AS username_dono,
            (SELECT COUNT(*) FROM whishbook wb WHERE wb.id_whishlist = w.id) AS quantidade_livros,
            (SELECT COUNT(*) FROM whishlist_seguida ws WHERE ws.id_whishlist = w.id) AS seguidores,
            (SELECT json_agg(capa_url) FROM (
@@ -99,10 +86,14 @@ $stmt = $conn->prepare("
       AND w.id_user <> :id_user_dono
       AND NOT EXISTS (SELECT 1 FROM whishlist_seguida ws WHERE ws.id_whishlist = w.id AND ws.id_user = :id_user_seguindo)
     ORDER BY seguidores DESC, w.data_criacao DESC
-    LIMIT 3
+    LIMIT 5
 ");
 $stmt->execute([':id_user_dono' => $id_user, ':id_user_seguindo' => $id_user]);
 $listas_sugeridas = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+$stmt = $conn->prepare("SELECT a.id_autor, a.nome_autor, a.autor, a.foto_url, COUNT(DISTINCT fa.id_follower) AS seguidores FROM autor a LEFT JOIN follow_autor fa ON fa.id_autor = a.id_autor GROUP BY a.id_autor, a.nome_autor, a.autor, a.foto_url ORDER BY seguidores DESC, a.nome_autor ASC LIMIT 6");
+$stmt->execute();
+$autores_em_alta = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 $esc = static fn($valor) => htmlspecialchars((string) ($valor ?? ''), ENT_QUOTES, 'UTF-8');
 $imagemUrl = static function ($caminho) use ($esc) {
@@ -122,6 +113,7 @@ $fotoFallback = mb_strtoupper(mb_substr($usuario['username'] ?? 'N', 0, 1));
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="/TCC-Nook/front-end/css/main.css">
     <link rel="stylesheet" href="/TCC-Nook/front-end/css/pages/paginaprincipal.css">
+    <link rel="stylesheet" href="/TCC-Nook/front-end/css/pages/perfil-listas.css">
     <link rel="shortcut icon" href="/TCC-Nook/img/icons/ico-nook/ico-nook.ico" type="image/x-icon">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -137,34 +129,24 @@ $fotoFallback = mb_strtoupper(mb_substr($usuario['username'] ?? 'N', 0, 1));
         <button type="button" data-open-post-home><i data-lucide="square-pen"></i> Compartilhar leitura</button>
     </section>
 
-    <?php if ($continuar_lendo): ?>
-        <section class="home-section continue-section">
-            <header class="home-section-heading"><div><p>DE ONDE VOCÊ PAROU</p><h2>Continuar lendo</h2></div><i data-lucide="book-open-check"></i></header>
-            <div class="continue-grid">
-                <?php foreach ($continuar_lendo as $leitura): ?>
-                    <?php $progresso = min(100, (float) $leitura['porcentagem_progresso']); ?>
-                    <a class="continue-book" href="ler_livro.php?id_livro=<?= (int) $leitura['id_livro'] ?>">
-                        <?php if ($leitura['capa_url']): ?><img src="<?= $imagemUrl($leitura['capa_url']) ?>" alt="Capa de <?= $esc($leitura['titulo_livro']) ?>" loading="lazy"><?php else: ?><span class="home-no-cover">Sem capa</span><?php endif; ?>
-                        <span class="continue-book-info"><strong><?= $esc($leitura['titulo_livro']) ?></strong><small><?= $esc($leitura['nome_autor'] ?: 'Autor não informado') ?></small><span class="continue-progress"><span style="width:<?= $progresso ?>%"></span></span><small><?= round($progresso) ?>% concluído</small></span>
-                        <i data-lucide="play"></i>
-                    </a>
+    <section class="home-section home-people-suggestions">
+        <header class="home-section-heading"><div><p>ENCONTRE SUA COMUNIDADE</p><h2>Leitores para seguir</h2></div><a class="home-section-more" href="pesquisa_user.php">Ver todos <i data-lucide="arrow-up-right"></i></a></header>
+        <?php if ($usuarios_sugeridos): ?>
+            <div class="home-people-row">
+                <?php foreach ($usuarios_sugeridos as $sugerido): ?>
+                    <article class="home-person-card" data-persona="<?= (int) $sugerido['id_user'] ?>">
+                        <a href="perfil_user_terceiro.php?id_user=<?= (int) $sugerido['id_user'] ?>" class="home-person-card-link">
+                            <?php if (!empty($sugerido['foto_perfil_url'])): ?><img src="<?= $imagemUrl($sugerido['foto_perfil_url']) ?>" alt="Foto de <?= $esc($sugerido['username']) ?>" loading="lazy"><?php else: ?><span class="home-person-avatar-fallback"><?= $esc(mb_strtoupper(mb_substr($sugerido['username'], 0, 1))) ?></span><?php endif; ?>
+                            <strong>@<?= $esc($sugerido['username']) ?></strong>
+                            <span class="home-person-name"><?= $esc($sugerido['nome_completo']) ?></span>
+                            <?php if ((int) $sugerido['em_comum']): ?><small><?= (int) $sugerido['em_comum'] ?> em comum</small><?php endif; ?>
+                        </a>
+                        <button type="button" data-seguir-usuario="<?= (int) $sugerido['id_user'] ?>"><i data-lucide="user-plus"></i> Seguir</button>
+                        <a class="home-person-message" href="#" hidden aria-label="Enviar mensagem"><i data-lucide="message-circle"></i></a>
+                    </article>
                 <?php endforeach; ?>
             </div>
-        </section>
-    <?php endif; ?>
-
-    <section class="home-section home-bookshelf">
-        <header class="home-section-heading"><div><p>CURADORIA PARA VOCÊ</p><h2>Livros que podem te conquistar</h2></div><a href="catalogo.php">Explorar catálogo <i data-lucide="arrow-up-right"></i></a></header>
-        <?php if ($livros_recomendados): ?>
-            <div class="home-book-row">
-                <?php foreach ($livros_recomendados as $livro): ?>
-                    <a class="home-book" href="visao_livro.php?id_livro=<?= (int) $livro['id_livro'] ?>">
-                        <span class="home-book-cover"><?php if ($livro['capa_url']): ?><img src="<?= $imagemUrl($livro['capa_url']) ?>" alt="Capa de <?= $esc($livro['titulo_livro']) ?>" loading="lazy"><?php else: ?><span class="home-no-cover">Sem capa</span><?php endif; ?></span>
-                        <strong><?= $esc($livro['titulo_livro']) ?></strong><small><?= $esc($livro['nome_autor'] ?: 'Autor não informado') ?></small>
-                    </a>
-                <?php endforeach; ?>
-            </div>
-        <?php else: ?><p class="home-empty">Ainda não há recomendações. Explore o catálogo para encontrar sua próxima leitura.</p><?php endif; ?>
+        <?php else: ?><p class="home-empty">Você já segue todos os leitores sugeridos.</p><?php endif; ?>
     </section>
 
     <div class="home-columns">
@@ -210,40 +192,39 @@ $fotoFallback = mb_strtoupper(mb_substr($usuario['username'] ?? 'N', 0, 1));
             </section>
         </section>
 
-        <aside class="home-sidebar">
-            <section class="home-side-section home-reader-card">
-                <p>NOOK READER</p><div><?php if ($fotoUsuario): ?><img src="<?= $fotoUsuario ?>" alt=""><?php else: ?><span class="home-avatar-fallback"><?= $fotoFallback ?></span><?php endif; ?><span><strong><?= $esc($usuario['nome_completo'] ?? '') ?></strong><small>@<?= $esc($usuario['username'] ?? '') ?></small></span></div>
-                <a href="perfil.php">Abrir meu perfil <i data-lucide="arrow-up-right"></i></a>
-            </section>
+    </div>
 
-            <section class="home-side-section">
-                <header><h2>Leitores para conhecer</h2><a href="pesquisa_user.php">Ver mais</a></header>
-                <?php foreach ($usuarios_sugeridos as $sugerido): ?>
-                    <article class="home-person" data-persona="<?= (int) $sugerido['id_user'] ?>">
-                        <a href="perfil_user_terceiro.php?id_user=<?= (int) $sugerido['id_user'] ?>" class="home-person-link">
-                            <?php if (!empty($sugerido['foto_perfil_url'])): ?><img src="<?= $imagemUrl($sugerido['foto_perfil_url']) ?>" alt=""><?php else: ?><span class="home-avatar-fallback"><?= $esc(mb_strtoupper(mb_substr($sugerido['username'], 0, 1))) ?></span><?php endif; ?>
-                            <span><strong><?= $esc($sugerido['nome_completo']) ?></strong><small>@<?= $esc($sugerido['username']) ?><?= (int) $sugerido['em_comum'] ? ' · ' . (int) $sugerido['em_comum'] . ' em comum' : '' ?></small></span>
+    <section class="home-section home-list-suggestions">
+        <header class="home-section-heading"><div><p>CURADORIA DA COMUNIDADE</p><h2>Listas para explorar</h2></div><a class="home-section-more" href="explorar_listas.php">Ver mais <i data-lucide="arrow-up-right"></i></a></header>
+        <?php if ($listas_sugeridas): ?>
+            <div class="listas-grid home-listas-grid">
+                <?php foreach ($listas_sugeridas as $lista): ?>
+                    <?php $capasLista = array_slice(array_filter(json_decode($lista['capas'] ?? '[]', true) ?? []), 0, 3); ?>
+                    <article class="lista-card lista-card--outro">
+                        <a href="ver_lista.php?id=<?= (int) $lista['id'] ?>">
+                            <div class="lista-topo"><h3><?= $esc($lista['nome_lista']) ?></h3><p><?= $esc($lista['descricao'] ?: 'Uma coleção de livros selecionados.') ?></p><small class="lista-dono">Por @<?= $esc($lista['username_dono']) ?></small></div>
+                            <div class="capas"><?php foreach ($capasLista as $capa): ?><img src="<?= $imagemUrl($capa) ?>" alt="Capa da lista" loading="lazy"><?php endforeach; ?></div>
+                            <ul class="lista-info"><li><i data-lucide="book"></i> <?= (int) $lista['quantidade_livros'] ?> livros</li><li><i data-lucide="users"></i> <?= (int) $lista['seguidores'] ?> seguindo</li></ul>
                         </a>
-                        <button type="button" data-seguir-usuario="<?= (int) $sugerido['id_user'] ?>">Seguir</button>
-                        <a class="home-person-message" href="#" hidden aria-label="Enviar mensagem"><i data-lucide="message-circle"></i></a>
                     </article>
                 <?php endforeach; ?>
-                <?php if (!$usuarios_sugeridos): ?><p class="home-empty-small">No momento não há sugestões.</p><?php endif; ?>
-            </section>
+            </div>
+        <?php else: ?><p class="home-empty">Ainda não há listas públicas para sugerir.</p><?php endif; ?>
+    </section>
 
-            <section class="home-side-section home-list-suggestions">
-                <header><h2>Listas para explorar</h2><a href="perfil.php?aba=listas-leitura">Ver listas</a></header>
-                <?php foreach ($listas_sugeridas as $lista): ?>
-                    <?php $capasLista = array_slice(json_decode($lista['capas'] ?? '[]', true) ?? [], 0, 2); ?>
-                    <a class="home-list-suggestion" href="ver_lista.php?id=<?= (int) $lista['id'] ?>">
-                        <span class="home-list-covers"><?php foreach ($capasLista as $capa): ?><img src="<?= $imagemUrl($capa) ?>" alt="" loading="lazy"><?php endforeach; ?></span>
-                        <span><strong><?= $esc($lista['nome_lista']) ?></strong><small>@<?= $esc($lista['username_dono']) ?> · <?= (int) $lista['quantidade_livros'] ?> livros</small></span>
+    <section class="home-section home-authors-trending">
+        <header class="home-section-heading"><div><p>EM ALTA NA COMUNIDADE</p><h2>Autores em destaque</h2></div><a class="home-section-more" href="pesquisa_autores.php">Ver todos <i data-lucide="arrow-up-right"></i></a></header>
+        <?php if ($autores_em_alta): ?>
+            <div class="home-authors-row">
+                <?php foreach ($autores_em_alta as $autor): ?>
+                    <a class="home-author-card" href="perfil_autor.php?id_autor=<?= (int) $autor['id_autor'] ?>">
+                        <?php if (!empty($autor['foto_url'])): ?><img src="<?= $imagemUrl($autor['foto_url']) ?>" alt="" loading="lazy"><?php else: ?><span><?= $esc(mb_strtoupper(mb_substr($autor['nome_autor'] ?: $autor['autor'], 0, 1))) ?></span><?php endif; ?>
+                        <strong><?= $esc($autor['nome_autor'] ?: $autor['autor']) ?></strong><small><?= (int) $autor['seguidores'] ?> seguidores</small>
                     </a>
                 <?php endforeach; ?>
-                <?php if (!$listas_sugeridas): ?><p class="home-empty-small">Siga pessoas para descobrir listas.</p><?php endif; ?>
-            </section>
-        </aside>
-    </div>
+            </div>
+        <?php else: ?><p class="home-empty">Os autores em destaque aparecerão aqui.</p><?php endif; ?>
+    </section>
 </main>
 
 <?php require_once __DIR__ . '/footer.php'; ?>

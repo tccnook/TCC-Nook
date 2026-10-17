@@ -19,7 +19,7 @@ if (!isset($_SESSION['id_user'])) {
 $id_user = (int) $_SESSION['id_user'];
 $id_lista = filter_var($_POST['id_lista'] ?? null, FILTER_VALIDATE_INT);
 $acao = $_POST['acao'] ?? '';
-$acoes = ['seguir', 'comentar', 'visibilidade', 'ordenar', 'remover_livro', 'adicionar_sugestao'];
+$acoes = ['seguir', 'comentar', 'editar', 'visibilidade', 'ordenar', 'remover_livro', 'adicionar_sugestao', 'adicionar_catalogo'];
 if (!$id_lista || !in_array($acao, $acoes, true)) {
     responderLista(422, 'Ação inválida.');
 }
@@ -68,6 +68,62 @@ try {
     if ($dono !== $id_user) {
         $conn->rollBack();
         responderLista(403, 'Você não pode editar esta lista.');
+    }
+
+    if ($acao === 'adicionar_catalogo') {
+        $id_livro = filter_var($_POST['id_livro'] ?? null, FILTER_VALIDATE_INT);
+        if (!$id_livro) {
+            $conn->rollBack();
+            responderLista(422, 'Livro inválido.');
+        }
+        $stmt = $conn->prepare("SELECT 1 FROM livro WHERE id_livro = :id_livro AND visibilidade = 'publico'");
+        $stmt->execute([':id_livro' => $id_livro]);
+        if (!$stmt->fetchColumn()) {
+            $conn->rollBack();
+            responderLista(404, 'Livro não encontrado no catálogo.');
+        }
+        $stmt = $conn->prepare('SELECT 1 FROM whishbook WHERE id_whishlist = :id_lista AND id_livro = :id_livro');
+        $stmt->execute([':id_lista' => $id_lista, ':id_livro' => $id_livro]);
+        if ($stmt->fetchColumn()) {
+            $conn->commit();
+            responderLista(200, 'Este livro já está na lista.');
+        }
+        $stmt = $conn->prepare('INSERT INTO whishbook (id_livro, id_user, id_whishlist, ordem) VALUES (:id_livro, :id_user, :id_lista, (SELECT COALESCE(MAX(ordem), 0) + 1 FROM whishbook WHERE id_whishlist = :lista_ordem))');
+        $stmt->execute([
+            ':id_livro' => $id_livro,
+            ':id_user' => $id_user,
+            ':id_lista' => $id_lista,
+            ':lista_ordem' => $id_lista
+        ]);
+        $conn->commit();
+        responderLista(200, 'Livro adicionado à lista.');
+    }
+
+    if ($acao === 'editar') {
+        $nome_lista = trim($_POST['nome_lista'] ?? '');
+        $descricao = trim($_POST['descricao'] ?? '');
+        $visibilidade = $_POST['visibilidade'] ?? '';
+        if ($nome_lista === '' || mb_strlen($nome_lista) > 120 || mb_strlen($descricao) > 90) {
+            $conn->rollBack();
+            responderLista(422, 'Informe um nome de até 120 caracteres e uma descrição de até 90 caracteres.');
+        }
+        if (!in_array($visibilidade, ['publica', 'privada'], true)) {
+            $conn->rollBack();
+            responderLista(422, 'Visibilidade inválida.');
+        }
+        $stmt = $conn->prepare('UPDATE whishlist SET nome_lista = :nome_lista, descricao = :descricao, visibilidade = :visibilidade WHERE id = :id_lista');
+        $stmt->execute([
+            ':nome_lista' => $nome_lista,
+            ':descricao' => $descricao,
+            ':visibilidade' => $visibilidade,
+            ':id_lista' => $id_lista
+        ]);
+        if ($visibilidade === 'privada') {
+            $stmt = $conn->prepare('DELETE FROM whishlist_seguida WHERE id_whishlist = :id_lista');
+            $stmt->execute([':id_lista' => $id_lista]);
+        }
+        $conn->commit();
+        responderLista(200, 'Lista atualizada.');
     }
 
     if ($acao === 'visibilidade') {

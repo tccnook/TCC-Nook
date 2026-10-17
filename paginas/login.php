@@ -3,6 +3,10 @@
 require_once('conexao.php');
 
 session_start();
+if (empty($_SESSION['login_csrf'])) {
+    $_SESSION['login_csrf'] = bin2hex(random_bytes(32));
+}
+$erroLogin = '';
 
             class parametroBusca {
                 private $email;
@@ -41,22 +45,25 @@ session_start();
                 }
             }
 
-            if(isset($_POST['logar'])){
-                $email = $_POST['email'];
-                $senha = $_POST['senha'];
-                $senhahash = password_hash($senha, PASSWORD_DEFAULT);
+            if (isset($_POST['logar']) && !hash_equals($_SESSION['login_csrf'], (string) ($_POST['csrf_token'] ?? ''))) {
+                $erroLogin = 'A sessão expirou. Atualize a página e tente novamente.';
+            } elseif(isset($_POST['logar'])){
+                $email = trim((string) ($_POST['email'] ?? ''));
+                $senha = (string) ($_POST['senha'] ?? '');
                 $parametroBusca = new parametroBusca();
-                $parametroBusca->setEmail($_POST['email']);
+                $parametroBusca->setEmail($email);
                 $parametroBusca->setSenha($senha);
 
                 $busca = new Busca();
                 $usuario = $busca->buscarUsuario($parametroBusca);
 
                 if ($usuario && password_verify($parametroBusca->getSenha(), $usuario['senha'])){
+                    session_regenerate_id(true);
                         $_SESSION["id_user"] = $usuario['id_user'];    
-                        header("Location:perfil.php"); // colocar dashboard.php depois
+                    header("Location: paginaprincipal.php");
+                    exit();
                     } else{
-                        echo '<script> alert("Dados Inválidos, tente novamente"); </script>';
+                        $erroLogin = 'E-mail ou senha inválidos.';
                     }
 
                 
@@ -88,14 +95,16 @@ session_start();
             <h1> Bem vindo de volta ao Nook </h1>
             
             
-            <form name="login" method="POST" action="#"> 
+            <form name="login" method="POST" action="#">
+                <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['login_csrf'], ENT_QUOTES, 'UTF-8') ?>">
+                <?php if ($erroLogin !== ''): ?><p role="alert"><?= htmlspecialchars($erroLogin, ENT_QUOTES, 'UTF-8') ?></p><?php endif; ?>
                 <label for="email"> Email </label>
                 
-                <input type="text" name="email" id="name">
+                <input type="email" name="email" id="email" autocomplete="username" required>
                 
                 <label for="senha"> Senha </label>
                 
-                <input type="password" name="senha" id="senha">
+                <input type="password" name="senha" id="senha" autocomplete="current-password" required>
                 
                 <p class="remember-password">Esqueceu sua senha?<a href="esqueceu-senha.php"> Redefina aqui. </a></p>
                 <input class="button-action" type="submit" name="logar" value="Entrar">

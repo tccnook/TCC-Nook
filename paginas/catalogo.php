@@ -3,7 +3,7 @@
 session_start();
 
 if(!isset($_SESSION['id_user'])){
-    header("location:index.php");
+    header('Location: login.php');
     exit();
 }
 
@@ -13,6 +13,18 @@ require_once('conexao.php');
 
 $db = new Database;
 $conn = $db->conectar();
+
+$id_lista_contexto = filter_var($_GET['lista'] ?? null, FILTER_VALIDATE_INT);
+$lista_contexto = null;
+if ($id_lista_contexto !== false && $id_lista_contexto > 0) {
+    $stmt_lista = $conn->prepare('SELECT id, nome_lista FROM whishlist WHERE id = :id_lista AND id_user = :id_user');
+    $stmt_lista->execute([':id_lista' => $id_lista_contexto, ':id_user' => $id_user]);
+    $lista_contexto = $stmt_lista->fetch(PDO::FETCH_ASSOC);
+    if (!$lista_contexto) {
+        header('Location: perfil.php?aba=listas-leitura');
+        exit();
+    }
+}
 
 
 // busa dos generos disponiveis para filtrar
@@ -26,6 +38,35 @@ $stmt_generos = $conn->prepare($select_generos);
 $stmt_generos->execute();
 
 $generos = $stmt_generos->fetchAll(PDO::FETCH_ASSOC);
+
+$stmt = $conn->prepare("SELECT l.id_livro, l.titulo_livro, l.nome_autor, l.capa_url, pr.capitulo_atual, pr.porcentagem_progresso, pr.ultima_leitura, (SELECT COUNT(*) FROM capitulo cp WHERE cp.id_livro = l.id_livro) AS total_capitulos FROM progresso_leitura pr INNER JOIN livro l ON l.id_livro = pr.id_livro WHERE pr.id_user = :id_user AND pr.porcentagem_progresso > 0 AND pr.porcentagem_progresso < 100 ORDER BY pr.ultima_leitura DESC LIMIT 8");
+$stmt->execute([':id_user' => $id_user]);
+$continuar_lendo = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+$stmt = $conn->prepare("SELECT l.id_livro, l.titulo_livro, l.nome_autor, l.capa_url, l.idioma, COUNT(DISTINCT pl.id_preferencia) AS preferencias_em_comum FROM livro l INNER JOIN preferencia_livro pl ON pl.id_livro = l.id_livro INNER JOIN preferencia_user pu ON pu.id_preferencia = pl.id_preferencia WHERE l.visibilidade = 'publico' AND pu.id_user = :id_user AND NOT EXISTS (SELECT 1 FROM progresso_leitura pr WHERE pr.id_user = :id_user_excluir AND pr.id_livro = l.id_livro AND pr.porcentagem_progresso = 100) GROUP BY l.id_livro, l.titulo_livro, l.nome_autor, l.capa_url, l.idioma ORDER BY preferencias_em_comum DESC, CASE WHEN LOWER(COALESCE(l.idioma, '')) LIKE 'pt%' OR LOWER(COALESCE(l.idioma, '')) LIKE 'portugu%' THEN 0 ELSE 1 END, l.titulo_livro LIMIT 12");
+$stmt->execute([':id_user' => $id_user, ':id_user_excluir' => $id_user]);
+$livros_recomendados = $stmt->fetchAll(PDO::FETCH_ASSOC);
+if (!$livros_recomendados) {
+    $stmt = $conn->prepare("SELECT id_livro, titulo_livro, nome_autor, capa_url FROM livro WHERE visibilidade = 'publico' ORDER BY CASE WHEN LOWER(COALESCE(idioma, '')) LIKE 'pt%' OR LOWER(COALESCE(idioma, '')) LIKE 'portugu%' THEN 0 ELSE 1 END, data_publi DESC NULLS LAST LIMIT 12");
+    $stmt->execute();
+    $livros_recomendados = $stmt->fetchAll(PDO::FETCH_ASSOC);
+}
+
+$stmt = $conn->prepare("SELECT l.id_livro, l.titulo_livro, l.nome_autor, l.capa_url, ll.atualizado_em FROM livros_lidos ll INNER JOIN livro l ON l.id_livro = ll.id_livro WHERE ll.id_user = :id_user ORDER BY ll.atualizado_em DESC NULLS LAST LIMIT 12");
+$stmt->execute([':id_user' => $id_user]);
+$livros_lidos = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+$stmt = $conn->prepare("SELECT a.id_autor, a.nome_autor, a.autor, a.foto_url, COUNT(DISTINCT fa.id_follower) AS seguidores FROM autor a LEFT JOIN follow_autor fa ON fa.id_autor = a.id_autor WHERE NOT EXISTS (SELECT 1 FROM follow_autor proprio WHERE proprio.id_follower = :id_user AND proprio.id_autor = a.id_autor) GROUP BY a.id_autor, a.nome_autor, a.autor, a.foto_url ORDER BY seguidores DESC, a.nome_autor ASC LIMIT 8");
+$stmt->execute([':id_user' => $id_user]);
+$autores_sugeridos = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+$esc = static fn($valor) => htmlspecialchars((string) ($valor ?? ''), ENT_QUOTES, 'UTF-8');
+$imagemCatalogo = static function ($caminho) use ($esc) {
+    $caminho = trim((string) ($caminho ?? ''));
+    if ($caminho === '') return '';
+    if (preg_match('~^(https?:)?//|^/~i', $caminho)) return $esc($caminho);
+    return $esc('../' . ltrim($caminho, './'));
+};
 ?>
 
 <!DOCTYPE html>
@@ -45,16 +86,67 @@ $generos = $stmt_generos->fetchAll(PDO::FETCH_ASSOC);
 <?php require_once __DIR__ . '/header.php'; ?>
 
 <main class="catalog-page">
-    <section class="catalog-intro">
-        <p class="catalog-eyebrow">PRATELEIRAS NOOK</p>
-        <h1>Encontre sua próxima leitura.</h1>
-        <p>Explore títulos por nome, autor ou gênero e descubra histórias para guardar.</p>
-        <label class="catalog-search">
-            <i data-lucide="search"></i>
-            <input type="search" id="campo-pesquisa" placeholder="Busque por livro ou autor" autocomplete="off">
-            <kbd>Enter</kbd>
-        </label>
-    </section>
+    <?php if ($lista_contexto): ?>
+        <a class="catalog-list-context" href="ver_lista.php?id=<?= (int) $lista_contexto['id'] ?>"><i data-lucide="arrow-left"></i> Adicionando livros a <strong><?= htmlspecialchars($lista_contexto['nome_lista'], ENT_QUOTES, 'UTF-8') ?></strong></a>
+    <?php endif; ?>
+
+    <?php if ($continuar_lendo): ?>
+        <section class="catalog-shelf catalog-continue-shelf">
+            <header class="catalog-shelf-heading"><div><p>RETOME SUA HISTÓRIA</p><h2>Continuar lendo</h2></div></header>
+            <div class="catalog-continue-row">
+                <?php foreach ($continuar_lendo as $leitura): ?>
+                    <?php $progresso = min(100, max(0, (float) $leitura['porcentagem_progresso'])); ?>
+                    <a class="catalog-continue-book" href="ler_livro.php?id_livro=<?= (int) $leitura['id_livro'] ?>">
+                        <?php if ($leitura['capa_url']): ?><img src="<?= $imagemCatalogo($leitura['capa_url']) ?>" alt="Capa de <?= $esc($leitura['titulo_livro']) ?>" loading="lazy"><?php else: ?><span class="catalog-continue-cover-empty">Sem capa</span><?php endif; ?>
+                        <span class="catalog-continue-info"><strong><?= $esc($leitura['titulo_livro']) ?></strong><small><?= $esc($leitura['nome_autor'] ?: 'Autor não informado') ?></small><span class="catalog-progress"><span style="width: <?= $progresso ?>%"></span></span><small><?= round($progresso) ?>% concluído</small></span>
+                        <i data-lucide="play"></i>
+                    </a>
+                <?php endforeach; ?>
+            </div>
+        </section>
+    <?php endif; ?>
+
+    <?php if ($livros_recomendados): ?>
+        <section class="catalog-shelf">
+            <header class="catalog-shelf-heading"><div><p>CURADORIA PARA VOCÊ</p><h2>Livros que podem te conquistar</h2></div></header>
+            <div class="catalog-rail">
+                <?php foreach ($livros_recomendados as $livro): ?>
+                    <a class="catalog-rail-book" href="visao_livro.php?id_livro=<?= (int) $livro['id_livro'] ?>">
+                        <span class="catalog-rail-cover"><?php if ($livro['capa_url']): ?><img src="<?= $imagemCatalogo($livro['capa_url']) ?>" alt="Capa de <?= $esc($livro['titulo_livro']) ?>" loading="lazy"><?php else: ?><span>Sem capa</span><?php endif; ?></span>
+                        <strong><?= $esc($livro['titulo_livro']) ?></strong><small><?= $esc($livro['nome_autor'] ?: 'Autor não informado') ?></small>
+                    </a>
+                <?php endforeach; ?>
+            </div>
+        </section>
+    <?php endif; ?>
+
+    <?php if ($livros_lidos): ?>
+        <section class="catalog-shelf">
+            <header class="catalog-shelf-heading"><div><p>SEU HISTÓRICO</p><h2>Livros lidos</h2></div><a href="perfil.php?aba=livros-lidos">Ver seu perfil <i data-lucide="arrow-up-right"></i></a></header>
+            <div class="catalog-rail">
+                <?php foreach ($livros_lidos as $livro): ?>
+                    <a class="catalog-rail-book" href="visao_livro.php?id_livro=<?= (int) $livro['id_livro'] ?>">
+                        <span class="catalog-rail-cover"><?php if ($livro['capa_url']): ?><img src="<?= $imagemCatalogo($livro['capa_url']) ?>" alt="Capa de <?= $esc($livro['titulo_livro']) ?>" loading="lazy"><?php else: ?><span>Sem capa</span><?php endif; ?></span>
+                        <strong><?= $esc($livro['titulo_livro']) ?></strong><small><?= $esc($livro['nome_autor'] ?: 'Autor não informado') ?></small>
+                    </a>
+                <?php endforeach; ?>
+            </div>
+        </section>
+    <?php endif; ?>
+
+    <?php if ($autores_sugeridos): ?>
+        <section class="catalog-shelf catalog-authors-shelf">
+            <header class="catalog-shelf-heading"><div><p>VOZES PARA DESCOBRIR</p><h2>Autores para conhecer</h2></div><a href="pesquisa_autores.php">Explorar autores <i data-lucide="arrow-up-right"></i></a></header>
+            <div class="catalog-author-row">
+                <?php foreach ($autores_sugeridos as $autor): ?>
+                    <a class="catalog-author" href="perfil_autor.php?id_autor=<?= (int) $autor['id_autor'] ?>">
+                        <?php if ($autor['foto_url']): ?><img src="<?= $imagemCatalogo($autor['foto_url']) ?>" alt="" loading="lazy"><?php else: ?><span class="catalog-author-fallback"><?= $esc(mb_strtoupper(mb_substr($autor['nome_autor'] ?: $autor['autor'], 0, 1))) ?></span><?php endif; ?>
+                        <strong><?= $esc($autor['nome_autor'] ?: $autor['autor']) ?></strong><small><?= (int) $autor['seguidores'] ?> seguidores</small>
+                    </a>
+                <?php endforeach; ?>
+            </div>
+        </section>
+    <?php endif; ?>
 
     <section class="catalog-controls" aria-label="Filtros do catálogo">
         <div class="catalog-filter-wrap">
@@ -79,13 +171,25 @@ $generos = $stmt_generos->fetchAll(PDO::FETCH_ASSOC);
         </label>
     </section>
 
+    <section class="catalog-intro">
+        <p class="catalog-eyebrow">PRATELEIRAS NOOK</p>
+        <h1>Encontre sua próxima leitura.</h1>
+        <p>Explore títulos por nome, autor ou gênero e descubra histórias para guardar.</p>
+        <label class="catalog-search">
+            <i data-lucide="search"></i>
+            <input type="search" id="campo-pesquisa" placeholder="Busque por livro ou autor" autocomplete="off">
+        </label>
+    </section>
+
     <section class="catalog-results-section" aria-live="polite">
         <header class="catalog-results-header">
             <h2 id="titulo-resultados">Todos os livros</h2>
             <span id="total-resultados"></span>
         </header>
+        <p id="aviso-google" class="catalog-api-notice" role="status" hidden></p>
         <div id="resultado-livros" class="catalog-grid"></div>
         <p id="estado-catalogo" class="catalog-empty" hidden></p>
+        <button type="button" id="carregar-mais-livros" class="catalog-load-more" hidden>Ver mais livros</button>
     </section>
 </main>
 
@@ -95,12 +199,18 @@ $generos = $stmt_generos->fetchAll(PDO::FETCH_ASSOC);
     const resultadoLivros = document.getElementById('resultado-livros');
     const estadoCatalogo = document.getElementById('estado-catalogo');
     const totalResultados = document.getElementById('total-resultados');
+    const avisoGoogle = document.getElementById('aviso-google');
     const tituloResultados = document.getElementById('titulo-resultados');
     const ordemCatalogoCatalogo = document.getElementById('ordem-catalogo');
+    const carregarMaisLivros = document.getElementById('carregar-mais-livros');
     const abrirFiltrosGenero = document.getElementById('abrir-filtros-genero');
     const filtrosGenero = document.getElementById('filtros-genero');
+    const idListaCatalogo = <?= json_encode($lista_contexto ? (int) $lista_contexto['id'] : null) ?>;
     let generoSelecionado = '';
     let timeoutPesquisaCatalogo;
+    let livrosCarregados = [];
+    let proximoInicio = 0;
+    let requisicaoCatalogo = 0;
 
     function escaparHtml(valor) {
         return String(valor ?? '').replace(/[&<>"']/g, (caractere) => ({
@@ -114,66 +224,144 @@ $generos = $stmt_generos->fetchAll(PDO::FETCH_ASSOC);
         return `../${caminho.replace(/^\.\//, '')}`;
     }
 
-    function renderizarLivros(livros) {
+    function renderizarLivros(livros, acrescentar = false) {
+        livrosCarregados = acrescentar ? [...livrosCarregados, ...livros] : livros;
         resultadoLivros.replaceChildren();
-        totalResultados.textContent = `${livros.length} ${livros.length === 1 ? 'livro' : 'livros'}`;
-        if (!livros.length) {
+        totalResultados.textContent = `${livrosCarregados.length} ${livrosCarregados.length === 1 ? 'livro' : 'livros'}`;
+        if (!livrosCarregados.length) {
             estadoCatalogo.hidden = false;
             estadoCatalogo.textContent = 'Nenhum livro encontrado com esses filtros.';
             return;
         }
         estadoCatalogo.hidden = true;
-        resultadoLivros.innerHTML = livros.map((livro) => {
-            const nota = Number(livro.media || 0);
+        resultadoLivros.innerHTML = livrosCarregados.map((livro) => {
+            const nota = Number(livro.media || livro.nota_google || 0);
+            const totalAvaliacoes = Number(livro.total || 0);
             const estrelas = '★'.repeat(Math.round(nota)) + '☆'.repeat(5 - Math.round(nota));
             const imagem = livro.capa_url
                 ? `<img src="${escaparHtml(urlCapa(livro.capa_url))}" alt="Capa de ${escaparHtml(livro.titulo_livro)}" loading="lazy">`
                 : '<span class="catalog-cover-empty">Capa indisponível</span>';
+            const metadata = [livro.editora, livro.data_publi].filter(Boolean).join(' · ');
+            const synopsisText = livro.descricao || livro.sinopse_livro || '';
+            const synopsis = synopsisText
+                ? `<p class="catalog-book-description">${escaparHtml(synopsisText)}</p>`
+                : '';
+            const categories = Array.isArray(livro.categorias) && livro.categorias.length
+                ? `<small class="catalog-book-categories">${escaparHtml(livro.categorias.join(' · '))}</small>`
+                : '';
             const urlLivro = livro.id_livro
                 ? `visao_livro.php?id_livro=${encodeURIComponent(livro.id_livro)}`
-                : `visao_livro.php?google_books_id=${encodeURIComponent(livro.google_books_id)}`;
+                : `visao_livro.php?google_books_id=${encodeURIComponent(livro.google_books_id)}${idListaCatalogo ? `&adicionar_a_lista=${idListaCatalogo}` : ''}`;
+            const acaoLista = idListaCatalogo
+                ? livro.id_livro
+                    ? `<button type="button" class="catalog-add-book" data-adicionar-catalogo="${Number(livro.id_livro)}"><i data-lucide="plus"></i> Adicionar à lista</button>`
+                    : `<a class="catalog-add-book" href="${escaparHtml(urlLivro)}"><i data-lucide="arrow-up-right"></i> Ver e adicionar</a>`
+                : '';
+            const linkLeitura = livro.origem === 'interna'
+                ? `ler_livro.php?id_livro=${encodeURIComponent(livro.id_livro)}`
+                : livro.pdf_disponivel && livro.pdf_url
+                    ? livro.pdf_url
+                    : ['FULL_READING', 'FULL_PUBLIC_DOMAIN', 'PARTIAL', 'SAMPLE'].includes(livro.status_acesso)
+                        ? (livro.preview_url || livro.link_leitura || '')
+                        : (livro.id_livro && !livro.status_acesso ? (livro.link_leitura || '') : '');
+            const leituraCompleta = ['FULL_READING', 'FULL_PUBLIC_DOMAIN'].includes(livro.status_acesso);
+            const textoLeitura = livro.origem === 'interna'
+                ? 'Ler agora'
+                : livro.pdf_disponivel
+                    ? 'Ler PDF'
+                    : leituraCompleta
+                        ? 'Ler no Google Books'
+                        : 'Abrir leitura';
+            const urlLeitura = linkLeitura
+                ? `<a class="catalog-read-link ${livro.pdf_disponivel ? 'catalog-read-pdf' : 'catalog-read-preview'}" href="${escaparHtml(linkLeitura)}" ${livro.origem === 'interna' ? '' : 'target="_blank" rel="noopener noreferrer"'}><i data-lucide="${livro.pdf_disponivel ? 'file-down' : 'book-open'}"></i> ${textoLeitura}</a>`
+                : '';
+            const urlResenha = livro.id_livro
+                ? `visao_livro.php?id_livro=${encodeURIComponent(livro.id_livro)}&abrir_resenha=1`
+                : `visao_livro.php?google_books_id=${encodeURIComponent(livro.google_books_id)}&abrir_resenha=1`;
             return `<article class="catalog-book">
                 <a href="${escaparHtml(urlLivro)}" class="catalog-book-link">
                     <div class="catalog-cover">${imagem}<span class="catalog-book-open"><i data-lucide="arrow-up-right"></i></span></div>
                     <div class="catalog-book-meta">
                         <p>${escaparHtml(livro.nome_autor || 'Autor não informado')}</p>
                         <h3>${escaparHtml(livro.titulo_livro)}</h3>
-                        <div class="catalog-rating"><span>${escaparHtml(estrelas)}</span><small>${nota ? nota.toFixed(1).replace('.', ',') : 'Novo'}${livro.total ? ` · ${Number(livro.total)} res.` : ''}</small></div>
+                            ${livro.subtitulo ? `<small class="catalog-book-subtitle">${escaparHtml(livro.subtitulo)}</small>` : ''}
+                            ${metadata ? `<small class="catalog-book-publisher">${escaparHtml(metadata)}</small>` : ''}
+                            ${categories}
+                            <div class="catalog-rating"><span>${escaparHtml(estrelas)}</span><small>${nota ? nota.toFixed(1).replace('.', ',') : 'Novo'}${totalAvaliacoes ? ` · ${totalAvaliacoes} avaliações` : ''}</small></div>
                         <small class="catalog-book-details">${livro.paginas ? `${Number(livro.paginas)} páginas` : 'Explore os detalhes do livro'}${livro.idioma ? ` · ${escaparHtml(livro.idioma)}` : ''}</small>
+                            ${synopsis}
                     </div>
                 </a>
+                <div class="catalog-book-actions">
+                    ${urlLeitura}
+                    ${acaoLista}
+                    <a class="catalog-review-link" href="${escaparHtml(urlResenha)}"><i data-lucide="square-pen"></i> Resenhar</a>
+                </div>
             </article>`;
         }).join('');
         if (window.lucide) lucide.createIcons();
     }
 
-    async function pesquisarLivros() {
+    resultadoLivros.addEventListener('click', async (evento) => {
+        const botao = evento.target.closest('[data-adicionar-catalogo]');
+        if (!botao || !idListaCatalogo) return;
+        botao.disabled = true;
+        const dados = new FormData();
+        dados.append('acao', 'adicionar_catalogo');
+        dados.append('id_lista', idListaCatalogo);
+        dados.append('id_livro', botao.dataset.adicionarCatalogo);
+        try {
+            const resposta = await fetch('acoes_lista.php', { method: 'POST', body: dados, headers: { Accept: 'application/json' } });
+            const resultado = await resposta.json();
+            if (!resposta.ok) throw new Error(resultado.mensagem || 'Não foi possível adicionar este livro.');
+            botao.innerHTML = '<i data-lucide="check"></i> Adicionado';
+            if (window.lucide) lucide.createIcons();
+        } catch (erro) {
+            botao.disabled = false;
+            botao.title = erro.message;
+        }
+    });
+
+    async function pesquisarLivros(carregarProximaPagina = false) {
+        const requisicaoAtual = ++requisicaoCatalogo;
+        const inicio = carregarProximaPagina ? proximoInicio : 0;
         const parametros = new URLSearchParams({
             nome: campoPesquisaCatalogo.value.trim(),
             genero: generoSelecionado,
-            ordem: ordemCatalogoCatalogo.value
+            ordem: ordemCatalogoCatalogo.value,
+            inicio: String(inicio)
         });
         resultadoLivros.setAttribute('aria-busy', 'true');
+        carregarMaisLivros.disabled = true;
         try {
             const resposta = await fetch(`buscar-livros.php?${parametros}`);
             const dados = await resposta.json();
+            if (requisicaoAtual !== requisicaoCatalogo) return;
             if (!resposta.ok) throw new Error(dados.mensagem || 'Não foi possível carregar o catálogo.');
-            renderizarLivros(dados.livros || []);
+            renderizarLivros(dados.livros || [], carregarProximaPagina);
+            proximoInicio = inicio + 20;
+            carregarMaisLivros.hidden = !dados.tem_mais;
+            avisoGoogle.hidden = !dados.aviso_google;
+            avisoGoogle.textContent = dados.aviso_google || '';
             const genero = document.querySelector('.genre-chip.is-active')?.textContent.trim();
             tituloResultados.textContent = campoPesquisaCatalogo.value.trim()
                 ? `Resultados para “${campoPesquisaCatalogo.value.trim()}”`
                 : genero && genero !== 'Todos' ? genero : 'Todos os livros';
         } catch (erro) {
+            if (requisicaoAtual !== requisicaoCatalogo) return;
             estadoCatalogo.hidden = false;
             estadoCatalogo.textContent = erro.message;
         } finally {
-            resultadoLivros.removeAttribute('aria-busy');
+            if (requisicaoAtual === requisicaoCatalogo) {
+                resultadoLivros.removeAttribute('aria-busy');
+                carregarMaisLivros.disabled = false;
+            }
         }
     }
 
     campoPesquisaCatalogo.addEventListener('input', () => {
         clearTimeout(timeoutPesquisaCatalogo);
-        timeoutPesquisaCatalogo = setTimeout(pesquisarLivros, 250);
+        timeoutPesquisaCatalogo = setTimeout(() => pesquisarLivros(false), 300);
     });
     abrirFiltrosGenero.addEventListener('click', () => {
         filtrosGenero.hidden = !filtrosGenero.hidden;
@@ -188,7 +376,8 @@ $generos = $stmt_generos->fetchAll(PDO::FETCH_ASSOC);
     campoPesquisaCatalogo.addEventListener('keydown', (evento) => {
         if (evento.key === 'Enter') {
             evento.preventDefault();
-            pesquisarLivros();
+            clearTimeout(timeoutPesquisaCatalogo);
+            pesquisarLivros(false);
         }
     });
     filtrosGenero.querySelectorAll('.genre-chip').forEach((botao) => {
@@ -199,8 +388,9 @@ $generos = $stmt_generos->fetchAll(PDO::FETCH_ASSOC);
             pesquisarLivros();
         });
     });
-    ordemCatalogoCatalogo.addEventListener('change', pesquisarLivros);
-    pesquisarLivros();
+    ordemCatalogoCatalogo.addEventListener('change', () => pesquisarLivros(false));
+    carregarMaisLivros.addEventListener('click', () => pesquisarLivros(true));
+    pesquisarLivros(false);
 </script>
 </body>
 </html>

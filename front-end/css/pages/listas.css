@@ -53,6 +53,8 @@
 .lista-hero-topo > p,
 .lista-visibilidade-control { display: flex; align-items: center; gap: .3rem; }
 .lista-hero-topo svg { width: .85rem; height: .85rem; }
+.lista-editar { display: inline-flex; align-items: center; gap: .4rem; min-height: 2.25rem; padding: 0 .75rem; border-radius: 7px; background: var(--all-white); color: var(--text-title); font-size: .7rem; font-weight: 700; }
+.lista-editar:hover { background: var(--bg-soft); }
 .lista-visibilidade-control { position: relative; color: var(--text-on-dark); }
 .lista-visibilidade-control select { max-width: 7rem; border: 0; appearance: none; background: transparent; color: inherit; font: inherit; cursor: pointer; }
 .lista-visibilidade-control option { color: var(--text-primary); }
@@ -101,8 +103,13 @@
 .lista-arrastar:active { cursor: grabbing; }
 .lista-sem-livros { padding: 1.5rem; color: var(--text-secondary); font-size: .75rem; text-align: center; }
 
-.lista-sugestoes-secao { margin-top: 1rem; }
-.lista-sugestoes-secao h2 { margin-bottom: .6rem; }
+.lista-sugestoes-secao { margin-top: 1rem; padding: .9rem; border-radius: var(--radius-sm); background: var(--all-white); }
+.lista-sugestoes-cabecalho { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-bottom: .75rem; }
+.lista-sugestoes-secao h2 { color: var(--text-primary); font: 500 .95rem var(--font-secundary); }
+.lista-sugestoes-cabecalho p { margin-top: .2rem; color: var(--text-secondary); font-size: .68rem; }
+.lista-explorar-catalogo { display: inline-flex; align-items: center; justify-content: center; gap: .4rem; min-height: 2.25rem; padding: 0 .75rem; border-radius: 7px; background: var(--bg-cards); color: var(--text-on-dark); font-size: .7rem; font-weight: 700; white-space: nowrap; }
+.lista-explorar-catalogo svg { width: .95rem; }
+.lista-sugestoes-vazia { padding: .6rem 0; color: var(--text-secondary); font-size: .72rem; }
 .lista-sugestoes-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(145px, 1fr)); gap: .7rem; }
 .lista-sugestao { display: grid; gap: .5rem; min-width: 0; padding: .6rem; border-radius: 8px; background: var(--all-white); box-shadow: 0 .2rem .7rem var(--border-primary); }
 .lista-sugestao a { align-items: flex-start; gap: .5rem; min-width: 0; color: var(--text-primary); }
@@ -135,6 +142,25 @@
 .lista-confirmar-modal footer button { padding: .45rem .65rem; border-radius: 6px; color: var(--text-title); font-size: .7rem; }
 .lista-confirmar-modal #confirmarRemocao { background: var(--danger); color: var(--text-on-dark); }
 
+.lista-editar-modal { width: min(520px, 92vw); max-height: min(90vh, 44rem); margin: auto; padding: 0; overflow: auto; border: 0; border-radius: var(--radius-md); background: var(--bg-primary); color: var(--text-primary); box-shadow: var(--shadow-elevated); }
+.lista-editar-modal::backdrop { background: var(--overlay-dark); }
+.lista-editar-form { display: grid; gap: .55rem; padding: 1.35rem; }
+.lista-editar-form > header { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; margin-bottom: .4rem; }
+.lista-editar-eyebrow { color: var(--color-accent); font-size: .62rem; font-weight: 700; }
+.lista-editar-form h2 { margin-top: .2rem; color: var(--text-title); font: 500 1.25rem var(--font-secundary); }
+.lista-modal-fechar { display: grid; width: 2rem; aspect-ratio: 1; place-items: center; border-radius: 50%; color: var(--text-secondary); }
+.lista-modal-fechar svg { width: 1.1rem; }
+.lista-editar-form > label { margin-top: .35rem; color: var(--text-secondary); font-size: .72rem; font-weight: 700; }
+.lista-editar-form input,
+.lista-editar-form textarea,
+.lista-editar-form select { width: 100%; min-height: 2.6rem; padding: .6rem .7rem; border: 1px solid var(--border-primary); border-radius: 7px; background: var(--all-white); color: var(--text-primary); font: inherit; font-size: .75rem; }
+.lista-editar-form textarea { min-height: 5rem; resize: vertical; }
+.lista-editar-status { min-height: 1.1rem; color: var(--danger); font-size: .68rem; }
+.lista-editar-form > footer { display: flex; justify-content: flex-end; gap: .5rem; margin-top: .25rem; }
+.lista-editar-form > footer button { min-height: 2.4rem; padding: 0 .8rem; border-radius: 7px; font-size: .72rem; font-weight: 700; }
+.lista-editar-cancelar { color: var(--text-secondary); }
+.lista-editar-salvar { background: var(--bg-cards); color: var(--text-on-dark); }
+
 @media (max-width: 680px) {
     .lista-detalhe-page { width: min(100% - 1rem, 40rem); padding-top: .6rem; }
     .lista-detalhe-hero { grid-template-columns: 7rem minmax(0, 1fr); gap: .75rem; min-height: 0; padding: .7rem; }
@@ -145,4 +171,6 @@
     .lista-livro-row { min-width: 650px; }
     .lista-livros-secao { overflow-x: auto; }
     .lista-sugestoes-grid { grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); }
+    .lista-sugestoes-cabecalho { align-items: flex-start; flex-direction: column; }
+    .lista-explorar-catalogo { width: 100%; }
 }

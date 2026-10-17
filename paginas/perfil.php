@@ -51,6 +51,8 @@
     <link rel="stylesheet" href="/TCC-Nook/front-end/css/main.css">
     <link rel="stylesheet" href="/TCC-Nook/front-end/css/pages/perfil.css">
     <link rel="stylesheet" href="/TCC-Nook/front-end/css/pages/header-perfil.css">
+    <link rel="stylesheet" href="/TCC-Nook/front-end/css/pages/perfil-livros.css">
+    <link rel="stylesheet" href="/TCC-Nook/front-end/css/pages/perfil-listas.css">
     <link rel="stylesheet" href="/TCC-Nook/front-end/css/pages/visão-geral.css">
 
     <link rel="preconnect" href="https://fonts.googleapis.com">

@@ -16,8 +16,45 @@ if (($id_livro === null || $id_livro === '') && ($google_books_id === null || $g
 
 $id_user = $_SESSION['id_user'];
 $info = [];
+$dados_google = null;
 $categorias_google = [];
 $livro = null;
+$abrirResenhaInicial = ($_GET['abrir_resenha'] ?? '') === '1';
+
+function consultarVolumeGoogleBooks(string $googleId, string $apiKey): ?array
+{
+    if (!function_exists('curl_init')) {
+        return null;
+    }
+
+    $url = 'https://www.googleapis.com/books/v1/volumes/' . rawurlencode($googleId);
+    if ($apiKey !== '') {
+        $url .= '?' . http_build_query(['key' => $apiKey]);
+    }
+
+    $curl = curl_init($url);
+    configurarCurlGoogleBooks($curl);
+    curl_setopt_array($curl, [
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_TIMEOUT => 10,
+        CURLOPT_USERAGENT => 'Nook/1.0'
+    ]);
+    $response = curl_exec($curl);
+    $httpStatus = curl_getinfo($curl, CURLINFO_HTTP_CODE);
+    curl_close($curl);
+
+    if ($response === false || $httpStatus !== 200) {
+        return null;
+    }
+
+    try {
+        $data = json_decode($response, true, 512, JSON_THROW_ON_ERROR);
+    } catch (JsonException $error) {
+        return null;
+    }
+
+    return is_array($data) && !empty($data['volumeInfo']) ? $data : null;
+}
 
 require_once __DIR__ . '/conexao.php';
 $db = new Database();
@@ -118,39 +155,10 @@ if($id_livro === null && $google_books_id !== null){
         //puxar da API e cadastrar no banco
         require_once __DIR__ . '/config_api_ex.php';
 
-        $parametros_api = $chave_api !== '' ? ['key' => $chave_api] : [];
-        $url = 'https://www.googleapis.com/books/v1/volumes/' . rawurlencode($google_books_id);
-        if ($parametros_api) {
-            $url .= '?' . http_build_query($parametros_api);
-        }
-
-        $ch = curl_init($url);
-        curl_setopt_array($ch, [
-            CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_TIMEOUT => 10,
-            CURLOPT_USERAGENT => 'Nook/1.0'
-        ]);
-        $resposta = curl_exec($ch);
-
-        if ($resposta === false) {
-            curl_close($ch);
+        $dados_google = consultarVolumeGoogleBooks((string) $google_books_id, $chave_api);
+        if ($dados_google === null) {
             http_response_code(502);
-            exit('Não foi possível consultar a Google Books API.');
-        }
-
-        $codigo_http = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        curl_close($ch);
-
-        try {
-            $dados_google = json_decode($resposta, true, 512, JSON_THROW_ON_ERROR);
-        } catch (JsonException $erro) {
-            http_response_code(502);
-            exit('A Google Books API retornou uma resposta inválida.');
-        }
-
-        if ($codigo_http !== 200 || empty($dados_google['volumeInfo'])) {
-            http_response_code($codigo_http === 404 ? 404 : 502);
-            exit('Livro não encontrado na Google Books.');
+            exit('Não foi possível carregar este livro do Google Books agora.');
         }
 
         $info = $dados_google['volumeInfo'];
@@ -170,11 +178,12 @@ if($id_livro === null && $google_books_id !== null){
             }
         }
 
-        $titulo = $info['title'] ?? 'sem titulo';
+        $titulo = mb_substr($info['title'] ?? 'sem titulo', 0, 100);
+        $subtitulo = $info['subtitle'] ?? null;
 
         $autor = null;
         if(isset($info['authors'])){
-            $autor = implode(', ', $info['authors']);
+            $autor = mb_substr(implode(', ', $info['authors']), 0, 100);
         }
 
         $sinopse = $info['description'] ?? null;
@@ -184,8 +193,11 @@ if($id_livro === null && $google_books_id !== null){
         $qtd_avaliacoes = $info['ratingsCount'] ?? null;    
 
         $capa = null;
-        if(isset($info['imageLinks']['thumbnail'])){
-            $capa = $info['imageLinks']['thumbnail'];
+        foreach (['extraLarge', 'large', 'medium', 'thumbnail', 'smallThumbnail'] as $tamanhoCapa) {
+            if (!empty($info['imageLinks'][$tamanhoCapa])) {
+                $capa = preg_replace('/^http:/i', 'https:', $info['imageLinks'][$tamanhoCapa]);
+                break;
+            }
         }
 
         $data_publi = null;
@@ -204,7 +216,7 @@ if($id_livro === null && $google_books_id !== null){
         }
         
 
-        $class_ind = null;
+        $class_ind = 0;
         if(isset($info['maturityRating'])){
             switch($info['maturityRating']){
                 case 'NOT_MATURE':
@@ -214,7 +226,7 @@ if($id_livro === null && $google_books_id !== null){
                     $class_ind = 18;
                     break;
                 default:
-                    $class_ind = null;
+                    $class_ind = 0;
                     break;
             }
         }
@@ -222,13 +234,17 @@ if($id_livro === null && $google_books_id !== null){
         $access = $dados_google['accessInfo'] ?? [];
         $sale = $dados_google['saleInfo'] ?? [];
 
-        $link_leitura = null;
         $tipo_acesso = $access['accessViewStatus'] ?? null;
-
-        // verifica se existe alguma forma de leitura/prévia
-        if($tipo_acesso === 'FULL_READING' || $tipo_acesso === 'PARTIAL'){
-            $link_leitura = $access['webReaderLink'] ?? null;
-        }
+        $pdfUrl = $access['pdf']['downloadLink'] ?? null;
+        $pdfDisponivel = !empty($access['pdf']['isAvailable'])
+            && is_string($pdfUrl)
+            && filter_var($pdfUrl, FILTER_VALIDATE_URL)
+            && str_starts_with($pdfUrl, 'https://');
+        $link_leitura = $pdfDisponivel
+            ? $pdfUrl
+            : (in_array($tipo_acesso, ['FULL_READING', 'FULL_PUBLIC_DOMAIN', 'PARTIAL', 'SAMPLE'], true)
+                ? ($access['webReaderLink'] ?? $info['previewLink'] ?? null)
+                : null);
 
         $link_compra = $sale['buyLink'] ?? null;
 
@@ -249,7 +265,6 @@ if($id_livro === null && $google_books_id !== null){
                     link_leitura,
                     link_compra,
                     nota_google,
-                    avaliacoes_google,
                     paginas,
                     isbn10,
                     isbn13
@@ -271,7 +286,6 @@ if($id_livro === null && $google_books_id !== null){
                     :link_leitura,
                     :link_compra,
                     :nota_google,
-                    :avaliacoes_google,
                     :paginas,
                     :isbn10,
                     :isbn13
@@ -281,7 +295,7 @@ if($id_livro === null && $google_books_id !== null){
             $stmt = $conn->prepare($insert_livro);
             $stmt->execute([
                 ':titulo_livro' => $titulo,
-                ':resumo_livro' => null,
+                ':resumo_livro' => $subtitulo,
                 ':class_ind' => $class_ind,
                 ':nome_autor' => $autor,
                 ':sinopse_livro' => $sinopse,
@@ -292,7 +306,6 @@ if($id_livro === null && $google_books_id !== null){
                 ':link_leitura' => $link_leitura,
                 ':link_compra' => $link_compra,
                 ':nota_google' => $nota,
-                ':avaliacoes_google' => $qtd_avaliacoes,
                 ':paginas' => $paginas,
                 ':isbn10' => $isbn10,
                 ':isbn13' => $isbn13
@@ -315,6 +328,20 @@ if($id_livro === null && $google_books_id !== null){
     }
 }
 
+if ($livro && !empty($livro['google_books_id']) && !$info) {
+    require_once __DIR__ . '/config_api_ex.php';
+    $dados_google = consultarVolumeGoogleBooks((string) $livro['google_books_id'], $chave_api);
+    if ($dados_google !== null) {
+        $info = $dados_google['volumeInfo'] ?? [];
+        $categorias_google = $info['categories'] ?? [];
+    }
+}
+
+if (!empty($info['description'])) {
+    $info['description'] = preg_replace('/<br\s*\/?\s*>|<\/p>/i', "\n", $info['description']);
+    $info['description'] = trim(html_entity_decode(strip_tags($info['description']), ENT_QUOTES | ENT_HTML5, 'UTF-8'));
+}
+
 if ($categorias_google) {
     relacionarGeneros($conn, $id_livro, $categorias_google);
 }
@@ -327,6 +354,7 @@ if (!$livro) {
 $stmt = $conn->prepare('SELECT p.nome_preferencia FROM preferencia p INNER JOIN preferencia_livro pl ON pl.id_preferencia = p.id_preferencia WHERE pl.id_livro = :id_livro ORDER BY p.nome_preferencia');
 $stmt->execute([':id_livro' => $id_livro]);
 $generos = $stmt->fetchAll(PDO::FETCH_COLUMN);
+$generosExibidos = $generos ?: ($info['categories'] ?? []);
 
 $stmt = $conn->prepare("SELECT r.id_resenha, r.titulo_resenha, r.sinopse, r.data_publi, u.username, conta.foto_perfil_url, c.nota_avaliacao FROM resenha r INNER JOIN usuario u ON u.id_user = r.id_user LEFT JOIN conta ON conta.id_user = u.id_user LEFT JOIN comentario c ON c.id_coisocurtido = r.id_resenha AND c.categoria_curtida = 'resenha' WHERE r.id_livro = :id_livro AND r.visibilidade = 'publico' ORDER BY r.data_publi DESC");
 $stmt->execute([':id_livro' => $id_livro]);
@@ -343,18 +371,60 @@ $comentarios = $stmt->fetchAll(PDO::FETCH_ASSOC);
 $stmt = $conn->prepare('SELECT id, nome_lista FROM whishlist WHERE id_user = :id_user ORDER BY data_criacao DESC');
 $stmt->execute([':id_user' => $id_user]);
 $listas = $stmt->fetchAll(PDO::FETCH_ASSOC);
+$idListaParaAdicionar = filter_var($_GET['adicionar_a_lista'] ?? null, FILTER_VALIDATE_INT);
+if ($idListaParaAdicionar === false || !in_array($idListaParaAdicionar, array_map('intval', array_column($listas, 'id')), true)) {
+    $idListaParaAdicionar = null;
+}
 
 $stmt = $conn->prepare('SELECT EXISTS (SELECT 1 FROM livros_lidos WHERE id_user = :id_user AND id_livro = :id_livro)');
 $stmt->execute([':id_user' => $id_user, ':id_livro' => $id_livro]);
 $jaLido = $stmt->fetchColumn();
 
-$notaMedia = (float) ($avaliacao['media'] ?? 0);
-$quantidadeAvaliacoes = (int) ($avaliacao['quantidade'] ?? 0);
-$temLeitura = ($livro['origem'] ?? '') === 'interna' || !empty($livro['link_leitura']);
-$urlLeitura = ($livro['origem'] ?? '') === 'interna'
+$accessInfo = $dados_google['accessInfo'] ?? [];
+$accessStatus = $accessInfo['accessViewStatus'] ?? null;
+$pdfUrl = $accessInfo['pdf']['downloadLink'] ?? null;
+$pdfDisponivel = !empty($accessInfo['pdf']['isAvailable'])
+    && is_string($pdfUrl)
+    && filter_var($pdfUrl, FILTER_VALIDATE_URL)
+    && str_starts_with($pdfUrl, 'https://');
+$readerUrl = $accessInfo['webReaderLink'] ?? $info['previewLink'] ?? null;
+$preVisualizacaoDisponivel = in_array($accessStatus, ['FULL_READING', 'FULL_PUBLIC_DOMAIN', 'PARTIAL', 'SAMPLE'], true) && !empty($readerUrl);
+$urlLeituraSalva = $dados_google === null ? ($livro['link_leitura'] ?? null) : null;
+$ehLivroInterno = ($livro['origem'] ?? '') === 'interna';
+$temLeitura = $ehLivroInterno || $pdfDisponivel || $preVisualizacaoDisponivel || !empty($urlLeituraSalva);
+$urlLeitura = $ehLivroInterno
     ? 'ler_livro.php?id_livro=' . urlencode((string) $id_livro)
-    : ($livro['link_leitura'] ?? '');
-$dataPublicacao = !empty($livro['data_publi']) ? (new DateTime($livro['data_publi']))->format('d/m/Y') : 'Não informado';
+    : ($pdfDisponivel ? $pdfUrl : ($preVisualizacaoDisponivel ? $readerUrl : $urlLeituraSalva));
+$rotuloLeitura = $ehLivroInterno
+    ? 'Ler agora'
+    : ($pdfDisponivel ? 'Ler PDF' : (in_array($accessStatus, ['FULL_READING', 'FULL_PUBLIC_DOMAIN'], true) ? 'Ler no Google Books' : ($urlLeituraSalva ? 'Abrir leitura' : 'Ler prévia no Google Books')));
+$autoresExibidos = !empty($info['authors']) ? implode(', ', $info['authors']) : ($livro['nome_autor'] ?? '');
+$descricaoExibida = $info['description'] ?? $livro['sinopse_livro'] ?? $livro['resumo_livro'] ?? '';
+$subtituloExibido = $info['subtitle'] ?? $livro['resumo_livro'] ?? '';
+$editora = $info['publisher'] ?? '';
+$imagemApi = $info['imageLinks']['extraLarge'] ?? $info['imageLinks']['large'] ?? $info['imageLinks']['medium'] ?? $info['imageLinks']['thumbnail'] ?? null;
+$imagemApi = $imagemApi ? preg_replace('/^http:/i', 'https:', $imagemApi) : null;
+$capaExibida = $livro['capa_url'] ?: $imagemApi;
+$paginasExibidas = $livro['paginas'] ?: ($info['pageCount'] ?? null);
+$idiomaExibido = $livro['idioma'] ?: ($info['language'] ?? null);
+$identificadoresGoogle = $info['industryIdentifiers'] ?? [];
+$isbn10Exibido = $livro['isbn10'] ?? null;
+$isbn13Exibido = $livro['isbn13'] ?? null;
+foreach ($identificadoresGoogle as $identificadorGoogle) {
+    if (($identificadorGoogle['type'] ?? '') === 'ISBN_10') $isbn10Exibido = $identificadorGoogle['identifier'] ?? $isbn10Exibido;
+    if (($identificadorGoogle['type'] ?? '') === 'ISBN_13') $isbn13Exibido = $identificadorGoogle['identifier'] ?? $isbn13Exibido;
+}
+$notaMedia = (float) ($avaliacao['media'] ?? $info['averageRating'] ?? 0);
+$quantidadeAvaliacoes = (int) (($avaliacao['quantidade'] ?? 0) ?: ($info['ratingsCount'] ?? 0));
+$linkCompra = $dados_google['saleInfo']['buyLink'] ?? $livro['link_compra'] ?? null;
+$linkInformacoesGoogle = $info['infoLink'] ?? null;
+$categoriasGoogleTexto = implode(', ', $info['categories'] ?? []);
+$statusLeitura = $pdfDisponivel
+    ? 'PDF disponível para leitura'
+    : (in_array($accessStatus, ['FULL_READING', 'FULL_PUBLIC_DOMAIN'], true) ? 'Leitura integral no Google Books' : ($preVisualizacaoDisponivel ? 'Prévia disponível no Google Books' : 'Acesso digital não informado'));
+$dataPublicacao = !empty($livro['data_publi'])
+    ? (new DateTime($livro['data_publi']))->format('d/m/Y')
+    : ($info['publishedDate'] ?? 'Não informado');
 $esc = static fn($valor) => htmlspecialchars((string) ($valor ?? ''), ENT_QUOTES, 'UTF-8');
 $estrelasMedia = str_repeat('★', (int) round($notaMedia)) . str_repeat('☆', 5 - (int) round($notaMedia));
 ?>
@@ -380,8 +450,8 @@ $estrelasMedia = str_repeat('★', (int) round($notaMedia)) . str_repeat('☆', 
 
     <section class="book-hero">
         <div class="book-cover-wrap">
-            <?php if (!empty($livro['capa_url'])): ?>
-                <img class="book-cover" src="<?= $esc($livro['capa_url']) ?>" alt="Capa de <?= $esc($livro['titulo_livro']) ?>">
+            <?php if (!empty($capaExibida)): ?>
+                <img class="book-cover" src="<?= $esc($capaExibida) ?>" alt="Capa de <?= $esc($livro['titulo_livro']) ?>">
             <?php else: ?>
                 <div class="book-cover book-cover-empty">Capa não disponível</div>
             <?php endif; ?>
@@ -390,7 +460,8 @@ $estrelasMedia = str_repeat('★', (int) round($notaMedia)) . str_repeat('☆', 
         <div class="book-summary">
             <p class="book-eyebrow">Livro</p>
             <h1><?= $esc($livro['titulo_livro']) ?></h1>
-            <p class="book-author"><?= $esc($livro['nome_autor'] ?: 'Autor não informado') ?></p>
+            <?php if ($subtituloExibido !== ''): ?><p class="book-subtitle"><?= $esc($subtituloExibido) ?></p><?php endif; ?>
+            <p class="book-author"><?= $esc($autoresExibidos ?: 'Autor não informado') ?></p>
 
             <div class="book-rating" aria-label="Nota média <?= number_format($notaMedia, 1, ',', '.') ?> de 5">
                 <span class="star-display"><?= $esc($estrelasMedia) ?></span>
@@ -398,17 +469,18 @@ $estrelasMedia = str_repeat('★', (int) round($notaMedia)) . str_repeat('☆', 
                 <span><?= $quantidadeAvaliacoes ?> <?= $quantidadeAvaliacoes === 1 ? 'resenha' : 'resenhas' ?></span>
             </div>
 
-            <?php if (!empty($livro['sinopse_livro'])): ?>
-                <p class="book-synopsis"><?= nl2br($esc($livro['sinopse_livro'])) ?></p>
+            <?php if (!empty($descricaoExibida)): ?>
+                <p class="book-synopsis"><?= nl2br($esc($descricaoExibida)) ?></p>
             <?php endif; ?>
 
             <div class="book-actions">
                 <?php if ($temLeitura): ?>
-                    <a class="book-action book-action-primary" href="<?= $esc($urlLeitura) ?>" <?= ($livro['origem'] ?? '') !== 'interna' ? 'target="_blank" rel="noopener noreferrer"' : '' ?>>
-                        <i data-lucide="book-open"></i> Ler agora
+                    <a class="book-action book-action-primary" href="<?= $esc($urlLeitura) ?>" <?= !$ehLivroInterno ? 'target="_blank" rel="noopener noreferrer"' : '' ?>>
+                        <i data-lucide="<?= $pdfDisponivel ? 'file-down' : 'book-open' ?>"></i> <?= $esc($rotuloLeitura) ?>
                     </a>
+                    <?php if ($linkCompra): ?><a class="book-action book-action-quiet" href="<?= $esc($linkCompra) ?>" target="_blank" rel="noopener noreferrer"><i data-lucide="shopping-bag"></i> Comprar</a><?php endif; ?>
                 <?php else: ?>
-                    <a class="book-action book-action-primary" href="https://www.google.com/search?tbm=shop&amp;q=<?= rawurlencode($livro['titulo_livro'] . ' ' . ($livro['nome_autor'] ?? '')) ?>" target="_blank" rel="noopener noreferrer">
+                    <a class="book-action book-action-primary" href="<?= $esc($linkCompra ?: 'https://www.google.com/search?tbm=shop&q=' . rawurlencode($livro['titulo_livro'] . ' ' . ($autoresExibidos ?: ''))) ?>" target="_blank" rel="noopener noreferrer">
                         <i data-lucide="shopping-bag"></i> Opções de compra
                     </a>
                 <?php endif; ?>
@@ -491,7 +563,7 @@ $estrelasMedia = str_repeat('★', (int) round($notaMedia)) . str_repeat('☆', 
             <dl class="book-facts">
                 <div>
                     <dt>Número de páginas</dt>
-                    <dd><?= $esc($livro['paginas'] ?: 'Não informado') ?></dd>
+                    <dd><?= $esc($paginasExibidas ?: 'Não informado') ?></dd>
                 </div>
                 <div>
                     <dt>Publicado em</dt>
@@ -499,20 +571,22 @@ $estrelasMedia = str_repeat('★', (int) round($notaMedia)) . str_repeat('☆', 
                 </div>
                 <div>
                     <dt>Idioma original</dt>
-                    <dd><?= $esc($livro['idioma'] ?: 'Não informado') ?></dd>
+                    <dd><?= $esc($idiomaExibido ?: 'Não informado') ?></dd>
                 </div>
                 <div>
                     <dt>Classificação indicativa</dt>
                     <dd><?= $livro['class_ind'] !== null ? $esc($livro['class_ind']) . '+' : 'Não informada' ?></dd>
                 </div>
-                
                 <div>
                     <dt>Gêneros</dt>
-                    <dd><?= $esc($generos ? implode(', ', $generos) : 'Não informado') ?></dd>
+                    <dd><?= $esc($generosExibidos ? implode(', ', $generosExibidos) : 'Não informado') ?></dd>
                 </div>
-                
-                <?php if ($livro['nota_google'] !== null): ?>
-                    <div><dt>Avaliação Google Books</dt><dd><?= $esc($livro['nota_google']) ?> / 5 (<?= $esc($livro['avaliacoes_google'] ?? 0) ?> avaliações)</dd></div>
+                <?php if ($editora !== ''): ?><div><dt>Editora</dt><dd><?= $esc($editora) ?></dd></div><?php endif; ?>
+                <?php if ($isbn10Exibido): ?><div><dt>ISBN-10</dt><dd><?= $esc($isbn10Exibido) ?></dd></div><?php endif; ?>
+                <?php if ($isbn13Exibido): ?><div><dt>ISBN-13</dt><dd><?= $esc($isbn13Exibido) ?></dd></div><?php endif; ?>
+                <?php if (!empty($livro['google_books_id'])): ?><div><dt>Acesso digital</dt><dd><?= $esc($statusLeitura) ?></dd></div><?php endif; ?>
+                <?php if ($livro['nota_google'] !== null || isset($info['averageRating'])): ?>
+                    <div><dt>Avaliação Google Books</dt><dd><?= $esc($livro['nota_google'] ?? $info['averageRating']) ?> / 5 (<?= (int) ($info['ratingsCount'] ?? 0) ?> avaliações)</dd></div>
                 <?php endif; ?>
                 <?php if (!empty($livro['google_books_id'])): ?>
                     <div><dt>Identificador Google Books</dt><dd><?= $esc($livro['google_books_id']) ?></dd></div>
@@ -521,12 +595,14 @@ $estrelasMedia = str_repeat('★', (int) round($notaMedia)) . str_repeat('☆', 
             <div class="book-text-details">
                 <article>
                     <h3><i data-lucide="book-open-check"></i> Sobre a obra</h3>
-                    <p><?= nl2br($esc($livro['resumo_livro'] ?: $livro['sinopse_livro'] ?: 'Sem descrição disponível.')) ?></p>
+                    <p><?= nl2br($esc($descricaoExibida ?: 'Sem descrição disponível.')) ?></p>
                 </article>
                 <article>
                     <h3><i data-lucide="user-round"></i> Sobre o autor</h3>
-                    <p><?= $esc($livro['nome_autor'] ?: 'Autor não informado') ?></p>
+                    <p><?= $esc($autoresExibidos ?: 'Autor não informado') ?></p>
                 </article>
+                <?php if ($categoriasGoogleTexto !== ''): ?><article><h3><i data-lucide="tags"></i> Categorias Google Books</h3><p><?= $esc($categoriasGoogleTexto) ?></p></article><?php endif; ?>
+                <?php if ($linkInformacoesGoogle): ?><a class="book-google-source" href="<?= $esc($linkInformacoesGoogle) ?>" target="_blank" rel="noopener noreferrer"><i data-lucide="external-link"></i> Ver ficha completa no Google Books</a><?php endif; ?>
             </div>
         </div>
     </section>
@@ -608,7 +684,7 @@ $estrelasMedia = str_repeat('★', (int) round($notaMedia)) . str_repeat('☆', 
             <?php if ($listas): ?>
                 <option value="">Escolha uma lista</option>
                 <?php foreach ($listas as $lista): ?>
-                    <option value="<?= $esc($lista['id']) ?>"><?= $esc($lista['nome_lista']) ?></option>
+                    <option value="<?= $esc($lista['id']) ?>" <?= (int) $lista['id'] === $idListaParaAdicionar ? 'selected' : '' ?>><?= $esc($lista['nome_lista']) ?></option>
                 <?php endforeach; ?>
             <?php else: ?>
                 <option value="">Você ainda não criou listas</option>
@@ -648,6 +724,8 @@ $estrelasMedia = str_repeat('★', (int) round($notaMedia)) . str_repeat('☆', 
     });
 
     const dialogs = [document.getElementById('reviewDialog'), document.getElementById('listDialog')];
+    if (<?= json_encode($abrirResenhaInicial) ?>) dialogs[0].showModal();
+    if (<?= json_encode($idListaParaAdicionar !== null) ?>) dialogs[1].showModal();
     document.querySelector('[data-abrir-resenha]').addEventListener('click', () => dialogs[0].showModal());
     document.querySelector('[data-abrir-listas]').addEventListener('click', () => {
         document.querySelector('.book-add-menu').hidden = true;

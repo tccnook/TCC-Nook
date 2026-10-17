@@ -1,17 +1,9 @@
 <?php
-    session_start();
-
-    require_once('conexao.php');
+    require_once __DIR__ . '/admin-auth.php';
+    require_once __DIR__ . '/conexao.php';
 
     $db = new Database();
     $conn = $db->conectar();
-
-    /*if(!isset($_SESSION['id_adm'])){
-        header('location:login_adm.php');
-        exit();
-    }
-
-    $id_adm = $_SESSION['id_adm'];*/
 
     $select_autores = "select * from autor order by id_autor;";
     $stmt = $conn->prepare($select_autores);
@@ -166,6 +158,7 @@
 <body>
     <main> <!--colocar em um modal dps-->
         <form action="#" method="POST" enctype="multipart/form-data">
+            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['admin_csrf_token'], ENT_QUOTES, 'UTF-8') ?>">
             <label for="nome_autor">Digite o nome do autor:</label><br>
             <input type="text" name="nome_autor" required><br>
             <label for="autor">Digite o @ do autor:</label><br>
@@ -206,7 +199,7 @@
                                     >Editar
                                 </button>
                             </td>
-                            <td><a href="excluir_autor.php?id_autor=<?= $autor['id_autor'] ?>">Excluir</a></td>
+                            <td><form action="excluir_autor.php" method="POST"><input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['admin_csrf_token'], ENT_QUOTES, 'UTF-8') ?>"><input type="hidden" name="id_autor" value="<?= (int) $autor['id_autor'] ?>"><button type="submit">Excluir</button></form></td>
                         </tr>
                     <?php endforeach ?>
                 </tbody>
@@ -218,6 +211,7 @@
                 X
             </button>
             <form action="#" method="POST" enctype="multipart/form-data">
+                <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['admin_csrf_token'], ENT_QUOTES, 'UTF-8') ?>">
                 <input type="hidden" name="id_autor" id="id_autor">
 
                 <img src="" alt="foto do autor" id="foto_atual_editar"><br><br>

@@ -75,6 +75,8 @@
     color: var(--text-secondary);
 }
 
+.book-subtitle { margin-top: .2rem; color: var(--text-secondary); font: italic .9rem var(--font-secundary); }
+
 .book-rating {
     flex-wrap: wrap;
     gap: .55rem;
@@ -127,6 +129,8 @@
     background: var(--color-accent);
     color: var(--text-on-dark);
 }
+
+.book-action-primary[target="_blank"] { background: var(--bg-cards); color: var(--text-on-dark); }
 
 .book-action-read {
     border-color: var(--border-primary);
@@ -428,6 +432,9 @@
     font-size: .8rem;
     line-height: 1.5;
 }
+
+.book-google-source { display: inline-flex; align-items: center; gap: .4rem; width: fit-content; padding: .55rem .7rem; border-radius: 7px; background: var(--bg-soft-strong); color: var(--text-title); font-size: .68rem; font-weight: 700; }
+.book-google-source svg { width: .85rem; }
 
 .book-comments {
     margin-top: 2rem;
