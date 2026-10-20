@@ -76,96 +76,52 @@
     }
 
     // Pesquisa na Google Books API.
+    
+    require_once('busca_api.php');
+
+    $resultado_google = buscarLivrosGoogle($nome);
+
     $livros_google = [];
 
-    if ($nome !== '') {
-        require_once('config_api.php');
+    if (!$resultado_google['erro']) {
+        foreach ($resultado_google['livros'] as $livro) {
 
-        $consulta_google = trim($nome);
+            $google_id = $livro['id'] ?? '';
 
-        $url = 'https://www.googleapis.com/books/v1/volumes?q='.urlencode($consulta_google).'&langRestrict=pt&maxResults=20&key='.urlencode($chave_api);
-            $ch = curl_init();
+            if ($google_id === '') {
+                continue;
+            }
 
-            curl_setopt_array($ch, [
-                CURLOPT_URL => $url,
-                CURLOPT_RETURNTRANSFER => true,
-                CURLOPT_CONNECTTIMEOUT => 5,
-                CURLOPT_TIMEOUT => 20
+            // Verifica se o livro já existe no NOOK.
+            $stmt_existente = $conn->prepare(
+                "SELECT id_livro
+                FROM livro
+                WHERE google_books_id = :google_id"
+            );
+
+            $stmt_existente->execute([
+                ':google_id' => $google_id
             ]);
 
-            $resposta = curl_exec($ch);
-            $erro_curl = curl_errno($ch);
-            $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            $id_existente = $stmt_existente->fetchColumn();
 
-            curl_close($ch);
-
-            if ($resposta !== false && $erro_curl === 0 && $http_code === 200) {
-                $dados_google = json_decode($resposta, true);
-
-                if (!empty($dados_google['items'])) {
-                    foreach ($dados_google['items'] as $item) {
-                        $info = $item['volumeInfo'] ?? [];
-                        $google_id = $item['id'] ?? '';
-
-                        if ($google_id === '') {
-                            continue;
-                        }
-
-                        // Verifica se este livro da API já existe no NOOK.
-                        $stmt_existente = $conn->prepare(
-                            "SELECT id_livro
-                            FROM livro
-                            WHERE google_books_id = :google_id"
-                        );
-
-                        $stmt_existente->execute([
-                            ':google_id' => $google_id
-                        ]);
-
-                        $id_existente = $stmt_existente->fetchColumn();
-
-                        // Se já estiver cadastrado, evita duplicar o resultado.
-                        if ($id_existente !== false) {
-                            if (in_array((int) $id_existente, $ids_locais, true)) {
-                                continue;
-                            }
-
-                            // Se necessário, o livro existente é tratado como local.
-                            $stmt_local = $conn->prepare(
-                                "SELECT id_livro, titulo_livro, nome_autor, capa_url
-                                FROM livro
-                                WHERE id_livro = :id"
-                            );
-
-                            $stmt_local->execute([':id' => $id_existente]);
-                            $livro_existente = $stmt_local->fetch(PDO::FETCH_ASSOC);
-
-                            if ($livro_existente) {
-                                $livros[] = $livro_existente;
-                                $ids_locais[] = (int) $id_existente;
-                            }
-
-                            continue;
-                        }
-
-                        $titulo = $info['title'] ?? 'Título indisponível';
-                        $autores = $info['authors'] ?? [];
-                        $autor = implode(', ', $autores);
-
-                        $capa = $info['imageLinks']['thumbnail'] ?? '';
-
-                        // Evita carregar a capa por HTTP quando houver HTTPS disponível.
-                        $capa = str_replace('http://', 'https://', $capa);
-
-                        $livros_google[] = [
-                            'google_books_id' => $google_id,
-                            'titulo_livro' => $titulo,
-                            'nome_autor' => $autor,
-                            'capa_url' => $capa
-                        ];
-                    }
-                }
+            // Se já estiver no banco, não exibe como resultado da API.
+            if ($id_existente !== false) {
+                continue;
             }
+
+            $info = $livro['volumeInfo'] ?? [];
+
+            $capa = $info['imageLinks']['thumbnail'] ?? '';
+            $capa = str_replace('http://', 'https://', $capa);
+
+            $livros_google[] = [
+                'google_books_id' => $google_id,
+                'titulo_livro' => $info['title'] ?? 'Título indisponível',
+                'nome_autor' => implode(', ', $info['authors'] ?? []),
+                'capa_url' => $capa
+            ];
+        }
     }
 
     // Exibe os livros do banco local.

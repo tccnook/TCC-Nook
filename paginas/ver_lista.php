@@ -47,6 +47,7 @@
         LEFT JOIN livro l
             ON l.id_livro = wb.id_livro
         WHERE w.id = :id
+        AND w.id_user = :id_user
         GROUP BY
             w.id,
             w.nome_lista,
@@ -57,8 +58,15 @@
             w.data_criacao";
 
         $stmt = $conn->prepare($select_lista);
-        $stmt->execute([':id' => $id_lista]);
+        $stmt->execute([
+            ':id' => $id_lista,
+            ':id_user' => $id_user
+        ]);
         $lista = $stmt->fetch(PDO::FETCH_ASSOC);
+        if (!$lista) {
+    header('Location: listas_livros.php');
+    exit;
+}
 
         $livros = json_decode($lista['livros'], true);
 
@@ -100,23 +108,40 @@
 
         $livros_parecidos = $stmt_parecidos->fetchAll(PDO::FETCH_ASSOC);
 
-        if (!isset($_SESSION['livros_lista'])) {
-            $select_livros_lista = "
-                SELECT id_livro
-                FROM whishbook
-                WHERE id_whishlist = :id_lista
-                AND id_user = :id_user
-                ORDER BY ordem;
-            ";
+        
+/*
+ * Carrega os livros do banco somente quando a sessão
+ * ainda não corresponde à lista que está sendo editada.
+ */
+if (
+    !isset($_SESSION['lista_edicao_id']) ||
+    (string) $_SESSION['lista_edicao_id'] !== (string) $id_lista
+) {
+    $select_livros_lista = "
+        SELECT id_livro
+        FROM whishbook
+        WHERE id_whishlist = :id_lista
+          AND id_user = :id_user
+        ORDER BY ordem
+    ";
 
-            $stmt = $conn->prepare($select_livros_lista);
-            $stmt->execute([
-                ':id_lista' => $id_lista,
-                ':id_user' => $id_user
-            ]);
+    $stmt = $conn->prepare($select_livros_lista);
+    $stmt->execute([
+        ':id_lista' => $id_lista,
+        ':id_user' => $id_user
+    ]);
 
-            $_SESSION['livros_lista'] = $stmt->fetchAll(PDO::FETCH_COLUMN);
-        }
+    $_SESSION['livros_lista'] = array_map(
+        fn($id) => [
+            'tipo' => 'local',
+            'id' => (string) $id
+        ],
+        $stmt->fetchAll(PDO::FETCH_COLUMN)
+    );
+
+    $_SESSION['lista_edicao_id'] = (string) $id_lista;
+}
+
 
         $visibilidade = $lista['visibilidade'];
         $tipo_capa = $lista['tipo_capa'];
@@ -135,7 +160,7 @@
             try {
                 $conn->beginTransaction();
 
-                $deleteLivros = "delete from whishbook where id_whishlist = :id_lista id_user = :id_user";
+                $deleteLivros = "delete from whishbook where id_whishlist = :id_lista and id_user = :id_user";
 
                 $stmt = $conn->prepare($deleteLivros);
                 $stmt->execute([
@@ -311,171 +336,235 @@
             modal.close();
         });
 
-        const formPesquisa = document.getElementById("form-pesquisa-livros");
-        const resultadosLivros = document.getElementById("resultados-livros");
+        document.addEventListener("DOMContentLoaded", function () {
+            const formPesquisa = document.getElementById("form-pesquisa-livros");
+            const campoPesquisa = formPesquisa
+                ? formPesquisa.querySelector('input[name="nome"]')
+                : null;
 
-        formPesquisa.addEventListener("submit", function (event) {
-            //impede o formulário de recarregar a página e fechar o modal
-            event.preventDefault();
+            const resultadosLivros = document.getElementById("resultados-livros");
+            const listaSelecionados = document.getElementById("lista-selecionados");
 
-            const nome = document.getElementById("nome-livro").value;
+            let requisicaoAtual = null;
 
-            resultadosLivros.innerHTML = "<p>Pesquisando...</p>";
+            // Exibe os livros selecionados na lista
+            function mostrarLivros(livros) {
+                if (!listaSelecionados) return;
 
-            fetch(
-                "pesquisa_livros_lista.php?nome=" +
-                encodeURIComponent(nome)
-            )
-            .then(response => response.text())
-            .then(html => {
-                // coloca os resultados da pesquisa na tela
-                resultadosLivros.innerHTML = html;
+                listaSelecionados.innerHTML = "";
 
-            })
-            .catch(error => {
+                if (!livros || livros.length === 0) {
+                    listaSelecionados.innerHTML =
+                        "<p>Nenhum livro selecionado.</p>";
+                    return;
+                }
 
-                console.error("Erro na pesquisa:", error);
+                livros.forEach(function (livro) {
+                    const tipo = livro.tipo || "local";
 
-                resultadosLivros.innerHTML =
-                    "<p>Erro ao pesquisar livros.</p>";
+                    const idLivro = tipo === "google"
+                        ? livro.google_books_id
+                        : livro.id_livro;
 
-            });
+                    const item = document.createElement("div");
+                    item.className = "livro-selecionado";
 
-        });
+                    const imagem = document.createElement("img");
+                    imagem.src = livro.capa_url || "";
+                    imagem.alt = "Capa do livro";
+                    imagem.width = 100;
 
-        // função para mostrar livros escolhidos
+                    const titulo = document.createElement("strong");
+                    titulo.textContent = livro.titulo_livro || "Título indisponível";
 
-        function mostrarLivros(livros) {
+                    const autor = document.createElement("span");
+                    autor.textContent = livro.nome_autor || "Autor desconhecido";
 
-            const container = document.getElementById("lista-selecionados");
-            container.innerHTML = "";
+                    const botaoRemover = document.createElement("button");
+                    botaoRemover.type = "button";
+                    botaoRemover.className = "btn-remover";
+                    botaoRemover.dataset.id = idLivro;
+                    botaoRemover.dataset.tipo = tipo;
+                    botaoRemover.textContent = "X";
+                    botaoRemover.setAttribute("aria-label", "Remover livro");
 
-            livros.forEach(function (livro) {
+                    item.append(imagem, titulo, autor, botaoRemover);
+                    listaSelecionados.appendChild(item);
+                });
+            }
 
-                container.innerHTML += `
-                    <div class="livro-selecionado">
+            // Pesquisa livros locais e do Google Books
+            async function pesquisarLivros(nome) {
+                if (!resultadosLivros) return;
 
-                        <img src="${livro.capa_url}" width="100">
+                if (requisicaoAtual) {
+                    requisicaoAtual.abort();
+                }
 
-                        <strong>
-                            ${livro.titulo_livro}
-                        </strong>
+                requisicaoAtual = new AbortController();
 
-                        <span>
-                            ${livro.nome_autor}
-                        </span>
+                if (!nome.trim()) {
+                    resultadosLivros.innerHTML = "";
+                    return;
+                }
 
-                        <button type="button" class="btn-remover" data-id="${livro.id_livro}">
-                            X
-                        </button>
+                resultadosLivros.innerHTML = "<p>Procurando livros, aguarde...</p>";
 
-                    </div>
-                `;
+                try {
+                    const resposta = await fetch(
+                        "pesquisa_livros_lista.php?nome=" +
+                            encodeURIComponent(nome),
+                        {
+                            signal: requisicaoAtual.signal
+                        }
+                    );
 
-            });
+                    if (!resposta.ok) {
+                        throw new Error("Falha ao pesquisar os livros.");
+                    }
 
-            // remove livros
+                    const html = await resposta.text();
+                    resultadosLivros.innerHTML = html;
+                } catch (erro) {
+                    if (erro.name === "AbortError") return;
 
-            document
-                .querySelectorAll(".btn-remover")
-                .forEach(function (botao) {
+                    console.error("Erro na pesquisa:", erro);
+                    resultadosLivros.innerHTML =
+                        "<p>Não foi possível pesquisar os livros. Tente novamente.</p>";
+                }
+            }
 
-                    botao.addEventListener("click", function () {
+            // Impede o envio tradicional do formulário de pesquisa
+            if (formPesquisa) {
+                formPesquisa.addEventListener("submit", function (event) {
+                    event.preventDefault();
 
-                        const idLivro = this.dataset.id;
+                    if (campoPesquisa) {
+                        pesquisarLivros(campoPesquisa.value);
+                    }
+                });
+            }
 
-                        fetch("processar_livros_lista.php", {
+            // Atualiza a busca enquanto o usuário digita
+            if (campoPesquisa) {
+                campoPesquisa.addEventListener("input", function () {
+                    pesquisarLivros(campoPesquisa.value);
+                });
+            }
 
+            // Adiciona livros aos selecionados
+            if (resultadosLivros) {
+                resultadosLivros.addEventListener("click", async function (event) {
+                    const botao = event.target.closest(".btn-adicionar");
+
+                    if (!botao) return;
+
+                    const tipo = botao.dataset.tipo || "local";
+                    const idLivro = botao.dataset.id;
+
+                    if (!idLivro) return;
+
+                    botao.disabled = true;
+
+                    try {
+                        const dados = new URLSearchParams({
+                            acao: "adicionar",
+                            tipo: tipo,
+                            ...(tipo === "google"
+                                ? { google_books_id: idLivro }
+                                : { id_livro: idLivro })
+                        });
+
+                        const resposta = await fetch("processar_livros_lista.php", {
                             method: "POST",
-
                             headers: {
                                 "Content-Type":
                                     "application/x-www-form-urlencoded"
                             },
-
-                            body:
-                                "acao=remover&id_livro=" +
-                                encodeURIComponent(idLivro)
-
-                        })
-
-                        .then(response => response.json())
-
-                        .then(data => {
-
-                            if (data.sucesso) {
-
-                                console.log("Livro removido!");
-
-                                mostrarLivros(data.livros);
-
-                            }
-
-                        })
-
-                        .catch(error => {
-
-                            console.error("Erro:", error);
-
+                            body: dados
                         });
 
-                    });
+                        if (!resposta.ok) {
+                            throw new Error("Falha ao adicionar o livro.");
+                        }
 
-                });
+                        const resultado = await resposta.json();
 
-        }
+                        if (resultado.sucesso) {
+                            mostrarLivros(resultado.livros);
 
-        // adiciona livros
+                            // Remove o livro dos resultados exibidos
+                            const resultadoLivro = botao.closest("section");
 
-        resultadosLivros.addEventListener("click", function (event) {
-
-            if (event.target.classList.contains("btn-adicionar")) {
-
-                const botao = event.target;
-
-                const idLivro = botao.dataset.id;
-
-                fetch("processar_livros_lista.php", {
-
-                    method: "POST",
-
-                    headers: {
-                        "Content-Type":
-                            "application/x-www-form-urlencoded"
-                    },
-
-                    body:
-                        "acao=adicionar&id_livro=" +
-                        encodeURIComponent(idLivro)
-
-                })
-
-                .then(response => response.json())
-
-                .then(data => {
-
-                    if (data.sucesso) {
-
-                        console.log("Livro adicionado!");
-
-                        console.log(data.livros);
-
-                        mostrarLivros(data.livros);
-
+                            if (resultadoLivro) {
+                                resultadoLivro.remove();
+                            } else {
+                                botao.remove();
+                            }
+                        } else {
+                            alert(resultado.mensagem || "Não foi possível adicionar o livro.");
+                            botao.disabled = false;
+                        }
+                    } catch (erro) {
+                        console.error("Erro ao adicionar livro:", erro);
+                        alert("Ocorreu um erro ao adicionar o livro.");
+                        botao.disabled = false;
                     }
-
-                })
-
-                .catch(error => {
-
-                    console.error("Erro:", error);
-
                 });
-
             }
 
-        });
+            // Remove livros selecionados
+            if (listaSelecionados) {
+                listaSelecionados.addEventListener("click", async function (event) {
+                    const botao = event.target.closest(".btn-remover");
 
+                    if (!botao) return;
+
+                    const tipo = botao.dataset.tipo || "local";
+                    const idLivro = botao.dataset.id;
+
+                    if (!idLivro) return;
+
+                    botao.disabled = true;
+
+                    try {
+                        const dados = new URLSearchParams({
+                            acao: "remover",
+                            tipo: tipo,
+                            ...(tipo === "google"
+                                ? { google_books_id: idLivro }
+                                : { id_livro: idLivro })
+                        });
+
+                        const resposta = await fetch("processar_livros_lista.php", {
+                            method: "POST",
+                            headers: {
+                                "Content-Type":
+                                    "application/x-www-form-urlencoded"
+                            },
+                            body: dados
+                        });
+
+                        if (!resposta.ok) {
+                            throw new Error("Falha ao remover o livro.");
+                        }
+
+                        const resultado = await resposta.json();
+
+                        if (resultado.sucesso) {
+                            mostrarLivros(resultado.livros);
+                        } else {
+                            alert(resultado.mensagem || "Não foi possível remover o livro.");
+                            botao.disabled = false;
+                        }
+                    } catch (erro) {
+                        console.error("Erro ao remover livro:", erro);
+                        alert("Ocorreu um erro ao remover o livro.");
+                        botao.disabled = false;
+                    }
+                });
+            }
+        });
     </script>
 </body>
 </html>

@@ -4,6 +4,10 @@ require_once('conexao.php');
 
 session_start();
 
+if(isset($_SESSION['id_user'])){
+    header('location: reset.php');
+}
+
             class parametroBusca {
                 private $email;
                 private $senha;
