@@ -13,6 +13,9 @@ require_once('conexao.php');
 
 $db = new Database;
 $conn = $db->conectar();
+require_once __DIR__ . '/schema_support.php';
+require_once __DIR__ . '/category_images.php';
+$schema = schemaProjeto($conn);
 
 $id_lista_contexto = filter_var($_GET['lista'] ?? null, FILTER_VALIDATE_INT);
 $lista_contexto = null;
@@ -30,7 +33,7 @@ if ($id_lista_contexto !== false && $id_lista_contexto > 0) {
 // busa dos generos disponiveis para filtrar
 
 $select_generos = "
-select id_preferencia, nome_preferencia
+select id_preferencia, nome_preferencia, preferencia
 from preferencia
 order by nome_preferencia";
 
@@ -56,8 +59,13 @@ $stmt = $conn->prepare("SELECT l.id_livro, l.titulo_livro, l.nome_autor, l.capa_
 $stmt->execute([':id_user' => $id_user]);
 $livros_lidos = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-$stmt = $conn->prepare("SELECT a.id_autor, a.nome_autor, a.autor, a.foto_url, COUNT(DISTINCT fa.id_follower) AS seguidores FROM autor a LEFT JOIN follow_autor fa ON fa.id_autor = a.id_autor WHERE NOT EXISTS (SELECT 1 FROM follow_autor proprio WHERE proprio.id_follower = :id_user AND proprio.id_autor = a.id_autor) GROUP BY a.id_autor, a.nome_autor, a.autor, a.foto_url ORDER BY seguidores DESC, a.nome_autor ASC LIMIT 8");
-$stmt->execute([':id_user' => $id_user]);
+$temSeguidoresAutor = isset($schema['follow_autor']);
+if ($temSeguidoresAutor) {
+    $stmt = $conn->prepare("SELECT a.id_autor, a.nome_autor, a.autor, a.foto_url, COUNT(DISTINCT fa.id_follower) AS seguidores FROM autor a LEFT JOIN follow_autor fa ON fa.id_autor = a.id_autor WHERE NOT EXISTS (SELECT 1 FROM follow_autor proprio WHERE proprio.id_follower = :id_user AND proprio.id_autor = a.id_autor) GROUP BY a.id_autor, a.nome_autor, a.autor, a.foto_url ORDER BY seguidores DESC, a.nome_autor ASC LIMIT 8");
+    $stmt->execute([':id_user' => $id_user]);
+} else {
+    $stmt = $conn->query("SELECT id_autor, nome_autor, autor, foto_url, NULL AS seguidores FROM autor ORDER BY nome_autor LIMIT 8");
+}
 $autores_sugeridos = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 $esc = static fn($valor) => htmlspecialchars((string) ($valor ?? ''), ENT_QUOTES, 'UTF-8');
@@ -81,6 +89,7 @@ $imagemCatalogo = static function ($caminho) use ($esc) {
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Lora:wght@400;500;600;700&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
     <title>Catálogo | Nook</title>
+<link rel="stylesheet" href="../front-end/css/pages/catalog-reference.css">
 </head>
 <body>
 <?php require_once __DIR__ . '/header.php'; ?>
@@ -89,6 +98,40 @@ $imagemCatalogo = static function ($caminho) use ($esc) {
     <?php if ($lista_contexto): ?>
         <a class="catalog-list-context" href="ver_lista.php?id=<?= (int) $lista_contexto['id'] ?>"><i data-lucide="arrow-left"></i> Adicionando livros a <strong><?= htmlspecialchars($lista_contexto['nome_lista'], ENT_QUOTES, 'UTF-8') ?></strong></a>
     <?php endif; ?>
+
+    <section class="catalog-intro">
+        <p class="catalog-eyebrow">PRATELEIRAS NOOK</p>
+        <h1>Encontre sua próxima leitura.</h1>
+        <p>Explore títulos por nome, autor ou gênero e descubra histórias para guardar.</p>
+        <label class="catalog-search">
+            <i data-lucide="search"></i>
+            <input type="search" id="campo-pesquisa" value="<?= $esc(is_string($_GET['autor']??null)?$_GET['autor']:'') ?>" aria-label="Buscar por livro ou autor" placeholder="Busque por livro ou autor" autocomplete="off">
+        </label>
+    </section>
+
+    <section class="catalog-controls" aria-label="Filtros do catálogo">
+        <div class="catalog-filter-wrap">
+            <button type="button" id="abrir-filtros-genero" class="catalog-filter-button" aria-expanded="false" aria-controls="filtros-genero">
+                <i data-lucide="list-filter"></i> Filtrar por categoria <i data-lucide="chevron-down"></i>
+            </button>
+            <div class="catalog-genres" id="filtros-genero" hidden>
+                <button type="button" class="genre-chip is-active" data-id="">Todas as categorias</button>
+                <?php foreach ($generos as $genero): ?>
+                    <button type="button" class="genre-chip" data-id="<?= (int) $genero['id_preferencia'] ?>">
+                        <?= htmlspecialchars(nomeCategoria($genero['preferencia'], $genero['nome_preferencia']), ENT_QUOTES, 'UTF-8') ?>
+                    </button>
+                <?php endforeach; ?>
+            </div>
+        </div>
+        <div class="catalog-quick-genres" aria-label="Categorias rápidas"><button type="button" class="genre-chip is-active" data-id="">Todos</button><?php foreach(array_slice($generos,0,8) as $quick):?><button type="button" class="genre-chip" data-id="<?=(int)$quick['id_preferencia']?>"><?=htmlspecialchars(nomeCategoria($quick['preferencia'],$quick['nome_preferencia']),ENT_QUOTES,'UTF-8')?></button><?php endforeach;?></div>
+        <label class="catalog-sort">Ordenar por
+            <select id="ordem-catalogo">
+                <option value="titulo">Título</option>
+                <option value="recentes">Mais recentes</option>
+                <option value="avaliados">Mais bem avaliados</option>
+            </select>
+        </label>
+    </section>
 
     <?php if ($continuar_lendo): ?>
         <section class="catalog-shelf catalog-continue-shelf">
@@ -141,49 +184,16 @@ $imagemCatalogo = static function ($caminho) use ($esc) {
                 <?php foreach ($autores_sugeridos as $autor): ?>
                     <a class="catalog-author" href="perfil_autor.php?id_autor=<?= (int) $autor['id_autor'] ?>">
                         <?php if ($autor['foto_url']): ?><img src="<?= $imagemCatalogo($autor['foto_url']) ?>" alt="" loading="lazy"><?php else: ?><span class="catalog-author-fallback"><?= $esc(mb_strtoupper(mb_substr($autor['nome_autor'] ?: $autor['autor'], 0, 1))) ?></span><?php endif; ?>
-                        <strong><?= $esc($autor['nome_autor'] ?: $autor['autor']) ?></strong><small><?= (int) $autor['seguidores'] ?> seguidores</small>
+                        <strong><?= $esc($autor['nome_autor'] ?: $autor['autor']) ?></strong><small><?= $autor['seguidores'] === null ? 'Conhecer autor' : (int) $autor['seguidores'] . ' seguidores' ?></small>
                     </a>
                 <?php endforeach; ?>
             </div>
         </section>
     <?php endif; ?>
 
-    <section class="catalog-controls" aria-label="Filtros do catálogo">
-        <div class="catalog-filter-wrap">
-            <button type="button" id="abrir-filtros-genero" class="catalog-filter-button" aria-expanded="false" aria-controls="filtros-genero">
-                <i data-lucide="list-filter"></i> Filtrar por categoria <i data-lucide="chevron-down"></i>
-            </button>
-            <div class="catalog-genres" id="filtros-genero" hidden>
-                <button type="button" class="genre-chip is-active" data-id="">Todas as categorias</button>
-                <?php foreach ($generos as $genero): ?>
-                    <button type="button" class="genre-chip" data-id="<?= (int) $genero['id_preferencia'] ?>">
-                        <?= htmlspecialchars($genero['nome_preferencia'], ENT_QUOTES, 'UTF-8') ?>
-                    </button>
-                <?php endforeach; ?>
-            </div>
-        </div>
-        <label class="catalog-sort">Ordenar por
-            <select id="ordem-catalogo">
-                <option value="titulo">Título</option>
-                <option value="recentes">Mais recentes</option>
-                <option value="avaliados">Mais bem avaliados</option>
-            </select>
-        </label>
-    </section>
-
-    <section class="catalog-intro">
-        <p class="catalog-eyebrow">PRATELEIRAS NOOK</p>
-        <h1>Encontre sua próxima leitura.</h1>
-        <p>Explore títulos por nome, autor ou gênero e descubra histórias para guardar.</p>
-        <label class="catalog-search">
-            <i data-lucide="search"></i>
-            <input type="search" id="campo-pesquisa" placeholder="Busque por livro ou autor" autocomplete="off">
-        </label>
-    </section>
-
     <section class="catalog-results-section" aria-live="polite">
         <header class="catalog-results-header">
-            <h2 id="titulo-resultados">Todos os livros</h2>
+            <div><p class="catalog-eyebrow">TODOS OS LIVROS</p><h2 id="titulo-resultados">Catálogo completo</h2><p class="catalog-section-description">Explore todos os títulos disponíveis na plataforma.</p></div>
             <span id="total-resultados"></span>
         </header>
         <p id="aviso-google" class="catalog-api-notice" role="status" hidden></p>
@@ -211,6 +221,7 @@ $imagemCatalogo = static function ($caminho) use ($esc) {
     let livrosCarregados = [];
     let proximoInicio = 0;
     let requisicaoCatalogo = 0;
+    let controlePesquisa;
 
     function escaparHtml(valor) {
         return String(valor ?? '').replace(/[&<>"']/g, (caractere) => ({
@@ -226,6 +237,13 @@ $imagemCatalogo = static function ($caminho) use ($esc) {
 
     function renderizarLivros(livros, acrescentar = false) {
         livrosCarregados = acrescentar ? [...livrosCarregados, ...livros] : livros;
+        const vistos = new Set();
+        livrosCarregados = livrosCarregados.filter((livro) => {
+            const chave = livro.google_books_id || `local-${livro.id_livro}`;
+            if (vistos.has(chave)) return false;
+            vistos.add(chave);
+            return true;
+        });
         resultadoLivros.replaceChildren();
         totalResultados.textContent = `${livrosCarregados.length} ${livrosCarregados.length === 1 ? 'livro' : 'livros'}`;
         if (!livrosCarregados.length) {
@@ -235,7 +253,8 @@ $imagemCatalogo = static function ($caminho) use ($esc) {
         }
         estadoCatalogo.hidden = true;
         resultadoLivros.innerHTML = livrosCarregados.map((livro) => {
-            const nota = Number(livro.media || livro.nota_google || 0);
+            const notaOriginal = Number(livro.media || livro.nota_google || 0);
+            const nota = Number.isFinite(notaOriginal) ? Math.max(0, Math.min(5, notaOriginal)) : 0;
             const totalAvaliacoes = Number(livro.total || 0);
             const estrelas = '★'.repeat(Math.round(nota)) + '☆'.repeat(5 - Math.round(nota));
             const imagem = livro.capa_url
@@ -287,7 +306,7 @@ $imagemCatalogo = static function ($caminho) use ($esc) {
                             ${livro.subtitulo ? `<small class="catalog-book-subtitle">${escaparHtml(livro.subtitulo)}</small>` : ''}
                             ${metadata ? `<small class="catalog-book-publisher">${escaparHtml(metadata)}</small>` : ''}
                             ${categories}
-                            <div class="catalog-rating"><span>${escaparHtml(estrelas)}</span><small>${nota ? nota.toFixed(1).replace('.', ',') : 'Novo'}${totalAvaliacoes ? ` · ${totalAvaliacoes} avaliações` : ''}</small></div>
+                            <div class="catalog-rating"><span>${nota ? '★' : '☆'}</span><small>${nota ? nota.toFixed(1).replace('.', ',') : 'Novo'}${totalAvaliacoes ? ` · ${totalAvaliacoes} avaliações` : ''}</small></div>
                         <small class="catalog-book-details">${livro.paginas ? `${Number(livro.paginas)} páginas` : 'Explore os detalhes do livro'}${livro.idioma ? ` · ${escaparHtml(livro.idioma)}` : ''}</small>
                             ${synopsis}
                     </div>
@@ -296,6 +315,7 @@ $imagemCatalogo = static function ($caminho) use ($esc) {
                     ${urlLeitura}
                     ${acaoLista}
                     <a class="catalog-review-link" href="${escaparHtml(urlResenha)}"><i data-lucide="square-pen"></i> Resenhar</a>
+                    ${livro.id_livro ? `<a class="catalog-bookmark" href="perfil.php?aba=marcadores&livro=${Number(livro.id_livro)}" aria-label="Adicionar marcador a ${escaparHtml(livro.titulo_livro)}"><i data-lucide="bookmark"></i></a>` : ''}
                 </div>
             </article>`;
         }).join('');
@@ -323,7 +343,11 @@ $imagemCatalogo = static function ($caminho) use ($esc) {
     });
 
     async function pesquisarLivros(carregarProximaPagina = false) {
+        controlePesquisa?.abort();
+        controlePesquisa = new AbortController();
         const requisicaoAtual = ++requisicaoCatalogo;
+        const buscando = Boolean(campoPesquisaCatalogo.value.trim() || generoSelecionado);
+        document.querySelectorAll('.catalog-shelf').forEach((prateleira) => { prateleira.hidden = buscando; });
         const inicio = carregarProximaPagina ? proximoInicio : 0;
         const parametros = new URLSearchParams({
             nome: campoPesquisaCatalogo.value.trim(),
@@ -334,7 +358,7 @@ $imagemCatalogo = static function ($caminho) use ($esc) {
         resultadoLivros.setAttribute('aria-busy', 'true');
         carregarMaisLivros.disabled = true;
         try {
-            const resposta = await fetch(`buscar-livros.php?${parametros}`);
+            const resposta = await fetch(`buscar-livros.php?${parametros}`, { signal: controlePesquisa.signal });
             const dados = await resposta.json();
             if (requisicaoAtual !== requisicaoCatalogo) return;
             if (!resposta.ok) throw new Error(dados.mensagem || 'Não foi possível carregar o catálogo.');
@@ -346,7 +370,7 @@ $imagemCatalogo = static function ($caminho) use ($esc) {
             const genero = document.querySelector('.genre-chip.is-active')?.textContent.trim();
             tituloResultados.textContent = campoPesquisaCatalogo.value.trim()
                 ? `Resultados para “${campoPesquisaCatalogo.value.trim()}”`
-                : genero && genero !== 'Todos' ? genero : 'Todos os livros';
+                : genero && !['Todas as categorias','Todos'].includes(genero) ? genero : 'Catálogo completo';
         } catch (erro) {
             if (requisicaoAtual !== requisicaoCatalogo) return;
             estadoCatalogo.hidden = false;
@@ -380,9 +404,9 @@ $imagemCatalogo = static function ($caminho) use ($esc) {
             pesquisarLivros(false);
         }
     });
-    filtrosGenero.querySelectorAll('.genre-chip').forEach((botao) => {
+    document.querySelectorAll('.genre-chip').forEach((botao) => {
         botao.addEventListener('click', () => {
-            filtrosGenero.querySelectorAll('.genre-chip').forEach((item) => item.classList.toggle('is-active', item === botao));
+            document.querySelectorAll('.genre-chip').forEach((item) => {item.classList.toggle('is-active',item.dataset.id===botao.dataset.id);item.setAttribute('aria-pressed',String(item.dataset.id===botao.dataset.id));});
             generoSelecionado = botao.dataset.id;
             abrirFiltrosGenero.setAttribute('aria-label', generoSelecionado ? `Categoria: ${botao.textContent.trim()}` : 'Filtrar por categoria');
             pesquisarLivros();

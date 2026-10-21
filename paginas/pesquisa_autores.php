@@ -9,16 +9,8 @@ $busca = trim($_GET['pesquisa'] ?? '');
 require_once __DIR__ . '/conexao.php';
 $conn = (new Database())->conectar();
 
-$sql = 'SELECT id_autor, nome_autor, autor, foto_url FROM autor';
-$parametros = [];
-if ($busca !== '') {
-    $sql .= ' WHERE nome_autor ILIKE :nome OR autor ILIKE :username';
-    $parametros = [':nome' => '%' . $busca . '%', ':username' => '%' . $busca . '%'];
-}
-$sql .= ' ORDER BY nome_autor ASC LIMIT 60';
-$stmt = $conn->prepare($sql);
-$stmt->execute($parametros);
-$autores = $stmt->fetchAll(PDO::FETCH_ASSOC);
+require_once __DIR__.'/author_search_service.php';
+$autores=autoresLocais($conn,(int)$_SESSION['id_user'],$busca);
 
 $esc = static fn($valor) => htmlspecialchars((string) ($valor ?? ''), ENT_QUOTES, 'UTF-8');
 $imagemUrl = static function ($caminho) use ($esc) {
@@ -31,6 +23,7 @@ $imagemUrl = static function ($caminho) use ($esc) {
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
+<link rel="icon" href="/TCC-Nook/img/icons/ico-nook/ico-nook.ico" type="image/x-icon">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="/TCC-Nook/front-end/css/main.css">
@@ -44,101 +37,17 @@ $imagemUrl = static function ($caminho) use ($esc) {
 <?php require_once __DIR__ . '/header.php'; ?>
 <main class="community-page">
     <a class="community-back" href="paginaprincipal.php"><i data-lucide="arrow-left"></i> Início</a>
-    <header class="community-heading"><p>VOZES PARA DESCOBRIR</p><h1>Autores</h1><span><?= count($autores) ?> resultados</span></header>
-    <form class="community-search" method="GET" action="pesquisa_autores.php">
+    <header class="community-heading"><p>VOZES PARA DESCOBRIR</p><h1>Autores</h1><span id="authors-total"><?= count($autores) ?> autores</span></header>
+    <form class="community-search" id="authors-search" method="GET" action="pesquisa_autores.php">
         <i data-lucide="search"></i>
         <input type="search" name="pesquisa" value="<?= $esc($busca) ?>" placeholder="Buscar por nome de autor" aria-label="Buscar por nome de autor">
         <button type="submit">Buscar</button>
     </form>
-    <section class="community-google-section" aria-live="polite">
-        <header class="community-google-heading"><h2>Autores da Google Books</h2><span id="google-autores-total"></span></header>
-        <p id="google-autores-aviso" class="community-api-notice" role="status" hidden></p>
-        <div id="google-autores-resultados" class="community-results"></div>
-        <p id="google-autores-estado" class="community-empty" hidden></p>
-        <button type="button" id="google-autores-mais" class="community-load-more" hidden>Ver mais autores</button>
-    </section>
-    <h2 class="community-results-title">Autores na comunidade</h2>
-    <?php if ($autores): ?>
-        <div class="community-results">
-            <?php foreach ($autores as $autor): ?>
-                <article class="community-author">
-                    <a href="perfil_autor.php?id_autor=<?= (int) $autor['id_autor'] ?>">
-                        <?php if (!empty($autor['foto_url'])): ?><img src="<?= $imagemUrl($autor['foto_url']) ?>" alt="" loading="lazy"><?php else: ?><span class="community-author-fallback"><?= $esc(mb_strtoupper(mb_substr($autor['nome_autor'] ?: $autor['autor'], 0, 1))) ?></span><?php endif; ?>
-                        <span><strong><?= $esc($autor['nome_autor'] ?: $autor['autor']) ?></strong><small>@<?= $esc($autor['autor']) ?></small></span>
-                    </a>
-                </article>
-            <?php endforeach; ?>
-        </div>
-    <?php else: ?><p class="community-empty"><?= $busca !== '' ? 'Nenhum autor corresponde à sua busca.' : 'Ainda não há autores cadastrados.' ?></p><?php endif; ?>
+    <p id="authors-status" role="status" class="community-api-notice"></p>
+    <section aria-label="Autores" aria-live="polite"><div id="authors-results" class="community-results">
+    <?php foreach($autores as $autor): ?><article class="community-author"><a href="<?= !empty($autor['id_usuario'])?'perfil_user_terceiro.php?id_user='.(int)$autor['id_usuario']:'perfil_autor.php?id_autor='.(int)$autor['id_local'] ?>"><?php if($autor['foto']): ?><img src="<?= $esc($autor['foto']) ?>" alt="" width="72" height="72" loading="lazy"><?php else: ?><span class="community-author-fallback"><?= $esc(mb_substr($autor['nome'],0,1)) ?></span><?php endif; ?><span><strong><?= $esc($autor['nome']) ?></strong><small><?= $esc($autor['contexto']) ?></small></span></a></article><?php endforeach; ?>
+    </div><button type="button" id="authors-more" class="community-load-more" hidden>Ver mais autores</button></section>
 </main>
 <?php require_once __DIR__ . '/footer.php'; ?>
-<script>
-    const buscaAutores = <?= json_encode($busca, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>;
-    const resultadosAutoresGoogle = document.getElementById('google-autores-resultados');
-    const estadoAutoresGoogle = document.getElementById('google-autores-estado');
-    const avisoAutoresGoogle = document.getElementById('google-autores-aviso');
-    const totalAutoresGoogle = document.getElementById('google-autores-total');
-    const botaoMaisAutoresGoogle = document.getElementById('google-autores-mais');
-    let autoresGoogleCarregados = [];
-    let nomesAutoresGoogle = new Set();
-    let inicioAutoresGoogle = 0;
-    let requisicaoAutoresGoogle = 0;
-
-    function escaparHtml(valor) {
-        return String(valor ?? '').replace(/[&<>"']/g, (caractere) => ({
-            '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
-        })[caractere]);
-    }
-
-    function renderizarAutoresGoogle(autores) {
-        autores.forEach((autor) => {
-            const chave = autor.nome.trim().toLocaleLowerCase();
-            if (!chave || nomesAutoresGoogle.has(chave)) return;
-            nomesAutoresGoogle.add(chave);
-            autoresGoogleCarregados.push(autor);
-        });
-        resultadosAutoresGoogle.innerHTML = autoresGoogleCarregados.map((autor) => {
-            const iniciais = escaparHtml(Array.from(autor.nome.trim())[0]?.toLocaleUpperCase() || '?');
-            const buscaLivros = new URLSearchParams({ q: `inauthor:${autor.nome}` });
-            return `<article class="community-author community-google-author">
-                <a href="https://books.google.com/books?${buscaLivros}" target="_blank" rel="noopener noreferrer">
-                    <span class="community-author-fallback">${iniciais}</span>
-                    <span><strong>${escaparHtml(autor.nome)}</strong><small>Google Books</small></span>
-                </a>
-            </article>`;
-        }).join('');
-        totalAutoresGoogle.textContent = `${autoresGoogleCarregados.length} encontrados`;
-        estadoAutoresGoogle.hidden = autoresGoogleCarregados.length > 0;
-        estadoAutoresGoogle.textContent = 'Nenhum autor encontrado na Google Books.';
-    }
-
-    async function buscarAutoresGoogle(proximaPagina = false) {
-        const requisicaoAtual = ++requisicaoAutoresGoogle;
-        const inicio = proximaPagina ? inicioAutoresGoogle : 0;
-        botaoMaisAutoresGoogle.disabled = true;
-        try {
-            const parametros = new URLSearchParams({ pesquisa: buscaAutores, inicio: String(inicio) });
-            const resposta = await fetch(`buscar-autores-google.php?${parametros}`);
-            const dados = await resposta.json();
-            if (requisicaoAtual !== requisicaoAutoresGoogle) return;
-            if (!resposta.ok) throw new Error(dados.mensagem || 'Não foi possível buscar autores agora.');
-            renderizarAutoresGoogle(dados.autores || []);
-            inicioAutoresGoogle = inicio + 20;
-            botaoMaisAutoresGoogle.hidden = !dados.tem_mais;
-            avisoAutoresGoogle.hidden = true;
-            avisoAutoresGoogle.textContent = '';
-        } catch (erro) {
-            if (requisicaoAtual !== requisicaoAutoresGoogle) return;
-            avisoAutoresGoogle.hidden = false;
-            avisoAutoresGoogle.textContent = erro.message;
-        } finally {
-            if (requisicaoAtual === requisicaoAutoresGoogle) botaoMaisAutoresGoogle.disabled = false;
-        }
-    }
-
-    botaoMaisAutoresGoogle.addEventListener('click', () => buscarAutoresGoogle(true));
-    buscarAutoresGoogle();
-    if (window.lucide) lucide.createIcons();
-</script>
-</body>
-</html>
+<script src="/TCC-Nook/front-end/js/pages/author-search.js" defer></script>
+</body></html>

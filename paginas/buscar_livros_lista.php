@@ -8,6 +8,8 @@ if (!isset($_SESSION['id_user'])) {
     exit();
 }
 
+session_write_close();
+
 $termo = trim($_GET['q'] ?? '');
 if (mb_strlen($termo) < 2) {
     echo json_encode(['livros' => []], JSON_UNESCAPED_UNICODE);

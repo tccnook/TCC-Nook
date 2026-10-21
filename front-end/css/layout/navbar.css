@@ -281,3 +281,14 @@
     .header-nav .header-btn { width: 2.15rem; height: 2.15rem; }
     .header-nav .header-btn svg { width: 1.1rem; height: 1.1rem; }
 }
+.mobile-navigation { display: none; }
+@media(max-width: 600px) {
+    body:has(.mobile-navigation) { padding-bottom: calc(76px + env(safe-area-inset-bottom)); }
+    .header-global { display: flex; gap: .75rem; padding: .75rem 1rem; }
+    .header-global .header-nav { display: none; }
+    .header-global .header-pesquisa { flex: 1; min-width: 0; }
+    .mobile-navigation { position: fixed; z-index: 550; inset: auto 0 0; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); padding: .5rem .25rem calc(.5rem + env(safe-area-inset-bottom)); background: var(--color-surface); border-top: 1px solid var(--color-surface-muted); }
+    .mobile-navigation a, .mobile-navigation button { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: .25rem; min-height: 48px; font-size: .7rem; color: var(--text-muted); }
+    .mobile-navigation svg { width: 22px; height: 22px; }
+    .mobile-navigation [aria-current="page"] { color: var(--color-primary); font-weight: 700; }
+}

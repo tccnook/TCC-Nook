@@ -10,6 +10,8 @@ if (!isset($_SESSION['id_user'])) {
     exit();
 }
 
+session_write_close();
+
 require_once('conexao.php');
 
 header('Content-Type: application/json; charset=UTF-8');

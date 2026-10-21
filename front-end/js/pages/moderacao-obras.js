@@ -1,0 +1,1 @@
+document.querySelectorAll('[data-moderation-confirm]').forEach(form=>form.addEventListener('submit',event=>{if(!confirm('Confirmar esta decisão administrativa? A ação será registrada no histórico.'))event.preventDefault();}));

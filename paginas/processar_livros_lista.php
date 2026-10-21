@@ -39,7 +39,7 @@
         // BUSCAR DADOS DOS LIVROS
         $livros = [];
         foreach ($_SESSION['livros_lista'] as $id_livro) {
-            $sql = "select id_livro, titulo_livro, nome_autor, capa_url from livro where id_livro = :id_livro";
+            $sql = "select id_livro, titulo_livro, nome_autor, capa_url from livro where id_livro = :id_livro AND visibilidade = 'publico'";
             $stmt = $conn->prepare($sql);
             $stmt->execute([
                 ':id_livro' => $id_livro

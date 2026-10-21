@@ -1,0 +1,63 @@
+/* Ajustes específicos do perfil derivados dos anexos Figma do Nook. */
+.profile-page { --profile-highlight: #b46dff; --profile-soft: #f1e8ff; }
+.profile-page .main { padding-bottom: .6rem; }
+.profile-page .perfil-banner img, .profile-page .sem-banner { width: min(100% - 4rem, 1200px); height: clamp(160px,19vw,260px); border-radius: 0 0 16px 16px; }
+.profile-page .perfil-header { width: min(100% - 4rem,1160px); grid-template-columns: 160px minmax(0,1fr); gap: 1.5rem; margin-top: -48px; }
+.profile-page .perfil-avatar { width: 150px; height: 150px; }
+.profile-page .com-foto-perfil, .profile-page .sem-foto-perfil { margin: 0; border: 3px solid var(--color-primary); box-shadow: none; background: var(--color-surface-muted); }
+.profile-page .perfil-content { padding-top: 54px; gap: .85rem; }
+.profile-page .bio { grid-template-columns: minmax(0,1fr) auto; gap: 1.5rem; }
+.profile-page .info-usuario { justify-content: space-between; gap: .65rem 1rem; }
+.profile-page .info-usuario svg, .profile-page .estrelas { color: var(--profile-highlight); }
+.profile-page .user-names h1 { color: var(--color-text); }
+.profile-page .perfil-actions { gap: .75rem; }
+.profile-page .button-perfil, .profile-page .btn-opcoes { min-height: 44px; height: auto; box-shadow: 0 3px 8px #0002; }
+.profile-page .perfil-nav { padding: 1rem max(1rem,calc((100% - 1200px)/2)) .5rem; justify-content: space-around; border-bottom: 1px solid #aaa; }
+.profile-page .perfil-nav a { min-height: 44px; display: flex; align-items: center; }
+.profile-page .perfil-nav a.ativo { color: #8c39d8; border-bottom-color: var(--profile-highlight); }
+.profile-page .aba { width: min(100% - 2rem,1280px); margin: 1.5rem auto 3rem; }
+.profile-page .visao-grid { grid-template-columns: minmax(0,2.4fr) minmax(260px,1fr); gap: 1rem; }
+.profile-page .visao-principal, .profile-page .visao-lateral { gap: 1rem; }
+.profile-page .card { border: 0; border-radius: 12px; box-shadow: 0 5px 12px #0002; padding: 1rem; }
+.profile-page .top5-lista { gap: .85rem; }
+.profile-page .top5-adicionar { border-color: var(--profile-highlight); color: #8c39d8; }
+.profile-page .mini-card { border-color: #dfc9fa; background: #f6effc; border-radius: 8px; }
+.profile-page .mini-card strong { color: #9b5bd4; }
+.profile-page .listas-grid { grid-template-columns: repeat(3,minmax(0,1fr)); gap: 1.25rem; }
+.profile-page .lista-card { --lista-cor: #b8a0de; --lista-texto: var(--color-text); border-radius: 12px; box-shadow: 0 4px 10px #0003; }
+.profile-page .lista-card--outro { --lista-cor: var(--color-primary); --lista-texto: white; }
+.profile-page .lista-topo { min-height: 100px; padding: 1rem; }
+.profile-page .lista-topo h3 { font: 500 1.15rem/1.4 var(--font-secundary); }
+.profile-page .lista-topo p { font-size: .85rem; }
+.profile-page .capas { gap: .5rem; padding: 0 1rem 1rem; background: var(--lista-cor); }
+.profile-page .capas img { min-width: 0; aspect-ratio: 2/3; object-fit: contain; }
+.profile-page .lista-info { background: white; padding: .85rem 1rem; color: var(--color-text); font-size: .8rem; }
+.profile-page .livros-grid { grid-template-columns: repeat(3,minmax(0,1fr)); gap: 1rem; }
+.profile-page .livro-lido { grid-template-columns: minmax(80px,34%) minmax(0,1fr); padding: 1rem; background: var(--color-primary); color: white; border-radius: 8px; box-shadow: none; min-height: 240px; }
+.profile-page .livro-lido h3, .profile-page .livro-lido .autor, .profile-page .livro-lido .livro-comentario, .profile-page .livro-lido .lido-em { color: white; }
+.profile-page .livro-lido .sem-resenha { color: white; background: #5d467c; border-radius: 7px; }
+.profile-page .livro-lido .livro-capa img { object-fit: contain; border-radius: 5px; }
+.profile-page .profile-reviews { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 1.5rem; }
+.profile-review-card { padding: 1.25rem; border-radius: 12px; background: white; box-shadow: 0 5px 12px #0002; min-width: 0; }
+.profile-review-body { display: grid; grid-template-columns: 110px minmax(0,1fr); gap: 1rem; }
+.profile-review-cover { display: grid; gap: .5rem; align-content: start; }
+.profile-review-cover img { width: 110px; aspect-ratio: 2/3; height: auto; object-fit: contain; }
+.profile-review-body h2 { font-size: 1rem; }
+.profile-review-body h3 { font-size: .9rem; margin-bottom: .5rem; }
+.profile-review-body svg { color: var(--profile-highlight); width: 22px; height: 22px; margin-top: .75rem; }
+.profile-review-text { line-height: 1.6; font-size: .85rem; overflow-wrap: anywhere; }
+.profile-review-card footer { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .75rem; border-top: 1px solid #ccc; padding-top: .75rem; margin-top: 1rem; font-size: .8rem; }
+.profile-review-card footer a, .profile-review-card footer span, .profile-review-card footer button { display: inline-flex; align-items: center; gap: .25rem; min-height: 44px; color: var(--color-primary); }
+.profile-review-card footer svg { width: 20px; height: 20px; color: var(--profile-highlight); }
+.review-share-link { width: 100%; padding: .5rem; margin-top: .75rem; }
+@media(max-width:760px) { .profile-page .visao-grid { grid-template-columns: minmax(0,1fr); } .profile-page .visao-lateral { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); } .profile-page .livros-grid { grid-template-columns: repeat(2,minmax(0,1fr)); } .profile-page .bio { grid-template-columns: 1fr; } .profile-page .listas-grid { grid-template-columns: repeat(2,minmax(0,1fr)); } }
+@media(max-width:650px) { .profile-page .perfil-banner img, .profile-page .sem-banner { width: 100%; height: 160px; } .profile-page .perfil-header { width: calc(100% - 2rem); grid-template-columns: 90px minmax(0,1fr); margin-top: -36px; gap: 1rem; } .profile-page .perfil-avatar { width: 90px; height: 90px; } .profile-page .perfil-content { padding-top: 44px; } .profile-page .user-names h1 { font-size: 1.3rem; } .profile-page .bio { grid-column: 1/-1; } .profile-page .info-usuario { font-size: .75rem; } .profile-page .perfil-nav { justify-content: flex-start; gap: .75rem; } .profile-page .visao-lateral, .profile-page .livros-grid, .profile-page .listas-grid, .profile-page .profile-reviews { grid-template-columns: 1fr; } .profile-page .top5-lista, .profile-page .ultimos-lista { grid-template-columns: repeat(5,minmax(95px,1fr)); overflow-x: auto; padding-bottom: .5rem; } .profile-review-body { grid-template-columns: 85px minmax(0,1fr); } .profile-review-cover img { width: 85px; } }
+.bookmark-form { display: grid; grid-template-columns: minmax(0,2fr) minmax(100px,1fr); gap: 1rem; margin-bottom: 1.5rem; }
+.bookmark-form label { display: grid; gap: .5rem; font-size: .85rem; }
+.bookmark-form input,.bookmark-form select,.bookmark-form textarea { width: 100%; min-height: 44px; padding: .6rem; border: 1px solid #ccc; border-radius: 7px; }
+.bookmark-form .bookmark-text { grid-column: 1/-1; }.bookmark-form button { justify-self: start; }
+.bookmark-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 1.5rem; margin-bottom: 1.5rem; }
+.bookmark-grid blockquote { margin: 1rem 0; font: 400 1.15rem/1.8 var(--font-secundary); overflow-wrap: anywhere; }.bookmark-grid p { margin-top: .5rem; font-size: .85rem; color: var(--text-muted); }
+.bookmark-grid svg { color: var(--profile-highlight); }.bookmark-remove { min-height: 44px; font-size: .8rem; text-decoration: underline; }
+@media(max-width:600px) { .bookmark-grid,.bookmark-form { grid-template-columns: 1fr; } }
+.published-book-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:22px;margin-top:24px}.published-book-grid article{padding:22px;background:white;border-radius:8px}.published-book-grid img{object-fit:cover;border-radius:4px}.published-book-grid h3{font-family:Lora,Georgia,serif;margin:12px 0}.published-book-grid p{font-size:.9rem;line-height:1.6}.published-book-grid small{color:#625b6d}@media(max-width:760px){.published-book-grid{grid-template-columns:1fr 1fr}}@media(max-width:440px){.published-book-grid{grid-template-columns:1fr}}

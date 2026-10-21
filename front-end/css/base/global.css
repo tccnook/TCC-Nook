@@ -9,23 +9,6 @@ body {
     box-sizing: border-box;
 }
 
-html,
-body,
-*,
-*::before,
-*::after {
-    scrollbar-width: none;
-    -ms-overflow-style: none;
-}
-
-*::-webkit-scrollbar,
-*::-webkit-scrollbar-thumb,
-*::-webkit-scrollbar-track {
-    display: none;
-    width: 0;
-    height: 0;
-}
-
 a {
     text-decoration: none;
     color: var(--color-accent2);
@@ -61,3 +44,11 @@ textarea {
     outline: 2px solid var(--color-accent);
     outline-offset: 2px;
 }
+
+[hidden] { display: none !important; }
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }
+}
+
+/* Rótulos acessíveis que não devem ocupar espaço visual. */
+.sr-only { position: absolute!important; width: 1px!important; height: 1px!important; padding: 0!important; margin: -1px!important; overflow: hidden!important; clip: rect(0,0,0,0)!important; white-space: nowrap!important; border: 0!important; }

@@ -1,4 +1,7 @@
 <?php
+require_once __DIR__.'/schema_support.php';
+$schemaLista = schemaProjeto($conn);
+require_once __DIR__.'/privacy_settings.php';
 if (!isset($_POST['criar_lista'])) {
     return;
 }
@@ -21,6 +24,10 @@ if ($nome_lista === '' || mb_strlen($nome_lista) > 50 || mb_strlen($descricao) >
     $erro_lista = 'Selecione uma imagem para a capa manual.';
 }
 
+if (!isset($schemaLista['whishlist']['descricao']) && $descricao !== '') { $erro_lista='A descrição ainda não está disponível para esta lista.'; }
+if (!isset($schemaLista['whishlist']['visibilidade']) && $visibilidade !== 'privada') { $erro_lista='Somente listas privadas estão disponíveis.'; }
+if (!isset($schemaLista['whishlist']['capa_url']) && $tipo_capa === 'manual') { $erro_lista='Use a capa automática para esta lista.'; }
+
 if ($erro_lista !== '') {
     return;
 }
@@ -38,6 +45,7 @@ if ($tipo_capa === 'manual') {
 }
 
 try {
+    $destinosMencao=destinosMencoes($conn,$nome_lista.' '.$descricao,(int)$id_user);
     $conn->beginTransaction();
 
     $capas_livros = [];
@@ -54,21 +62,20 @@ try {
     $capa_url = $tipo_capa === 'manual'
         ? $capa_manual
         : null;
-    $stmt = $conn->prepare('INSERT INTO whishlist (nome_lista, id_user, descricao, visibilidade, tipo_capa, capa_url) VALUES (:nome, :user, :descricao, :visibilidade, :tipo_capa, :capa_url) RETURNING id');
-    $stmt->execute([
-        ':nome' => $nome_lista,
-        ':user' => $id_user,
-        ':descricao' => $descricao,
-        ':visibilidade' => $visibilidade,
-        ':tipo_capa' => $tipo_capa,
-        ':capa_url' => $capa_url
-    ]);
+    $valores = array_intersect_key(['nome_lista'=>$nome_lista,'id_user'=>$id_user,'descricao'=>$descricao,'visibilidade'=>$visibilidade,'tipo_capa'=>$tipo_capa,'capa_url'=>$capa_url],$schemaLista['whishlist']);
+    $colunas=array_keys($valores);
+    $params=array_combine(array_map(static fn($c)=>':'.$c,$colunas),array_values($valores));
+    $stmt=$conn->prepare('INSERT INTO whishlist ('.implode(',',$colunas).') VALUES ('.implode(',',array_keys($params)).') RETURNING id');
+    $stmt->execute($params);
     $id_lista = (int) $stmt->fetchColumn();
 
     if ($ids_livros) {
-        $insert = $conn->prepare('INSERT INTO whishbook (id_livro, id_user, id_whishlist, ordem) VALUES (:livro, :user, :lista, :ordem)');
+        $comOrdem = isset($schemaLista['whishbook']['ordem']);
+        $insert = $conn->prepare($comOrdem ? 'INSERT INTO whishbook (id_livro,id_user,id_whishlist,ordem) VALUES (:livro,:user,:lista,:ordem)' : 'INSERT INTO whishbook (id_livro,id_user,id_whishlist) VALUES (:livro,:user,:lista)');
         foreach ($ids_livros as $indice => $id_livro) {
-            $insert->execute([':livro' => $id_livro, ':user' => $id_user, ':lista' => $id_lista, ':ordem' => $indice + 1]);
+            $params=[':livro'=>$id_livro, ':user'=>$id_user, ':lista'=>$id_lista];
+            if($comOrdem)$params[':ordem']=$indice+1;
+            $insert->execute($params);
         }
     }
 
@@ -82,6 +89,7 @@ try {
         }
     }
 
+    registrarMencoes($conn,$destinosMencao,(int)$id_user,'whishlist',$id_lista);
     $conn->commit();
     header('Location: perfil.php?aba=listas-leitura&lista_criada=1');
     exit();
@@ -90,6 +98,6 @@ try {
         $conn->rollBack();
     }
     error_log('Falha ao criar lista: ' . $erro->getMessage());
-    $erro_lista = 'Não foi possível criar a lista. Revise os dados e tente novamente.';
+$erro_lista=$erro instanceof DomainException?$erro->getMessage():'Não foi possível criar a lista. Revise os dados e tente novamente.';
 }
 ?>

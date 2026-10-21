@@ -1,0 +1,27 @@
+/* Referências Nook: etapas compactas, seleção lavanda e cinco colunas. */
+.onboarding-page { --selection-color: #b46dff; --selection-surface: #ede3ff; background: var(--color-background); padding: 1rem clamp(1rem, 2.7vw, 2.5rem) 8rem; font-family: var(--font-primary); }
+.onboarding-header { position: relative; display: flex; justify-content: center; align-items: center; min-height: 48px; margin-bottom: .5rem; }
+.onboarding-header .logo { position: absolute; left: 0; top: 0; width: 44px; }
+.onboarding-header .progresso { width: min(270px, 45vw); margin: 0; gap: .4rem; }
+.onboarding-header .progresso hr { width: auto; flex: 1; }
+.onboarding-header .bola, .onboarding-header .bola-um { flex-shrink: 0; width: 9px; height: 9px; }
+.onboarding-header .etapa-atual { background: var(--selection-color); }
+.onboarding-page .page-header { text-align: center; margin: .5rem auto 1rem; }
+.onboarding-page .page-header h1 { font: 500 clamp(1.5rem, 3vw, 2.2rem)/1.25 var(--font-secundary); color: var(--color-text); }
+.onboarding-page .page-header p { max-width: 34ch; margin: .65rem auto 0; font: 400 .9rem/1.45 var(--font-secundary); }
+.onboarding-page .highlight { color: var(--selection-color); }
+.onboarding-search { display: flex; align-items: center; gap: .65rem; width: min(100%, 520px); min-height: 44px; margin: 1rem auto 1.5rem; padding: .25rem .75rem; background: white; border-radius: 8px; box-shadow: 0 4px 14px #0002; }
+.onboarding-search input { min-width: 0; width: 100%; min-height: 40px; border: 0; background: transparent; color: var(--color-text); outline-offset: 0; }
+.onboarding-page .actions { position: fixed; bottom: max(.75rem, env(safe-area-inset-bottom)); left: 50%; transform: translateX(-50%); width: calc(100% - clamp(2rem, 5.4vw, 5rem)); max-width: 1400px; display: flex; justify-content: space-between; align-items: center; gap: 1rem; padding: .85rem 1rem; border: 1px solid #d9c4fb; border-radius: 12px; background: var(--selection-surface); z-index: 20; }
+.onboarding-page .selected-count, .onboarding-page .action-buttons { display: flex; align-items: center; gap: .75rem; }
+.onboarding-page .selected-count { font: 400 clamp(.95rem, 1.8vw, 1.2rem) var(--font-secundary); }
+.onboarding-page .check-icon { display: grid; place-items: center; width: 24px; height: 24px; border: 1px solid var(--selection-color); border-radius: 6px; color: var(--selection-color); }
+.onboarding-page .button-action, .onboarding-page .btn { min-height: 44px; border: 0; padding: .65rem 1.75rem; border-radius: 7px; cursor: pointer; font: 400 1rem var(--font-secundary); }
+.onboarding-page .button-action { background: var(--color-primary); color: white; }
+.onboarding-page .button-action:disabled { opacity: .55; cursor: not-allowed; }
+.onboarding-page .btn-secondary { background: transparent; color: var(--color-primary); }
+@media(max-width: 560px) { .onboarding-page { padding-bottom: 10rem; } .onboarding-page .actions { flex-wrap: wrap; gap: .5rem; } .onboarding-page .action-buttons { margin-left: auto; } .onboarding-page .button-action, .onboarding-page .btn { padding: .6rem 1rem; } .onboarding-header .logo { width: 36px; } .onboarding-page .page-header { margin-top: 1rem; } }
+.onboarding-header { min-height: 32px; margin-bottom: 0; }
+.onboarding-page .page-header { margin: .25rem auto .5rem; }
+.onboarding-page .page-header p { font-size: .8rem; line-height: 1.4; margin-top: .5rem; }
+.onboarding-search { margin-top: .75rem; margin-bottom: 1rem; }

@@ -76,7 +76,7 @@ $qntd_listas = $qntd_listas ?? 0;
         <section class="lista-form-secao">
             <h3>Capa da lista</h3>
             <div class="lista-capa-opcoes">
-                <input class="sr-only" type="radio" name="tipo_capa" value="manual" id="capaManual">
+                <input class="sr-only" type="radio" name="tipo_capa" <?= isset($schemaLista['whishlist']['capa_url']) ? '' : 'disabled' ?> value="manual" id="capaManual">
                 <label class="lista-capa-opcao" for="capaManual"><i data-lucide="image-plus"></i><span>Capa da<br>lista</span></label>
                 <span class="lista-ou">OU</span>
                 <input class="sr-only" type="radio" name="tipo_capa" value="automatica" id="capaAutomatica" checked>
@@ -92,12 +92,13 @@ $qntd_listas = $qntd_listas ?? 0;
         <div class="lista-contador-campo"><input type="text" id="nome_lista" name="nome_lista" maxlength="50" placeholder="Ex.: Lista irada!" required><span id="contadorNomeLista">0/50</span></div>
 
         <label class="lista-campo-label" for="descricao">Descrição (opcional)</label>
-        <div class="lista-contador-campo lista-descricao-campo"><textarea id="descricao" name="descricao" maxlength="255" placeholder="Ex.: Lista irada!"></textarea><span id="contadorDescricaoLista">0/255</span></div>
+        <div class="lista-contador-campo lista-descricao-campo"><textarea id="descricao" name="descricao" <?= isset($schemaLista['whishlist']['descricao']) ? '' : 'disabled' ?> maxlength="255" placeholder="Ex.: Lista irada!"></textarea><span id="contadorDescricaoLista">0/255</span></div>
 
+        <?php if (!isset($schemaLista['whishlist']['visibilidade'])): ?><p class="lista-feedback">Somente listas privadas estão disponíveis.</p><?php endif; ?>
         <fieldset class="lista-visibilidade-opcoes">
             <legend class="sr-only">Visibilidade da lista</legend>
-            <label class="lista-visibilidade-card is-selected"><input type="radio" name="visibilidade" value="publica" checked><i data-lucide="globe-2"></i><strong>Pública</strong><span>Qualquer pessoa pode ver e adicionar essa lista.</span></label>
-            <label class="lista-visibilidade-card"><input type="radio" name="visibilidade" value="privada"><i data-lucide="lock-keyhole"></i><strong>Privada</strong><span>Qualquer pessoa pode ver e adicionar essa lista.</span></label>
+            <label class="lista-visibilidade-card is-selected"><input type="radio" name="visibilidade" value="publica" <?= isset($schemaLista['whishlist']['visibilidade']) ? 'checked' : 'disabled' ?>><i data-lucide="globe-2"></i><strong>Pública</strong><span>Qualquer pessoa pode ver e adicionar essa lista.</span></label>
+            <label class="lista-visibilidade-card"><input type="radio" name="visibilidade" value="privada" <?= isset($schemaLista['whishlist']['visibilidade']) ? '' : 'checked' ?>><i data-lucide="lock-keyhole"></i><strong>Privada</strong><span>Somente você pode ver esta lista.</span></label>
         </fieldset>
 
         <section class="lista-form-secao lista-selecao-livros">

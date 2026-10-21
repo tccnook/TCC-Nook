@@ -29,8 +29,10 @@ if (!$id_livro || $nota === false || $texto === '' || mb_strlen($titulo) > 100 |
 require_once __DIR__ . '/conexao.php';
 $db = new Database();
 $conn = $db->conectar();
+require_once __DIR__.'/privacy_settings.php';
 
 try {
+    $destinos=destinosMencoes($conn,$titulo.' '.$texto,(int)$_SESSION['id_user']);
     $conn->beginTransaction();
 
     $stmt = $conn->prepare("SELECT 1 FROM livro WHERE id_livro = :id_livro AND visibilidade = 'publico'");
@@ -56,12 +58,14 @@ try {
         ':nota' => $nota
     ]);
 
+    registrarMencoes($conn,$destinos,(int)$_SESSION['id_user'],'resenha',(int)$id_resenha);
     $conn->commit();
     responderResenha(201, 'Resenha publicada com sucesso.');
 } catch (Throwable $erro) {
     if ($conn->inTransaction()) {
         $conn->rollBack();
     }
+    if($erro instanceof DomainException)responderResenha(422,$erro->getMessage());
     error_log('Falha ao publicar resenha: ' . $erro->getMessage());
     responderResenha(500, 'Não foi possível publicar a resenha. Tente novamente.');
 }

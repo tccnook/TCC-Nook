@@ -26,10 +26,14 @@ if (!$id_lista || !in_array($acao, $acoes, true)) {
 
 require_once __DIR__ . '/conexao.php';
 $conn = (new Database())->conectar();
+require_once __DIR__.'/schema_support.php';
+$schema = schemaProjeto($conn);
+require_once __DIR__.'/privacy_settings.php';
+$colunaVisibilidade = isset($schema['whishlist']['visibilidade']) ? 'visibilidade' : "'privada' AS visibilidade";
 
 try {
     $conn->beginTransaction();
-    $stmt = $conn->prepare('SELECT id, id_user, visibilidade FROM whishlist WHERE id = :id_lista FOR UPDATE');
+    $stmt = $conn->prepare("SELECT id, id_user, $colunaVisibilidade FROM whishlist WHERE id = :id_lista FOR UPDATE");
     $stmt->execute([':id_lista' => $id_lista]);
     $lista = $stmt->fetch(PDO::FETCH_ASSOC);
     if (!$lista) {
@@ -38,6 +42,9 @@ try {
     }
 
     $dono = (int) $lista['id_user'];
+    if ($acao === 'seguir' && !isset($schema['whishlist_seguida'])) { $conn->rollBack(); responderLista(422,'Esta lista não pode ser seguida.'); }
+    if ($acao === 'visibilidade' && !isset($schema['whishlist']['visibilidade'])) { $conn->rollBack(); responderLista(422,'Somente listas privadas estão disponíveis.'); }
+    if ($acao === 'ordenar' && !isset($schema['whishbook']['ordem'])) { $conn->rollBack(); responderLista(422,'A reordenação ainda não está disponível.'); }
     if ($acao === 'seguir') {
         if ($dono === $id_user || $lista['visibilidade'] !== 'publica') {
             $conn->rollBack();
@@ -50,6 +57,7 @@ try {
     }
 
     if ($acao === 'comentar') {
+        if(!interacaoPermitida($conn,'comentarios',$dono,$id_user)){$conn->rollBack();responderLista(403,'Comentários limitados pelo autor desta lista.');}
         if ($lista['visibilidade'] !== 'publica' && $dono !== $id_user) {
             $conn->rollBack();
             responderLista(403, 'Você não pode comentar nesta lista.');
@@ -59,8 +67,10 @@ try {
             $conn->rollBack();
             responderLista(422, 'Escreva um comentário de até 1000 caracteres.');
         }
+        $destinos=destinosMencoes($conn,$comentario,$id_user);
         $stmt = $conn->prepare("INSERT INTO comentario (id_user, categoria_curtida, id_coisocurtido, comentario) VALUES (:id_user, 'whishlist', :id_lista, :comentario)");
         $stmt->execute([':id_user' => $id_user, ':id_lista' => $id_lista, ':comentario' => $comentario]);
+        registrarMencoes($conn,$destinos,$id_user,'whishlist',$id_lista);
         $conn->commit();
         responderLista(201, 'Comentário publicado.');
     }
@@ -88,6 +98,10 @@ try {
             $conn->commit();
             responderLista(200, 'Este livro já está na lista.');
         }
+        if (!isset($schema['whishbook']['ordem'])) {
+            $stmt=$conn->prepare('INSERT INTO whishbook (id_livro,id_user,id_whishlist) VALUES (:livro,:usuario,:lista)');
+            $stmt->execute([':livro'=>$id_livro,':usuario'=>$id_user,':lista'=>$id_lista]);
+        } else {
         $stmt = $conn->prepare('INSERT INTO whishbook (id_livro, id_user, id_whishlist, ordem) VALUES (:id_livro, :id_user, :id_lista, (SELECT COALESCE(MAX(ordem), 0) + 1 FROM whishbook WHERE id_whishlist = :lista_ordem))');
         $stmt->execute([
             ':id_livro' => $id_livro,
@@ -95,6 +109,7 @@ try {
             ':id_lista' => $id_lista,
             ':lista_ordem' => $id_lista
         ]);
+        }
         $conn->commit();
         responderLista(200, 'Livro adicionado à lista.');
     }
@@ -103,6 +118,7 @@ try {
         $nome_lista = trim($_POST['nome_lista'] ?? '');
         $descricao = trim($_POST['descricao'] ?? '');
         $visibilidade = $_POST['visibilidade'] ?? '';
+        $destinosEdicao=destinosMencoes($conn,$nome_lista.' '.$descricao,$id_user);
         if ($nome_lista === '' || mb_strlen($nome_lista) > 120 || mb_strlen($descricao) > 90) {
             $conn->rollBack();
             responderLista(422, 'Informe um nome de até 120 caracteres e uma descrição de até 90 caracteres.');
@@ -111,6 +127,11 @@ try {
             $conn->rollBack();
             responderLista(422, 'Visibilidade inválida.');
         }
+        if (!isset($schema['whishlist']['descricao'], $schema['whishlist']['visibilidade'])) {
+            if ($descricao !== '' || $visibilidade !== 'privada') { $conn->rollBack(); responderLista(422,'Somente o nome desta lista pode ser alterado.'); }
+            $stmt=$conn->prepare('UPDATE whishlist SET nome_lista=:nome WHERE id=:lista');
+            $stmt->execute([':nome'=>$nome_lista, ':lista'=>$id_lista]);
+        } else {
         $stmt = $conn->prepare('UPDATE whishlist SET nome_lista = :nome_lista, descricao = :descricao, visibilidade = :visibilidade WHERE id = :id_lista');
         $stmt->execute([
             ':nome_lista' => $nome_lista,
@@ -122,6 +143,8 @@ try {
             $stmt = $conn->prepare('DELETE FROM whishlist_seguida WHERE id_whishlist = :id_lista');
             $stmt->execute([':id_lista' => $id_lista]);
         }
+        }
+        registrarMencoes($conn,$destinosEdicao,$id_user,'whishlist',$id_lista);
         $conn->commit();
         responderLista(200, 'Lista atualizada.');
     }
@@ -159,6 +182,10 @@ try {
             $conn->rollBack();
             responderLista(422, 'Este livro não é mais uma sugestão válida para a lista.');
         }
+        if (!isset($schema['whishbook']['ordem'])) {
+            $stmt=$conn->prepare('INSERT INTO whishbook (id_livro,id_user,id_whishlist) VALUES (:livro,:usuario,:lista)');
+            $stmt->execute([':livro'=>$id_livro,':usuario'=>$id_user,':lista'=>$id_lista]);
+        } else {
         $stmt = $conn->prepare('INSERT INTO whishbook (id_livro, id_user, id_whishlist, ordem) VALUES (:id_livro, :id_user, :id_lista, (SELECT COALESCE(MAX(ordem), 0) + 1 FROM whishbook WHERE id_whishlist = :lista_ordem))');
         $stmt->execute([
             ':id_livro' => $id_livro,
@@ -166,6 +193,7 @@ try {
             ':id_lista' => $id_lista,
             ':lista_ordem' => $id_lista
         ]);
+        }
         $conn->commit();
         responderLista(200, 'Livro adicionado à lista.');
     }
@@ -178,6 +206,7 @@ try {
         }
         $stmt = $conn->prepare('DELETE FROM whishbook WHERE id_whishlist = :id_lista AND id_livro = :id_livro');
         $stmt->execute([':id_lista' => $id_lista, ':id_livro' => $id_livro]);
+        if (!isset($schema['whishbook']['ordem'])) { $conn->commit(); responderLista(200,'Livro removido da lista.'); }
         $stmt = $conn->prepare('SELECT id_livro FROM whishbook WHERE id_whishlist = :id_lista ORDER BY ordem ASC NULLS LAST, id ASC');
         $stmt->execute([':id_lista' => $id_lista]);
         $livros = $stmt->fetchAll(PDO::FETCH_COLUMN);
@@ -220,6 +249,7 @@ try {
     if ($conn->inTransaction()) {
         $conn->rollBack();
     }
+    if($erro instanceof DomainException)responderLista(422,$erro->getMessage());
     error_log('Falha na ação da lista: ' . $erro->getMessage());
     responderLista(500, 'Não foi possível atualizar a lista.');
 }

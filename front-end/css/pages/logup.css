@@ -168,3 +168,5 @@ form input, form label, .remember-password, h1, .button-action {
         padding: 1.25rem 1rem;
     }
 }
+.auth-page { font-family: var(--font-primary); }
+.auth-page h1 { font-family: var(--font-secundary); }

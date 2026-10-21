@@ -120,15 +120,14 @@
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <link rel="stylesheet" href="/TCC-Nook/front-end/css/main.css">    
+        <link rel="stylesheet" href="/TCC-Nook/front-end/css/core.css">
         <link rel="stylesheet" href="/TCC-Nook/front-end/css/pages/logup.css">
-        <link rel="stylesheet" href="/TCC-Nook/front-end/css/utilities/progress.css">
 
         <link rel="preconnect" href="https://fonts.googleapis.com">
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-        <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600;1,700&display=swap" rel="stylesheet">
+        <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600;1,700&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
 
-    
+
         <link rel="shortcut icon" href="/TCC-Nook/img/icons/ico-nook/ico-nook.ico" type="image/x-icon">
 
         <script src="/TCC-Nook/front-end/js/pages/logup.js" defer></script>
@@ -136,7 +135,7 @@
 
         <title> Nook - Cadastro </title>
     </head>
-    <body>
+    <body class="auth-page">
         <main>
 
         <div class="logo-nook">
@@ -156,7 +155,7 @@
 
         <label for="nome_user">Nome de Usuário</label>
         <input type="text" name="nome_user" id="nome_user" value="<?= htmlspecialchars($dadosCadastrados['username'] ?? '', ENT_QUOTES, 'UTF-8') ?>" minlength="3" maxlength="30" required>
-        
+
         <p>Já possui uma conta? <a href="login.php">Entre agora! </a></p>
 
         <section class="progresso">
@@ -187,7 +186,7 @@
 
         <p>Já possui uma conta? <a href="login.php">Entre agora! </a></p>
 
-        
+
         <section class="progresso">
             <section class="bola-um"></section>
             <hr>
@@ -214,13 +213,13 @@
                 <span>OU</span>
                 <hr>
 </section>
-            
+
             <button onclick="window.location.href='google-login.php'" class="google-btn">
                 <img class="ico-google" src="/TCC-Nook/img/icons/plataforms/google-ico.svg" alt="Google">
                 <span>Continuar com o Google</span>
             </button>
 
-            
+
 
 </main>
 </body>

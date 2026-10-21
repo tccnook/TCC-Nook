@@ -154,3 +154,5 @@ p {
         width: 100%;
     }
 }
+.auth-page { font-family: var(--font-primary); }
+.auth-page h1 { font-family: var(--font-secundary); }

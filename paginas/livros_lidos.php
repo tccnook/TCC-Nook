@@ -1,33 +1,11 @@
 <?php
 
-$select = 'select l.id_livro, l.titulo_livro, l.nome_autor, l.capa_url, pr.ultima_leitura, r.titulo_resenha, r.sinopse as resenha, r.nota_avaliacao
-from progresso_leitura pr
-inner join livro l on l.id_livro = pr.id_livro
-left join lateral (
-        select r.titulo_resenha, r.sinopse, c.nota_avaliacao
-        from resenha r
-        left join comentario c on c.id_coisocurtido = r.id_resenha
-            and c.id_user = r.id_user
-            and c.categoria_curtida = \'resenha\'
-        where r.id_livro = pr.id_livro
-            and r.id_user = pr.id_user
-        order by r.data_publi desc, r.id_resenha desc
-        limit 1
-) r on true
-where pr.porcentagem_progresso = 100 and pr.id_user = :id_user
-order by pr.ultima_leitura desc;
-';
-
+require_once __DIR__.'/reading_library.php';
 $livros_lidos = [];
 $erro_livros = '';
-
-try{
-    $stmt = $conn->prepare($select);
-    $stmt->execute([
-        ":id_user" => $id_user
-    ]);
-    $livros_lidos = $stmt->fetchAll(PDO::FETCH_ASSOC);
-} catch(PDOException $e){
+try {
+    $livros_lidos = livrosLidosUsuario($conn, (int)$id_user);
+} catch (PDOException $e) {
     error_log($e->getMessage());
     $erro_livros = 'Não foi possível carregar seus livros lidos.';
 }
@@ -89,7 +67,7 @@ $total_lidos = count($livros_lidos);
                             </a>
                         <?php endif; ?>
 
-                        <p class="lido-em">Lido em: <?= date('d/m/Y', strtotime($livro_lido['ultima_leitura'])) ?></p>
+                        <p class="lido-em">Lido em: <?= !empty($livro_lido['ultima_leitura']) ? date('d/m/Y', strtotime($livro_lido['ultima_leitura'])) : 'Data não registrada' ?></p>
                     </div>
 
                 </article>

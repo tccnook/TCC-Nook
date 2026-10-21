@@ -1,4 +1,11 @@
 :root {
+    --color-primary: #2B1F47;
+    --color-lavender: #7B6AA8;
+    --color-background: #F6F2EB;
+    --color-surface-muted: #E8DFD1;
+    --color-surface: #FFFFFF;
+    --color-text: #252525;
+    --color-gold: #D6C6A5;
     --space-1: .25rem;
     --space-2: .5rem;
     --space-3: .75rem;
@@ -12,13 +19,13 @@
     --size-input-height: clamp(2.8rem, 3vw, 3.5rem);
     --size-auth-panel: min(100%, 34rem);
 
-    --bg-primary: #F5F3ED;
+    --bg-primary: var(--color-background);
     --bg-cards: #2B1F47;
     --bg-cards-light: #3A2A5C;
-    --all-white: #F4F4F4;
+    --all-white: var(--color-surface);
 
-    --color-accent: #8B5CF6;
-    --color-accent2: #A855F7;
+    --color-accent: var(--color-primary);
+    --color-accent2: var(--color-lavender);
     --lista-propria-solid: #7B6AA8;
     --bg-soft: #F6F0FF;
     --bg-soft-strong: #E6DEF5;
@@ -27,7 +34,7 @@
     --surface-soft-strong: #ffffff99;
     --overlay-dark: #0000008c;
 
-    --text-primary: #000000;
+    --text-primary: var(--color-text);
     --text-secondary: #252525;
     --text-on-dark: #FFFFFF;
     --text-title: #2B1F47;

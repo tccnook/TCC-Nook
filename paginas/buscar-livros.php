@@ -8,13 +8,18 @@ if (!isset($_SESSION['id_user'])) {
     exit();
 }
 
+// Evita serializar buscas e outras ações AJAX da mesma sessão.
+session_write_close();
+require_once __DIR__ . '/catalog_support.php';
 require_once __DIR__ . '/conexao.php';
 $conn = (new Database())->conectar();
-$nome = trim($_GET['nome'] ?? '');
+require_once __DIR__ . '/schema_support.php';
+$schema = schemaProjeto($conn);
+$nome = mb_substr(trim(is_string($_GET['nome'] ?? '') ? ($_GET['nome'] ?? '') : ''), 0, 200);
 $genero = filter_var($_GET['genero'] ?? '', FILTER_VALIDATE_INT);
 $inicio = filter_var($_GET['inicio'] ?? 0, FILTER_VALIDATE_INT);
 $inicio = $inicio !== false ? max(0, min(980, $inicio)) : 0;
-$ordem = $_GET['ordem'] ?? 'titulo';
+$ordem = is_string($_GET['ordem'] ?? null) ? $_GET['ordem'] : 'titulo';
 $generoNome = '';
 if ($genero !== false && $genero !== '' && $genero > 0) {
     $stmtGenero = $conn->prepare('SELECT nome_preferencia FROM preferencia WHERE id_preferencia = :id');
@@ -28,23 +33,20 @@ $ordenacoes = [
 ];
 $orderBy = $ordenacoes[$ordem] ?? $ordenacoes['titulo'];
 
+$camposOpcionais = implode(', ', array_map(static fn($coluna) => colunaOpcional($schema, 'livro', $coluna, 'l'), ['paginas', 'google_books_id', 'nota_google', 'link_leitura', 'link_compra', 'origem']));
+
 $sql = "
     SELECT
+        $camposOpcionais,
         l.id_livro,
         l.titulo_livro,
         l.nome_autor,
         l.capa_url,
-        l.paginas,
         l.idioma,
         l.class_ind,
         l.data_publi,
-        l.google_books_id,
-        l.nota_google,
         l.sinopse_livro,
         l.resumo_livro,
-        l.link_leitura,
-        l.link_compra,
-        l.origem,
         avaliacao.media,
         avaliacao.total
     FROM livro l
@@ -98,36 +100,27 @@ if (function_exists('curl_init')) {
     if ($consultaApi === '') {
         $consultaApi = 'fiction';
     }
-    $parametrosApi = [
-        'q' => $consultaApi,
-        'maxResults' => 20,
-        'startIndex' => $inicio,
-        'orderBy' => $ordem === 'recentes' ? 'newest' : 'relevance',
-        'printType' => 'books'
-    ];
-    if ($chave_api !== '') {
-        $parametrosApi['key'] = $chave_api;
-    }
+    $parametrosApi = parametrosBuscaLivros($consultaApi, $inicio, $ordem);
+    $dadosGoogle = cacheGoogleBooks($parametrosApi, static function () use ($parametrosApi, $chave_api): ?array {
+        if ($chave_api !== '') { $parametrosApi['key'] = $chave_api; }
+        $ch = curl_init('https://www.googleapis.com/books/v1/volumes?' . http_build_query($parametrosApi));
+        configurarCurlGoogleBooks($ch);
+        curl_setopt_array($ch, [
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_CONNECTTIMEOUT => 2,
+            CURLOPT_TIMEOUT => 5,
+            CURLOPT_ENCODING => '',
+            CURLOPT_USERAGENT => 'Nook/1.0'
+        ]);
+        $resposta = curl_exec($ch);
+        $codigoHttp = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+        if ($resposta === false || $codigoHttp !== 200) { return null; }
+        $dados = json_decode($resposta, true);
+        return is_array($dados) ? $dados : null;
+    });
 
-    $ch = curl_init('https://www.googleapis.com/books/v1/volumes?' . http_build_query($parametrosApi));
-    configurarCurlGoogleBooks($ch);
-    curl_setopt_array($ch, [
-        CURLOPT_RETURNTRANSFER => true,
-        CURLOPT_TIMEOUT => 10,
-        CURLOPT_USERAGENT => 'Nook/1.0'
-    ]);
-    $resposta = curl_exec($ch);
-    $codigoHttp = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    curl_close($ch);
-
-    if ($resposta !== false && $codigoHttp === 200) {
-        try {
-            $dadosGoogle = json_decode($resposta, true, 512, JSON_THROW_ON_ERROR);
-        } catch (JsonException $erro) {
-            $dadosGoogle = [];
-            $avisoGoogle = 'A busca externa está temporariamente indisponível.';
-        }
-
+    if ($dadosGoogle !== null) {
         $totalGoogle = (int) ($dadosGoogle['totalItems'] ?? 0);
         $temMaisGoogle = $inicio < 980 && !empty($dadosGoogle['items']) && $inicio + 20 < $totalGoogle;
 

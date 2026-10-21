@@ -21,8 +21,12 @@
         'visao-geral'    => 'Visão Geral',
         'livros-lidos'   => 'Livros lidos',
         'listas-leitura' => 'Listas de leitura',
-        'resenhas'       => 'Resenhas'
+        'resenhas'       => 'Resenhas',
+        'marcadores' => 'Marcadores'
     ];
+
+    require_once __DIR__.'/publishing_service.php';
+    if(ehAutor($conn,(int)$id_user)) $possiveisAbas['livros-publicados']='Livros publicados';
 
     $aba = $_GET['aba'] ?? 'visao-geral';
 
@@ -54,6 +58,7 @@
     <link rel="stylesheet" href="/TCC-Nook/front-end/css/pages/perfil-livros.css">
     <link rel="stylesheet" href="/TCC-Nook/front-end/css/pages/perfil-listas.css">
     <link rel="stylesheet" href="/TCC-Nook/front-end/css/pages/visão-geral.css">
+    <link rel="stylesheet" href="/TCC-Nook/front-end/css/pages/profile-reference.css">
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -64,8 +69,9 @@
 
     <script src="https://unpkg.com/lucide@latest"></script>
     <title>Perfil</title>
+<link rel="stylesheet" href="../front-end/css/components/goal-manager.css">
 </head>
-<body>
+<body class="profile-page" data-profile-tab="<?= htmlspecialchars($aba, ENT_QUOTES, 'UTF-8') ?>">
     <header class="header">
         <?php require 'header_perfil.php'; ?>
     </header>
@@ -96,9 +102,14 @@
                     require 'listas_livros.php';
                     break;
 
+                case 'livros-publicados':
+                    require 'livros_publicados_perfil.php';
+                    break;
+                case 'marcadores':
+                    require 'marcadores_perfil.php';
+                    break;
                 case 'resenhas':
-                    // TODO: criar resenhas.php
-                    echo '<p class="aba-vazia">tem que colocar essa porra aqui ainda (eu não tenho e não sei se foi feito)</p>';
+                    require 'resenhas_perfil.php';
                     break;
             }
             

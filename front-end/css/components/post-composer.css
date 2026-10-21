@@ -1,0 +1,48 @@
+.post-composer-dialog { width: min(94vw,680px); max-height: min(92dvh,950px); overflow-y: auto; margin: auto; padding: 0; background: var(--color-background); border: 1px solid var(--color-surface-muted); border-radius: 18px; color: var(--color-text); }
+.post-composer-dialog::backdrop { background: #1b142b99; }
+.post-composer-dialog form { display: block; padding: 1.5rem; }
+.post-composer-heading { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
+.post-composer-heading h2 { font: 500 1.5rem var(--font-secundary); color: var(--color-primary); }
+.post-composer-heading button { display: grid; place-items: center; width: 44px; height: 44px; border-radius: 50%; }
+.post-composer-heading button:hover { background: var(--color-surface-muted); }
+.post-composer-help { color: var(--text-muted); font-size: .85rem; margin: .5rem 0 1.25rem; line-height: 1.6; }
+.post-draft-preview { padding: 1.25rem; border: 1px solid var(--color-surface-muted); border-radius: 12px; background: white; }
+.post-draft-author { display: flex; align-items: center; gap: .75rem; margin-bottom: .75rem; }
+.post-draft-author img { width: 44px; height: 44px; border-radius: 50%; object-fit: cover; }
+.post-draft-author strong { display: block; font-size: .95rem; }
+.post-draft-author small { display: block; margin-top: .2rem; font-size: .75rem; color: var(--text-muted); }
+.post-composer-dialog .post-draft-title, .post-composer-dialog .post-draft-content, .post-composer-dialog .post-draft-caption { display: block; width: 100%; border: 0; background: transparent; padding: .65rem 0; border-radius: 0; color: var(--color-text); box-shadow: none; min-height: 44px; }
+.post-composer-dialog .post-draft-title { font: 500 1.3rem var(--font-secundary); }
+.post-composer-dialog .post-draft-content { font: 400 1rem/1.8 var(--font-primary); resize: vertical; min-height: 120px; }
+.post-composer-dialog .post-draft-caption { font: 400 .9rem/1.6 var(--font-primary); resize: vertical; color: var(--text-muted); }
+.post-draft-media { position: relative; margin: .5rem -1.25rem; background: var(--color-background); }
+.post-draft-media > img { width: 100%; max-height: 420px; object-fit: contain; }
+.post-draft-media > div { position: absolute; right: .5rem; top: .5rem; display: flex; gap: .5rem; }
+.post-draft-media button { min-height: 44px; padding: .5rem .75rem; border-radius: 7px; background: white; color: var(--color-primary); font-size: .8rem; box-shadow: 0 2px 5px #0002; }
+.post-composer-tools { display: flex; align-items: center; flex-wrap: wrap; gap: .5rem 1rem; padding: .75rem 0; }
+.post-composer-tools button { display: inline-flex; align-items: center; gap: .5rem; min-height: 44px; color: var(--color-primary); font-size: .9rem; }
+.post-composer-tools small { color: var(--text-muted); font-size: .75rem; }
+.post-file-input { position: absolute; width: 1px; height: 1px; opacity: 0; }
+.post-composer-privacy { font-size: .8rem; color: var(--text-muted); line-height: 1.5; }
+.post-composer-privacy a { color: var(--color-primary); text-decoration: underline; }
+.post-content-labels { margin: 0 0 .75rem; font-size: .8rem; }
+.post-content-labels summary { min-height: 44px; display: flex; align-items: center; cursor: pointer; }
+.post-content-labels label { display: flex; align-items: center; gap: .5rem; min-height: 44px; }
+.post-content-labels input { accent-color: var(--color-primary); }
+.post-composer-footer { display: flex; align-items: center; justify-content: flex-end; gap: 1rem; margin-top: .5rem; }
+.post-composer-footer button { display: inline-flex; align-items: center; gap: .5rem; min-height: 44px; padding: .65rem 1rem; border-radius: 8px; font-size: .9rem; }
+.post-composer-footer .post-submit { background: var(--color-primary); color: white; }
+.post-composer-footer button:disabled { opacity: .6; cursor: wait; }
+.post-composer-dialog .modal-post-status { min-height: 1.5em; padding-top: .5rem; font-size: .85rem; color: var(--color-primary); }
+@media(max-width:600px) { .post-composer-dialog { width: calc(100% - 1rem); max-height: 96dvh; border-radius: 14px; } .post-composer-dialog form { padding: 1rem; } .post-draft-preview { padding: 1rem; } .post-draft-media { margin: .5rem -1rem; } }
+.post-composer-dialog form { display: flex; flex-direction: column; max-height: 92dvh; }
+.post-composer-heading, .post-composer-help, .post-composer-tools, .post-composer-privacy, .post-content-labels, .post-composer-footer, .post-composer-dialog .modal-post-status { flex: none; }
+.post-draft-preview { flex: 1 1 auto; min-height: 180px; overflow-y: auto; }
+.post-composer-dialog .post-draft-content { min-height: 80px; }
+.post-composer-dialog .post-draft-caption { min-height: 44px; }
+.post-draft-media > img { max-height: 320px; }
+.post-composer-footer { padding-top: .5rem; }
+#modalCriarPost #formCriarPostGlobal { display:flex; flex-direction:column; gap:0; height:min(92dvh,920px); max-height:92dvh; }
+#modalCriarPost .post-draft-preview { flex:1 1 0; min-height:120px; }
+#modalCriarPost .post-composer-footer { position:relative; flex-shrink:0; }
+@media(max-height:600px){#modalCriarPost .post-composer-help{display:none}#modalCriarPost .post-draft-preview{min-height:80px}#modalCriarPost .post-composer-privacy{font-size:.7rem}}

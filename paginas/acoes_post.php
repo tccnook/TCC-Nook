@@ -19,6 +19,7 @@ if (!$id_post || !in_array($acao, ['curtir', 'comentar'], true)) responderAcaoPo
 
 require_once __DIR__ . '/conexao.php';
 $conn = (new Database())->conectar();
+require_once __DIR__.'/privacy_settings.php';
 $stmt = $conn->prepare("SELECT id_user, visibilidade FROM post WHERE id_post = :id_post AND (visibilidade = 'publico' OR id_user = :id_user)");
 $stmt->execute([':id_post' => $id_post, ':id_user' => $id_user]);
 $post = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -31,10 +32,13 @@ try {
         responderAcaoPost(200, 'Post curtido.');
     }
 
+    if(!interacaoPermitida($conn,'comentarios',(int)$post['id_user'],$id_user))responderAcaoPost(403,'Este autor não permite seus comentários nesta publicação.');
     $comentario = trim($_POST['comentario'] ?? '');
     if ($comentario === '' || mb_strlen($comentario) > 1000) responderAcaoPost(422, 'Escreva um comentário de até 1000 caracteres.');
+    try{$destinos=destinosMencoes($conn,$comentario,$id_user);}catch(DomainException $e){responderAcaoPost(422,$e->getMessage());}
     $stmt = $conn->prepare("INSERT INTO comentario (id_user, categoria_curtida, id_coisocurtido, comentario) VALUES (:id_user, 'post', :id_post, :comentario)");
     $stmt->execute([':id_user' => $id_user, ':id_post' => $id_post, ':comentario' => $comentario]);
+    registrarMencoes($conn,$destinos,$id_user,'post',$id_post);
     responderAcaoPost(201, 'Comentário publicado.');
 } catch (Throwable $erro) {
     error_log('Falha em ação de post: ' . $erro->getMessage());

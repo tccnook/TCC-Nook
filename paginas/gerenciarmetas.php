@@ -2,48 +2,6 @@
 // Conteúdo do modal "Gerenciar metas" - incluído pela visao-geral.php
 // ($conn, $id_user, buscar_dados(), executar_sql() e contar_lidos_meta() já existem lá)
 
-/* ==========================
-   EXCLUIR META
-========================== */
-
-if (isset($_POST['excluir_meta_concluida'])) {
-    $delete = "
-        DELETE FROM meta_leitura
-        WHERE id_user = :id_user
-          AND id = :id_exclusao
-          AND status = 'concluida'
-    ";
-
-    executar_sql($conn, $delete, [
-        ':id_user' => $id_user,
-        ':id_exclusao' => $_POST['excluir_meta_concluida']
-    ]);
-
-    header('Location: perfil.php?aba=visao-geral&metas=1');
-    exit();
-}
-
-if (isset($_GET['exc_meta'])) {
-
-    $delete = "
-        DELETE FROM meta_leitura
-        WHERE id_user = :id_user
-        AND id = :id_exclusao
-    ";
-
-    executar_sql($conn, $delete, [
-        ':id_user' => $id_user,
-        ':id_exclusao' => $_GET['exc_meta']
-    ]);
-
-    header("location:perfil.php?aba=visao-geral&metas=1");
-    exit();
-}
-
-/* ==========================
-   FILTROS
-========================== */
-
 $select = "
     SELECT *
     FROM meta_leitura
@@ -56,20 +14,6 @@ $params = [
 
 $filtro_nome = trim($_GET['nome_meta'] ?? '');
 $filtro_periodo = $_GET['periodo'] ?? '';
-
-if (!empty($filtro_nome)) {
-
-    $select .= " AND nome_meta ILIKE :nome_meta";
-
-    $params[':nome_meta'] = '%' . $filtro_nome . '%';
-}
-
-if (!empty($filtro_periodo)) {
-
-    $select .= " AND periodo = :periodo";
-
-    $params[':periodo'] = $filtro_periodo;
-}
 
 $metas_modal = buscar_dados($conn, $select, $params, true);
 $meta_feedback = $_SESSION['meta_feedback'] ?? '';
@@ -110,6 +54,7 @@ $nomes_status = [
         <label><input type="radio" name="periodo" value="" class="sr-only" <?= $filtro_periodo === '' ? 'checked' : '' ?>> Todas</label>
         <label><input type="radio" name="periodo" value="semanal" class="sr-only" <?= $filtro_periodo === 'semanal' ? 'checked' : '' ?>> Semanal</label>
         <label><input type="radio" name="periodo" value="mensal" class="sr-only" <?= $filtro_periodo === 'mensal' ? 'checked' : '' ?>> Mensal</label>
+        <label><input type="radio" name="periodo" value="semestral" class="sr-only" <?= $filtro_periodo === 'semestral' ? 'checked' : '' ?>> Semestral</label>
         <label><input type="radio" name="periodo" value="anual" class="sr-only" <?= $filtro_periodo === 'anual' ? 'checked' : '' ?>> Anual</label>
     </fieldset>
 
@@ -121,7 +66,7 @@ $nomes_status = [
 
 <?php if (empty($metas_modal)): ?>
 
-    <p class="aba-vazia">Nenhuma meta encontrada.</p>
+    <section class="goal-empty"><img src="../img/escrita/pilha-livros.svg" width="120" height="84" alt=""><h3>Nenhuma meta encontrada.</h3><p>Crie uma meta para começar a acompanhar sua leitura.</p><button type="button" class="button-perfil" data-abrir-criar-meta><i data-lucide="plus"></i> Criar meta</button></section>
 
 <?php else: ?>
 
@@ -129,7 +74,7 @@ $nomes_status = [
         <?php foreach ($metas_modal as $m): ?>
 
             <?php
-            $lidos_meta = contar_lidos_meta($conn, $id_user, $m['criacao']);
+            $lidos_meta = progressoMeta($conn,(int)$id_user,$m);
             $falta_meta = $m['num_livros'] - $lidos_meta;
 
             $percentual = $m['num_livros'] > 0
@@ -144,21 +89,19 @@ $nomes_status = [
                 $mensagem_meta = 'Meta concluída!';
             }
 
+            if(($m['tipo_meta']??'livros')==='listas')$mensagem_meta=str_replace(['livros','livro'],['listas','lista'],$mensagem_meta);
             $prazo = !empty($m['expiracao']) ? (new DateTime($m['expiracao']))->format('d/m/Y') : '-';
             ?>
 
-            <article class="meta-card">
+            <article class="meta-card" data-goal-card="<?=(int)$m['id']?>" data-goal-name="<?=htmlspecialchars($m['nome_meta'],ENT_QUOTES,'UTF-8')?>" data-goal-period="<?=htmlspecialchars($m['periodo'],ENT_QUOTES,'UTF-8')?>">
 
                 <section class="meta-card-topo">
                     <h3><?= htmlspecialchars($m['nome_meta']) ?></h3>
                     <span class="status status-<?= htmlspecialchars($m['status']) ?>">
                         <?= $nomes_status[$m['status']] ?? htmlspecialchars($m['status']) ?>
                     </span>
-                    <?php if ($m['status'] === 'concluida'): ?>
-                        <form method="POST" action="perfil.php?aba=visao-geral&metas=1" class="meta-concluir-form">
-                            <input type="hidden" name="excluir_meta_concluida" value="<?= (int) $m['id'] ?>">
-                            <button type="submit" class="meta-concluir" onclick="return confirm('Excluir esta meta concluída?')">Concluir Meta!</button>
-                        </form>
+                    <?php if ($lidos_meta >= (int)$m['num_livros']): ?>
+                        <form class="meta-concluir-form" data-goal-action="concluir"><input type="hidden" name="csrf" value="<?=htmlspecialchars($_SESSION['goal_csrf'],ENT_QUOTES,'UTF-8')?>"><input type="hidden" name="id_meta" value="<?=(int)$m['id']?>"><button type="submit" class="meta-concluir" <?=$m['status']==='concluida'?'disabled':''?>><?=$m['status']==='concluida'?'Meta concluída':'Concluir meta'?></button></form>
                     <?php endif; ?>
                 </section>
 
@@ -173,7 +116,7 @@ $nomes_status = [
                     <span class="pilula"><?= round($percentual) ?>%</span>
                 </section>
 
-                <p class="meta-periodo"><?= htmlspecialchars($lidos_meta) ?> de <?= htmlspecialchars($m['num_livros']) ?> livros lidos</p>
+                <p class="meta-periodo"><?= htmlspecialchars($lidos_meta) ?> de <?= htmlspecialchars($m['num_livros']) ?> <?= ($m['tipo_meta']??'livros')==='listas'?'listas lidas':'livros lidos' ?></p>
                 <p class="meta-mensagem <?= $falta_meta <= 0 ? 'concluida' : '' ?>"><?= $mensagem_meta ?></p>
 
                 <section class="meta-acoes">
@@ -181,11 +124,7 @@ $nomes_status = [
                         <i data-lucide="pencil"></i> Atualizar
                     </a>
 
-                    <a href="?aba=visao-geral&exc_meta=<?= urlencode($m['id']) ?>"
-                       class="link-card perigo"
-                       onclick="return confirm('Excluir esta meta?')">
-                        <i data-lucide="trash-2"></i> Excluir
-                    </a>
+                    <form data-goal-action="excluir"><input type="hidden" name="csrf" value="<?=htmlspecialchars($_SESSION['goal_csrf'],ENT_QUOTES,'UTF-8')?>"><input type="hidden" name="id_meta" value="<?=(int)$m['id']?>"><button type="submit" class="link-card perigo"><i data-lucide="trash-2"></i> Excluir</button></form>
                 </section>
 
             </article>
@@ -200,5 +139,6 @@ $nomes_status = [
 </button>
 
 <footer class="form-acoes">
-    <button type="button" class="btn-cancelar" data-fechar>Fechar metas</button>
+    <button type="button" class="btn-cancelar" data-fechar>Fechar</button>
 </footer>
+<p role="status" class="meta-feedback" data-goal-status></p><p class="goal-no-results" hidden>Nenhuma meta encontrada com esses filtros.</p>

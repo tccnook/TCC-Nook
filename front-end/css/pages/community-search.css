@@ -84,4 +84,10 @@
     .community-search { gap: .4rem; }
     .community-search button { padding: 0 .55rem; }
     .community-results { grid-template-columns: 1fr; }
-}
+}#authors-results { gap: 1.25rem; }
+#authors-results .community-author { border: 1px solid var(--color-surface-muted); border-radius: 12px; background: white; box-shadow: none; }
+#authors-results .community-author > a { display: flex; align-items: center; gap: 1rem; min-height: 128px; padding: 1.25rem; color: var(--color-text); }
+#authors-results .community-author img, #authors-results .community-author-fallback { width: 72px; height: 72px; border-radius: 50%; object-fit: cover; flex: none; }
+#authors-results .community-author strong { font: 500 1.1rem/1.4 var(--font-secundary); }
+#authors-results .community-author small { display: block; margin-top: .4rem; font-size: .8rem; color: var(--text-muted); }
+#authors-status { min-height: 1.5em; margin: 1rem 0; font-size: .85rem; }

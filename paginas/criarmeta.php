@@ -12,123 +12,30 @@ if (!isset($_SESSION['id_user'])){
 
 $id_user = $_SESSION['id_user'];
 
+require_once __DIR__.'/reading_goal_support.php';
 if (($_POST['origem'] ?? '') === 'metas') {
-    $nome_meta = trim($_POST['nomemeta'] ?? '');
-    $num_livros = filter_var($_POST['quantidade'] ?? null, FILTER_VALIDATE_INT, [
-        'options' => ['min_range' => 1]
-    ]);
-    $periodo = $_POST['periodo'] ?? '';
-    $prazos = ['semanal' => 7, 'mensal' => 30, 'anual' => 365];
-
-    if ($nome_meta === '' || mb_strlen($nome_meta) > 100 || $num_livros === false || !isset($prazos[$periodo])) {
-        $_SESSION['meta_feedback'] = 'Preencha os campos da meta com valores válidos.';
-    } else {
-        try {
-            $insert = 'insert into meta_leitura (id_user, periodo, num_livros, expiracao, nome_meta) values (:id_user, :periodo, :num_livros, CURRENT_DATE + CAST(:prazo AS INTEGER), :nome_meta);';
-            $stmt = $conn->prepare($insert);
-            $stmt->execute([
-                ':id_user' => $id_user,
-                ':periodo' => $periodo,
-                ':num_livros' => $num_livros,
-                ':prazo' => $prazos[$periodo],
-                ':nome_meta' => $nome_meta
-            ]);
-            $_SESSION['meta_feedback'] = 'Meta criada com sucesso.';
-        } catch (PDOException $e) {
-            error_log($e->getMessage());
-            $_SESSION['meta_feedback'] = 'Não foi possível criar a meta. Tente novamente.';
-        }
-    }
-
-    header('Location: perfil.php?aba=visao-geral&metas=1');
-    exit();
-}
-
-if(isset($_GET['atualizar'])){
-    $id_atualizacao = $_GET['atualizar'];
-
-    $select = 'select * from meta_leitura where id_user = :id_user and id = :id;';
-    try{
-        $stmt = $conn->prepare($select);
-        $stmt->execute([
-            ":id_user" => $id_user,
-            ":id" => $id_atualizacao
-        ]);
-
-        $resultado = $stmt->fetch(PDO::FETCH_ASSOC);
-    } catch(PDOException $e){
-        echo 'Erro: '.$e->getMessage();
-    }
-}
-
-if(isset($_POST['cadastrar'])){
-    $num_livros = $_POST['quantidade'];
-    $periodo = $_POST['periodo'];
-    if($periodo == 'semanal'){
-        $prazo = 7;
-    } elseif($periodo == 'mensal'){
-        $prazo = 30;
-    } else{
-        $prazo = 365;
-    }
-    $nome_meta = $_POST['nomemeta'];
-    if(isset($id_atualizacao)){
-        $update = 'update meta_leitura set 
-        nome_meta = :nome_meta, periodo = :periodo, num_livros = :num_livros, expiracao = (criacao + CAST(:prazo AS INTEGER) * INTERVAL \'1 day\')::DATE 
-        where id = :id_atualizacao and id_user = :id_user;';
+    $erro='';$nome=trim(is_string($_POST['nomemeta']??'')?($_POST['nomemeta']??''):'');
+    $tipo=$_POST['tipo_meta']??'livros';$periodo=is_string($_POST['periodo']??'')?($_POST['periodo']??''):'';
+    $prazo=prazoMeta($periodo,is_string($_POST['data_limite']??null)?$_POST['data_limite']:null);
+    $ids=$tipo==='listas'?idsListasMeta($_POST['listas']??null):[];
+    $quantidade=$tipo==='listas'?count($ids??[]):filter_var($_POST['quantidade']??null,FILTER_VALIDATE_INT,['options'=>['min_range'=>1,'max_range'=>10000]]);
+    if(!is_string($_POST['csrf']??null)||empty($_SESSION['goal_csrf'])||!hash_equals($_SESSION['goal_csrf'],$_POST['csrf']))$erro='Sua sessão expirou. Atualize a página.';
+    elseif(!in_array($tipo,['livros','listas'],true)||!$prazo||!$quantidade||$ids===null||mb_strlen($nome)>100)$erro='Confira o tipo de meta, a quantidade e o prazo.';
+    if($erro===''){
         try{
-            $stmt = $conn->prepare($update);
-            $stmt->execute([
-                ":nome_meta" => $nome_meta,
-                ":periodo" => $periodo,
-                ":num_livros" => $num_livros,
-               ":prazo" => $prazo,
-                ":id_atualizacao" => 7,
-                ":id_user" => 19
-            ]);
-            header("location:gerenciarmetas.php");
-            exit();
-            
-        } catch(PDOException $e){
-            echo 'Erro: '.$e->getMessage();
-            header("location:gerenciarmetas.php");
-            exit();
-        }
-    } else{
-    $insert = 'insert into meta_leitura (id_user, periodo, num_livros, expiracao, nome_meta) values (:id_user, :periodo, :num_livros, CURRENT_DATE + CAST(:prazo AS INTEGER), :nome_meta);';
-    try{
-        $stmt = $conn->prepare($insert);
-        $stmt->execute([
-            ":id_user" => $id_user,
-            ":periodo" => $periodo,
-            ":num_livros" => $num_livros,
-            ":prazo" => $prazo,
-            ":nome_meta" => $nome_meta
-        ]);
-        echo 'Meta cadastrada com sucesso!';
-    } catch(PDOException $e){
-        echo 'Erro: '.$e->getMessage();
-    }
-    }
-
+            $conn->beginTransaction();
+            if($tipo==='listas'){
+                $markers=implode(',',array_fill(0,count($ids),'?'));$stmt=$conn->prepare("SELECT id FROM whishlist WHERE id IN ($markers) AND (id_user=? OR visibilidade='publica')");$stmt->execute(array_merge($ids,[$id_user]));
+                if(count($stmt->fetchAll(PDO::FETCH_COLUMN))!==count($ids))throw new DomainException('Uma das listas não está disponível.');
+            }
+            $stmt=$conn->prepare('INSERT INTO meta_leitura (id_user,periodo,num_livros,expiracao,nome_meta,tipo_meta) VALUES (:usuario,:periodo,:quantidade,:expiracao,:nome,:tipo) RETURNING id');
+            $stmt->execute([':usuario'=>$id_user,':periodo'=>$periodo,':quantidade'=>$quantidade,':expiracao'=>$prazo->format('Y-m-d'),':nome'=>$nome?:($tipo==='listas'?'Concluir minhas listas':'Minha meta de leitura'),':tipo'=>$tipo]);$metaId=$stmt->fetchColumn();
+            $stmt=$conn->prepare('INSERT INTO meta_leitura_listas (id_meta,id_lista) VALUES (:meta,:lista)');foreach($ids as $idLista)$stmt->execute([':meta'=>$metaId,':lista'=>$idLista]);
+            $conn->commit();$_SESSION['meta_feedback']='Meta criada com sucesso.';
+        }catch(Throwable $e){if($conn->inTransaction())$conn->rollBack();$_SESSION['meta_feedback']='Não foi possível criar sua meta. Confira as listas e tente novamente.';}
+    }else $_SESSION['meta_feedback']=$erro;
+    header('Location: perfil.php?aba=visao-geral&metas=1');exit;
 }
 
-echo '<a href="perfil.php"> Voltar </a>';
-echo '<h2> Criar Meta </h2>';
-echo '<br><br>';
-
-echo '<form name="criarmeta" method="POST" action="#">
-        <label for="nomemeta"> Nome da Meta </label><br>
-        <input type="text" name="nomemeta" value="'. (isset($id_atualizacao) ? $resultado['nome_meta'] : '').'"><br>
-        <label for="quantidade"> Número de Livros </label><br>
-        <input type="number" name="quantidade" value="'. (isset($id_atualizacao) ? $resultado['num_livros'] : '' ).'"><br>
-        <label for="periodo"> Duração da Meta </label><br>
-        <input type="radio" name="periodo" value="semanal" required '.(isset($id_atualizacao) && $resultado['periodo'] == 'semanal' ? 'checked' : '').'> Semanal
-        <input type="radio" name="periodo" value="mensal" '.(isset($id_atualizacao) && $resultado['periodo'] == 'mensal' ? 'checked' : '').'> Mensal 
-        <input type="radio" name="periodo" value="anual" '.(isset($id_atualizacao) && $resultado['periodo'] == 'anual' ? 'checked' : '').'> Anual
-        <br>
-        <input type="submit" name="cadastrar" value="cadastrar">
-</form>';
-
-
-?>
+if(isset($_GET['atualizar'])){require __DIR__.'/editar_meta.php';exit;}
+header('Location: perfil.php?aba=visao-geral&metas=1');exit;

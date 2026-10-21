@@ -151,11 +151,13 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
+<link rel="icon" href="/TCC-Nook/img/icons/ico-nook/ico-nook.ico" type="image/x-icon">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CRUD Autores</title>
 </head>
 <body>
+<nav><a href="moderacao_obras.php">Moderação de obras e denúncias</a></nav>
     <main> <!--colocar em um modal dps-->
         <form action="#" method="POST" enctype="multipart/form-data">
             <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['admin_csrf_token'], ENT_QUOTES, 'UTF-8') ?>">

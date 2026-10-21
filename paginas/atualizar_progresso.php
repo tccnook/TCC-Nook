@@ -14,6 +14,8 @@ $db = new Database;
 $conn = $db->conectar();
 
 $id_livro = $_POST['id_livro'] ?? null;
+$probe=$conn->prepare('SELECT 1 FROM publicacao_obra WHERE id_livro=?');$probe->execute([(int)$id_livro]);if($probe->fetchColumn()){http_response_code(422);exit('Use o leitor da publicação para atualizar sua página.');}
+
 $capitulo_atual = $_POST['capitulo_atual'] ?? null;
 $total_capitulo = $_POST['total_capitulo'] ?? null;
 $finalizado = $_POST['finalizado'] ?? 'false';

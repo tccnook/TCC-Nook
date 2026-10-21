@@ -1,6 +1,8 @@
 <?php
 // Aba "Visão Geral" - incluída pelo perfil.php ($conn e $id_user já existem)
 
+require_once __DIR__.'/reading_goal_support.php';
+$_SESSION['goal_csrf'] ??= bin2hex(random_bytes(32));
 /* ---------- FUNÇÕES ---------- */
 
 function buscar_dados($conn, $sql, $params, $todos = false){
@@ -52,6 +54,7 @@ $sql_top5 = "
         t.posicao,
         l.id_livro,
         l.titulo_livro,
+        l.nome_autor,
         l.capa_url,
         avaliacao.nota_avaliacao
 
@@ -77,23 +80,8 @@ $sql_top5 = "
 
 $livros = buscar_dados($conn, $sql_top5, [":id_user" => $id_user], true);
 
-$livros_lidos_usuario = buscar_dados($conn, "
-    SELECT *
-    FROM (
-        SELECT DISTINCT ON (l.id_livro)
-            l.id_livro,
-            l.titulo_livro,
-            l.nome_autor,
-            l.capa_url,
-                        pr.ultima_leitura AS atualizado_em
-                FROM progresso_leitura pr
-                INNER JOIN livro l ON l.id_livro = pr.id_livro
-                WHERE pr.id_user = :id_user
-                    AND pr.porcentagem_progresso = 100
-                ORDER BY l.id_livro, pr.ultima_leitura DESC, pr.id_progresso DESC
-    ) leituras
-    ORDER BY atualizado_em DESC
-", [":id_user" => $id_user], true);
+require_once __DIR__.'/reading_library.php';
+$livros_lidos_usuario = livrosLidosUsuario($conn,(int)$id_user);
 
 $ultimos_lidos = array_slice($livros_lidos_usuario, 0, 5);
 $posicoes_top5 = [];
@@ -103,30 +91,8 @@ foreach ($livros as $livro_top5) {
     $livros_top5_por_posicao[(int) $livro_top5['posicao']] = $livro_top5;
 }
 
-$listas_visao = buscar_dados($conn, "
-    SELECT
-        w.id,
-        w.nome_lista,
-        w.descricao,
-        w.visibilidade,
-        (SELECT COUNT(*) FROM whishbook wb WHERE wb.id_whishlist = w.id) AS quantidade_livros,
-        (
-            SELECT json_agg(capa_url)
-            FROM (
-                SELECT l.capa_url
-                FROM whishbook wb
-                INNER JOIN livro l ON l.id_livro = wb.id_livro
-                WHERE wb.id_whishlist = w.id
-                ORDER BY wb.ordem ASC NULLS LAST, wb.id ASC
-                LIMIT 3
-            ) capas_lista
-        ) AS capas,
-        (SELECT COUNT(*) FROM curtida c WHERE c.id_coisocurtido = w.id AND c.categoria_curtido = 'whishlist') AS curtidas
-    FROM whishlist w
-    WHERE w.id_user = :id_user
-    ORDER BY w.data_criacao DESC
-    LIMIT 3
-", [":id_user" => $id_user], true);
+require_once __DIR__.'/list_view_support.php';
+$listas_visao = array_slice(buscarListasPerfil($conn,(int)$id_user),0,3);
 
 /* ---------- METAS ---------- */
 
@@ -135,24 +101,11 @@ $todas_metas = buscar_dados($conn, "SELECT * FROM meta_leitura WHERE id_user = :
 
 foreach ($todas_metas as $meta) {
 
-    $quantidade = contar_lidos_meta($conn, $id_user, $meta['criacao']);
+    $quantidade = progressoMeta($conn,(int)$id_user,$meta);
     $faltando = $meta['num_livros'] - $quantidade;
 
-    if ($faltando <= 0 && $meta['status'] == 'andamento') {
-
-        executar_sql($conn, "UPDATE meta_leitura SET status = 'concluida' WHERE id = :id", [
-            ":id" => $meta['id']
-        ]);
-
-    } else {
-
-        executar_sql($conn, "
-            UPDATE meta_leitura
-            SET status = 'expirado'
-            WHERE id = :id
-            AND status = 'andamento'
-            AND expiracao < CURRENT_DATE
-        ", [":id" => $meta['id']]);
+    if ($faltando > 0) {
+        executar_sql($conn,"UPDATE meta_leitura SET status='expirado' WHERE id=:id AND id_user=:usuario AND status='andamento' AND expiracao<CURRENT_DATE",[':id'=>$meta['id'],':usuario'=>$id_user]);
     }
 }
 
@@ -181,7 +134,7 @@ $metas_sobrando = $total_meta - 3;
 
 foreach ($metas as $i => $meta) {
 
-    $quantidade = contar_lidos_meta($conn, $id_user, $meta['criacao']);
+    $quantidade = progressoMeta($conn,(int)$id_user,$meta);
 
     if ($meta['num_livros'] > 0) {
         $percent = ($quantidade / $meta['num_livros']) * 100;
@@ -201,19 +154,13 @@ foreach ($metas as $i => $meta) {
 
     $metas[$i]['quantidade'] = $quantidade;
     $metas[$i]['percent'] = min($percent, 100);
-    $metas[$i]['mensagem'] = $mensagem;
+    $metas[$i]['mensagem'] = ($meta['tipo_meta']??'livros')==='listas'?str_replace(['livros','livro'],['listas','lista'],$mensagem):$mensagem;
     $metas[$i]['concluida'] = $faltando <= 0;
 }
 
 /* ---------- ESTATÍSTICAS DE LEITURA ---------- */
 
-$resultado = buscar_dados($conn, "
-    SELECT COUNT(*) AS total_livros_lidos
-    FROM progresso_leitura
-    WHERE id_user = :id_user
-    AND porcentagem_progresso = 100
-", [":id_user" => $id_user]);
-$total_livros_lidos = $resultado['total_livros_lidos'] ?? 0;
+$total_livros_lidos = count($livros_lidos_usuario);
 
 $resultado = buscar_dados($conn, "
     SELECT AVG(nota_avaliacao) AS media_avaliacoes
@@ -223,87 +170,15 @@ $resultado = buscar_dados($conn, "
 ", [":id_user" => $id_user]);
 $media_avaliacoes = $resultado['media_avaliacoes'] ?? null;
 
-$resultado = buscar_dados($conn, "
-    SELECT SUM(capitulo_atual) AS total_capitulos_lidos
-    FROM progresso_leitura
-    WHERE id_user = :id_user
-", [":id_user" => $id_user]);
-$total_capitulos_lidos = $resultado['total_capitulos_lidos'] ?? 0;
+$resultado = buscar_dados($conn,"WITH registros AS (SELECT id_livro,100 AS progresso FROM livros_lidos WHERE id_user=:id_user UNION ALL SELECT id_livro,LEAST(porcentagem_progresso,100) FROM progresso_leitura WHERE id_user=:id_user), leitura AS (SELECT id_livro,MAX(progresso) AS progresso FROM registros GROUP BY id_livro) SELECT SUM(FLOOR(l.paginas*leitura.progresso/100.0)) AS paginas FROM leitura JOIN livro l ON l.id_livro=leitura.id_livro WHERE l.paginas IS NOT NULL",[":id_user"=>$id_user]);
+$total_paginas_lidas = $resultado['paginas'] ?? null;
 
 /* ---------- PERFIL LITERÁRIO ---------- */
 
-$genero_mais_lido = buscar_dados($conn, "
-    SELECT
-        p.nome_preferencia,
-        COUNT(DISTINCT pr.id_livro) AS quantidade_livros
-
-    FROM progresso_leitura pr
-
-    INNER JOIN preferencia_livro pl
-        ON pl.id_livro = pr.id_livro
-
-    INNER JOIN preferencia p
-        ON p.id_preferencia = pl.id_preferencia
-
-    WHERE pr.id_user = :id_user
-
-    GROUP BY
-        p.id_preferencia,
-        p.nome_preferencia
-
-    ORDER BY quantidade_livros DESC
-
-    LIMIT 1
-", [":id_user" => $id_user]);
-
-$autor_mais_lido = buscar_dados($conn, "
-    SELECT
-        a.nome_autor,
-        COUNT(DISTINCT pr.id_livro) AS quantidade_autores
-
-    FROM progresso_leitura pr
-
-    INNER JOIN livro l
-        ON l.id_livro = pr.id_livro
-
-    INNER JOIN autor a
-        ON l.nome_autor = a.nome_autor
-
-    WHERE pr.id_user = :id_user
-
-    GROUP BY
-        a.id_autor,
-        a.nome_autor
-
-    ORDER BY quantidade_autores DESC
-
-    LIMIT 1
-", [":id_user" => $id_user]);
-
-$maior_livro_lido = buscar_dados($conn, "
-    SELECT
-        l.titulo_livro,
-        COUNT(c.id_capitulo) AS quantidade_capitulos
-
-    FROM capitulo c
-
-    INNER JOIN livro l
-        ON l.id_livro = c.id_livro
-
-    INNER JOIN progresso_leitura pl
-        ON pl.id_livro = l.id_livro
-
-    WHERE pl.id_user = :id_user
-    AND pl.porcentagem_progresso = 100
-
-    GROUP BY
-        l.id_livro,
-        l.titulo_livro
-
-    ORDER BY quantidade_capitulos DESC
-
-    LIMIT 1
-", [":id_user" => $id_user]);
+$leiturasConcluidas = "(SELECT id_livro FROM livros_lidos WHERE id_user=:id_user UNION SELECT id_livro FROM progresso_leitura WHERE id_user=:id_user AND porcentagem_progresso=100)";
+$genero_mais_lido=buscar_dados($conn,"SELECT p.nome_preferencia,COUNT(DISTINCT pr.id_livro) AS quantidade_livros FROM $leiturasConcluidas pr JOIN preferencia_livro pl USING(id_livro) JOIN preferencia p USING(id_preferencia) GROUP BY p.id_preferencia,p.nome_preferencia ORDER BY quantidade_livros DESC,p.nome_preferencia LIMIT 1",[":id_user"=>$id_user]);
+$autor_mais_lido=buscar_dados($conn,"SELECT l.nome_autor,COUNT(DISTINCT l.id_livro) AS quantidade_autores FROM $leiturasConcluidas pr JOIN livro l USING(id_livro) WHERE l.nome_autor IS NOT NULL GROUP BY l.nome_autor ORDER BY quantidade_autores DESC,l.nome_autor LIMIT 1",[":id_user"=>$id_user]);
+$maior_livro_lido=buscar_dados($conn,"SELECT l.titulo_livro,l.paginas,COUNT(cp.id_capitulo) AS quantidade_capitulos FROM $leiturasConcluidas pr JOIN livro l USING(id_livro) LEFT JOIN capitulo cp USING(id_livro) GROUP BY l.id_livro,l.titulo_livro,l.paginas ORDER BY l.paginas DESC NULLS LAST,quantidade_capitulos DESC LIMIT 1",[":id_user"=>$id_user]);
 
 ?>
 
@@ -336,6 +211,7 @@ $maior_livro_lido = buscar_dados($conn, "
                                 </a>
                             </section>
                             <h3><?= htmlspecialchars($livro['titulo_livro']) ?></h3>
+                            <p class="autor"><?= htmlspecialchars($livro['nome_autor'] ?? '') ?></p>
                             <?= estrelas($livro['nota_avaliacao'] ?? 0) ?>
                         <?php else: ?>
                             <button type="button" class="top5-adicionar" data-abrir-top5 aria-label="Adicionar livro na posição <?= $posicaoTop5 ?>">
@@ -385,21 +261,18 @@ $maior_livro_lido = buscar_dados($conn, "
 
             <?php if (count($metas) > 0): ?>
                 <?php foreach ($metas as $meta): ?>
-                    <article class="meta">
+                    <article class="meta" data-goal-card="<?=(int)$meta['id']?>">
                         <div class="meta-topo">
                             <h3><?= htmlspecialchars($meta['nome_meta']) ?></h3>
-                            <?php if ($meta['status'] === 'concluida'): ?>
-                                <form method="POST" action="perfil.php?aba=visao-geral&metas=1">
-                                    <input type="hidden" name="excluir_meta_concluida" value="<?= (int) $meta['id'] ?>">
-                                    <button type="submit" class="meta-concluir" onclick="return confirm('Excluir esta meta concluída?')">Concluir Meta!</button>
-                                </form>
+                            <?php if ($meta['quantidade'] >= (int)$meta['num_livros']): ?>
+                                <form data-goal-action="concluir"><input type="hidden" name="csrf" value="<?=htmlspecialchars($_SESSION['goal_csrf'],ENT_QUOTES,'UTF-8')?>"><input type="hidden" name="id_meta" value="<?=(int)$meta['id']?>"><button type="submit" class="meta-concluir" <?=$meta['status']==='concluida'?'disabled':''?>><?=$meta['status']==='concluida'?'Meta concluída':'Concluir meta'?></button></form>
                             <?php endif; ?>
                         </div>
                         <p class="meta-periodo">Sua meta <?= htmlspecialchars($meta['periodo']) ?></p>
 
                         <p class="meta-numeros">
                             <strong><?= htmlspecialchars($meta['quantidade']) ?></strong>
-                            / <?= htmlspecialchars($meta['num_livros']) ?> Livros lidos
+                            / <?= htmlspecialchars($meta['num_livros']) ?> <?= ($meta['tipo_meta']??'livros')==='listas'?'Listas lidas':'Livros lidos' ?>
                         </p>
 
                         <section class="meta-barra">
@@ -438,8 +311,8 @@ $maior_livro_lido = buscar_dados($conn, "
                 </li>
                 <li class="mini-card">
                     <i data-lucide="file-text"></i>
-                    <strong><?= htmlspecialchars($total_capitulos_lidos) ?></strong>
-                    <span>Capítulos lidos</span>
+                    <strong><?= $total_paginas_lidas===null?'—':number_format((float)$total_paginas_lidas,0,',','.') ?></strong>
+                    <span>Páginas lidas</span>
                 </li>
                 <li class="mini-card">
                     <i data-lucide="star"></i>
@@ -483,7 +356,7 @@ $maior_livro_lido = buscar_dados($conn, "
                     <span>Maior livro lido</span>
                     <?php if ($maior_livro_lido): ?>
                         <strong class="texto"><?= htmlspecialchars($maior_livro_lido['titulo_livro']) ?></strong>
-                        <small><?= htmlspecialchars($maior_livro_lido['quantidade_capitulos']) ?> capítulos</small>
+                        <small><?= !empty($maior_livro_lido['paginas']) ? (int)$maior_livro_lido['paginas'].' páginas' : (!empty($maior_livro_lido['quantidade_capitulos']) ? (int)$maior_livro_lido['quantidade_capitulos'].' capítulos':'Páginas não informadas') ?></small>
                     <?php else: ?>
                         <small>Nenhum livro lido encontrado.</small>
                     <?php endif; ?>
@@ -597,36 +470,7 @@ $maior_livro_lido = buscar_dados($conn, "
     <?php require_once('gerenciarmetas.php'); ?>
 </dialog>
 
-<dialog id="modalCriarMeta">
-    <header class="modal-topo">
-        <h2>Criar meta de leitura</h2>
-        <p class="subtitulo">Defina o objetivo e o período da sua meta.</p>
-        <button type="button" class="btn-fechar" data-fechar-criar-meta aria-label="Fechar">
-            <i data-lucide="x"></i>
-        </button>
-    </header>
-
-    <form action="criarmeta.php" method="POST" class="meta-criar-form">
-        <input type="hidden" name="origem" value="metas">
-        <label for="nomeNovaMeta">Nome da meta</label>
-        <input type="text" id="nomeNovaMeta" name="nomemeta" maxlength="100" required>
-
-        <label for="quantidadeNovaMeta">Número de livros</label>
-        <input type="number" id="quantidadeNovaMeta" name="quantidade" min="1" required>
-
-        <fieldset class="meta-periodos">
-            <legend>Duração</legend>
-            <label><input type="radio" name="periodo" value="semanal" required> Semanal</label>
-            <label><input type="radio" name="periodo" value="mensal"> Mensal</label>
-            <label><input type="radio" name="periodo" value="anual"> Anual</label>
-        </fieldset>
-
-        <footer class="form-acoes">
-            <button type="button" class="btn-cancelar" data-fechar-criar-meta>Cancelar</button>
-            <button type="submit" name="cadastrar" class="button-perfil">Salvar meta</button>
-        </footer>
-    </form>
-</dialog>
+<?php require __DIR__.'/reading_goal_modal.php'; ?>
 
 <script>
     const modalTop5 = document.getElementById("modalGerenciarTop5");
@@ -735,16 +579,5 @@ $maior_livro_lido = buscar_dados($conn, "
         modalMetas.showModal();
     }
 
-    const formFiltroMetas = document.getElementById("formFiltroMetas");
-    const campoNomeMeta = formFiltroMetas.querySelector("[name='nome_meta']");
-    let temporizadorFiltro;
-
-    campoNomeMeta.addEventListener("input", () => {
-        clearTimeout(temporizadorFiltro);
-        temporizadorFiltro = setTimeout(() => formFiltroMetas.requestSubmit(), 300);
-    });
-
-    formFiltroMetas.querySelectorAll("[name='periodo']").forEach((filtro) => {
-        filtro.addEventListener("change", () => formFiltroMetas.requestSubmit());
-    });
 </script>
+<script src="../front-end/js/pages/goal-manager.js" defer></script>

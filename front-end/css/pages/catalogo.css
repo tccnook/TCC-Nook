@@ -339,3 +339,41 @@
     .catalog-continue-row { grid-auto-columns: minmax(235px, 82vw); }
     .catalog-author-row { grid-auto-columns: 125px; }
 }
+
+/* Descoberta editorial: busca primeiro e metadados legíveis. */
+.catalog-page { padding-top: 2rem; }
+.catalog-intro { padding: 0 0 1.5rem; border: 0; border-radius: 0; background: transparent; }
+.catalog-intro h1 { font: 500 clamp(1.7rem, 4vw, 2.5rem)/1.2 var(--font-secundary); }
+.catalog-intro > p:not(.catalog-eyebrow) { margin-top: .75rem; font-size: 1rem; line-height: 1.6; }
+.catalog-search { max-width: 42rem; min-height: 52px; background: var(--color-surface); border-color: var(--color-surface-muted); border-radius: var(--radius-sm); }
+.catalog-search input { min-height: 44px; font-size: 1rem; }
+.catalog-controls { margin-bottom: 2rem; }
+.catalog-filter-button, .catalog-sort select, .genre-chip { min-height: 44px; font-size: .875rem; }
+.catalog-shelf-heading h2 { font-size: 1.4rem; }
+.catalog-shelf-heading p, .catalog-eyebrow { color: var(--text-muted); font-size: .75rem; }
+.catalog-shelf-heading > a { font-size: .8rem; min-height: 44px; }
+.catalog-rail-book > strong { font-size: .9rem; }
+.catalog-rail-book > small, .catalog-continue-info small, .catalog-author small { font-size: .8rem; }
+.catalog-continue-info strong, .catalog-author strong { font-size: .9rem; }
+.catalog-book { display: flex; flex-direction: column; }
+.catalog-book-link { flex: 1; padding: 0; background: transparent; }
+.catalog-cover { border: 0; border-radius: 6px; background: var(--color-surface-muted); }
+.catalog-cover-empty { color: var(--color-primary); }
+.catalog-book-link:hover .catalog-cover { box-shadow: none; }
+.catalog-book-meta { padding: .75rem 0; gap: .4rem; }
+.catalog-book-meta h3 { font: 600 1rem/1.4 var(--font-primary); }
+.catalog-book-meta > p { font-size: .875rem; }
+.catalog-book-subtitle, .catalog-book-publisher, .catalog-book-categories, .catalog-book-description, .catalog-rating small, .catalog-book-details { font-size: .8rem; line-height: 1.6; }
+.catalog-book-description { -webkit-line-clamp: 2; }
+.catalog-book-actions { padding: 0; }
+.catalog-read-link, .catalog-review-link, .catalog-add-book, .catalog-load-more { min-height: 44px; font-size: .8rem; }
+.catalog-grid { gap: 2rem 1.5rem; }
+.catalog-results-header { margin-bottom: 1.5rem; }
+@media(max-width: 600px) {
+    .catalog-page { width: calc(100% - 2rem); }
+    .catalog-intro { padding: 0 0 1rem; }
+    .catalog-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.75rem 1rem; }
+    .catalog-controls { flex-direction: row; flex-wrap: wrap; gap: .75rem; }
+    .catalog-book-description, .catalog-book-categories, .catalog-book-subtitle { display: none; }
+    .catalog-sort { margin-left: auto; }
+}

@@ -25,6 +25,10 @@ if(isset($_GET['id_progresso'])){
 
 
 $id_livro = $_GET['id_livro'];
+require_once __DIR__.'/publishing_service.php';
+$probe=$conn->prepare('SELECT 1 FROM publicacao_obra WHERE id_livro=?');$probe->execute([(int)$id_livro]);
+if($probe->fetchColumn()){if(!publicacaoAcessivel($conn,(int)$id_livro,(int)$id_user)){http_response_code(404);exit('Publicação indisponível.');}header('Location: leitor_obra.php?id_livro='.(int)$id_livro);exit;}
+
 
 $select_livro = "select titulo_livro, capa_url from livro where id_livro = :id_livro";
 $stmt_livro = $conn->prepare($select_livro);

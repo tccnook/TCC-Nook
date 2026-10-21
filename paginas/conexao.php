@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__.'/session_registry.php';
 
 class Database
 {
@@ -50,6 +51,7 @@ class Database
                 ]
             );
             $connection->exec("SET CLIENT_ENCODING TO 'UTF-8'");
+            validarSessaoAtual($connection);
             return $connection;
         } catch (PDOException $erro) {
             throw new RuntimeException(
