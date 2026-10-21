@@ -1,6 +1,6 @@
 # Entrega integrada — Nook
 
-Implementação sobre PHP/PDO/PostgreSQL, CSS próprio e JavaScript nativo. Sem catálogo paralelo, alteração de branch, commit ou push. `.env` e imagens originais preservados.
+Implementação sobre PHP/PDO/PostgreSQL, CSS próprio e JavaScript nativo, integrada ao catálogo existente. Entrega na branch `murillo`, com commit em português e exportação do banco conforme solicitado. `.env` e imagens originais preservados. O [guia do banco](../banco/README.md) distingue o snapshot público incluído no Git do backup integral privado mantido localmente.
 
 ## Comparação com as imagens Figma
 

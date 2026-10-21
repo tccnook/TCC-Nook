@@ -4,6 +4,7 @@ Inventário do working tree da sessão. AGENTS.md e .vscode preexistentes preser
 
 ## Criados
 
+- `banco/nook-2026-10-20.sql` — estrutura atual e catálogo público; backup integral privado fora do Git.
 - `banco/migrations/20261020_nook_markers_sessions.sql`
 - `banco/migrations/20261020_nook_publishing.sql`
 - `banco/migrations/20261020_nook_social.sql`

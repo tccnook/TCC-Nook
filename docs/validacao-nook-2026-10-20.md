@@ -38,4 +38,4 @@ Referências consultadas por conteúdo/estrutura via web, sem alegação de aná
 - Não foram enviados formulários válidos de cadastro, edição ou seleção de gêneros para modificar dados reais. Privacidade/bloqueios foram cobertos pela regra de acesso com casos controlados, sem alterar contas para o teste. Compartilhamento nativo no sistema operacional e zoom de navegador a 200% não foram exercitados.
 - A aba de resenhas do perfil já estava incompleta; agora informa essa indisponibilidade. Outros fluxos de listas/autores que exigem as tabelas ausentes continuam dependendo da versão de banco apropriada.
 
-Não foram alterados `.env`, branches, dados do banco, uploads originais, `AGENTS.md` ou `.vscode/`. Não houve commit ou push.
+Este registro corresponde à primeira rodada de validação, antes das implementações posteriores e do pedido de commit/push. A entrega atual e a exportação estão descritas em `entrega-nook-2026-10-20.md` e `../banco/README.md`. `.env` e uploads originais foram preservados.
