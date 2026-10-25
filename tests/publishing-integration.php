@@ -8,6 +8,9 @@ try{
  $gen=$c->query('SELECT id_preferencia FROM preferencia LIMIT 1')->fetchColumn();$data=['revisao'=>1,'titulo'=>'Obra de teste','resumo'=>'Resumo significativo de teste','classificacao'=>0,'id_genero'=>$gen,'capitulos'=>[['titulo'=>'Início','html'=>'<p>Conteúdo original com acentuação.</p>']]];
  $saved=salvarObra($c,$id,$user,$data);try{salvarObra($c,$id,$user,$data);throw new RuntimeException('Sem controle de concorrência');}catch(ConflitoObra $e){}
  try{publicarObra($c,$id,$user,'');throw new RuntimeException('Sem declaração');}catch(InvalidArgumentException $e){}
+ $c->prepare('UPDATE publicacao_obra SET capa_url=? WHERE id_livro=?')->execute([str_repeat('a',40).'.png',$id]);
+ try{publicarObra($c,$id,$user,'autoria');throw new RuntimeException('Publicou com referência para capa perdida');}catch(InvalidArgumentException $e){}
+ $c->prepare('UPDATE publicacao_obra SET capa_url=NULL WHERE id_livro=?')->execute([$id]);
  $pub=publicarObra($c,$id,$user,'autoria');$files[]=$pub['arquivo'];$first=publicacaoAcessivel($c,$id,$user);if(!$first)throw new RuntimeException('Publicação indisponível');
  $data['revisao']=$pub['revisao'];$data['titulo']='Alteração ainda privada';$data['capitulos']=$saved['capitulos'];$saved=salvarObra($c,$id,$user,$data);
  if(publicacaoAcessivel($c,$id,$user)['publicado']['titulo']!=='Obra de teste')throw new RuntimeException('Rascunho vazou para a publicação');

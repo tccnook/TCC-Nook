@@ -43,7 +43,7 @@ $qntd_listas = $qntd_listas ?? 0;
 
                     <div class="capas">
                         <?php foreach($capas as $capa): ?>
-                            <img src="<?= htmlspecialchars($capa) ?>" alt="Capa do livro" loading="lazy">
+                            <img src="<?= htmlspecialchars($capa ?: '/TCC-Nook/img/livro-sem-capa.svg') ?>" alt="Capa do livro" loading="lazy">
                         <?php endforeach; ?>
                     </div>
 
@@ -125,6 +125,8 @@ $qntd_listas = $qntd_listas ?? 0;
     const pesquisaLivros = document.getElementById("pesquisa-livros-lista");
     const livrosSelecionados = new Map();
     let temporizadorPesquisa;
+    let controlePesquisaLivros;
+    let requisicaoPesquisaLivros = 0;
 
     btnLista.addEventListener("click", () => modalLista.showModal());
     btnFecharLista.addEventListener("click", () => modalLista.close());
@@ -160,14 +162,15 @@ $qntd_listas = $qntd_listas ?? 0;
 
     function renderizarSelecionados() {
         listaSelecionados.replaceChildren();
-        formLista.querySelectorAll("input[name='ids_livros[]']").forEach((input) => input.remove());
+        formLista.querySelectorAll("input[name='livros_lista[]']").forEach((input) => input.remove());
 
         livrosSelecionados.forEach((livro) => {
             const linha = document.createElement("div");
             linha.className = "lista-livro-selecionado";
-            if (livro.capa_url) {
+            {
                 const capa = document.createElement("img");
-                capa.src = livro.capa_url;
+                capa.src = livro.capa_url || '/TCC-Nook/img/livro-sem-capa.svg';
+                capa.dataset.bookCover = '';
                 capa.alt = "";
                 linha.append(capa);
             }
@@ -180,7 +183,7 @@ $qntd_listas = $qntd_listas ?? 0;
             const remover = document.createElement("button");
             remover.type = "button";
             remover.className = "lista-livro-remover";
-            remover.dataset.removerLivro = livro.id_livro;
+            remover.dataset.removerLivro = livro._token;
             remover.setAttribute("aria-label", `Remover ${livro.titulo_livro}`);
             remover.innerHTML = '<i data-lucide="x"></i>';
             linha.append(detalhes, remover);
@@ -188,8 +191,8 @@ $qntd_listas = $qntd_listas ?? 0;
 
             const id = document.createElement("input");
             id.type = "hidden";
-            id.name = "ids_livros[]";
-            id.value = livro.id_livro;
+            id.name = "livros_lista[]";
+            id.value = livro._token;
             formLista.append(id);
         });
         if (window.lucide) lucide.createIcons();
@@ -197,27 +200,47 @@ $qntd_listas = $qntd_listas ?? 0;
 
     async function pesquisarLivros() {
         const termo = pesquisaLivros.value.trim();
+        controlePesquisaLivros?.abort();
+        const requisicaoAtual = ++requisicaoPesquisaLivros;
         resultadosLivros.replaceChildren();
+        resultadosLivros.removeAttribute("aria-busy");
         if (termo.length < 2) return;
+        controlePesquisaLivros = new AbortController();
         const carregando = document.createElement("p");
         carregando.textContent = "Buscando livros...";
         resultadosLivros.append(carregando);
+        resultadosLivros.setAttribute("aria-busy", "true");
         try {
-            const resposta = await fetch(`buscar_livros_lista.php?q=${encodeURIComponent(termo)}`);
+            const parametros = new URLSearchParams({ nome: termo, inicio: "0", ordem: "titulo" });
+            const resposta = await fetch(`buscar-livros.php?${parametros}`, { signal: controlePesquisaLivros.signal });
             const dados = await resposta.json();
+            if (requisicaoAtual !== requisicaoPesquisaLivros) return;
+            if (!resposta.ok) throw new Error(dados.mensagem || "Não foi possível buscar livros agora.");
             resultadosLivros.replaceChildren();
-            if (!dados.livros.length) {
+            if (dados.aviso_google) {
+                const aviso = document.createElement("p");
+                aviso.className = "lista-resultados-aviso";
+                aviso.textContent = dados.aviso_google;
+                resultadosLivros.append(aviso);
+            }
+            if (!Array.isArray(dados.livros) || !dados.livros.length) {
                 const vazio = document.createElement("p");
                 vazio.textContent = "Nenhum livro encontrado.";
                 resultadosLivros.append(vazio);
                 return;
             }
             dados.livros.forEach((livro) => {
+                const idLocal = Number(livro.id_livro);
+                const token = idLocal > 0
+                    ? `local:${idLocal}`
+                    : livro.google_books_id ? `api:${livro.google_books_id}` : null;
+                if (!token) return;
                 const linha = document.createElement("div");
                 linha.className = "lista-livro-resultado";
-                if (livro.capa_url) {
+                {
                     const capa = document.createElement("img");
-                    capa.src = livro.capa_url;
+                    capa.src = livro.capa_url || '/TCC-Nook/img/livro-sem-capa.svg';
+                capa.dataset.bookCover = '';
                     capa.alt = "";
                     linha.append(capa);
                 }
@@ -227,12 +250,18 @@ $qntd_listas = $qntd_listas ?? 0;
                 const autor = document.createElement("small");
                 autor.textContent = livro.nome_autor || "Autor não informado";
                 detalhes.append(titulo, autor);
+                if (!livro.id_livro) {
+                    const origem = document.createElement("small");
+                    origem.className = "lista-livro-origem";
+                    origem.textContent = livro.origem === "openlibrary" ? "Open Library" : "Google Books";
+                    detalhes.append(origem);
+                }
                 const adicionar = document.createElement("button");
                 adicionar.type = "button";
-                adicionar.textContent = livrosSelecionados.has(String(livro.id_livro)) ? "Adicionado" : "Adicionar";
-                adicionar.disabled = livrosSelecionados.has(String(livro.id_livro));
+                adicionar.textContent = livrosSelecionados.has(token) ? "Adicionado" : "Adicionar";
+                adicionar.disabled = livrosSelecionados.has(token);
                 adicionar.addEventListener("click", () => {
-                    livrosSelecionados.set(String(livro.id_livro), livro);
+                    livrosSelecionados.set(token, { ...livro, _token: token });
                     renderizarSelecionados();
                     adicionar.textContent = "Adicionado";
                     adicionar.disabled = true;
@@ -241,10 +270,13 @@ $qntd_listas = $qntd_listas ?? 0;
                 resultadosLivros.append(linha);
             });
         } catch (erro) {
+            if (erro.name === "AbortError" || requisicaoAtual !== requisicaoPesquisaLivros) return;
             resultadosLivros.replaceChildren();
             const falha = document.createElement("p");
-            falha.textContent = "Não foi possível buscar livros agora.";
+            falha.textContent = erro.message || "Não foi possível buscar livros agora.";
             resultadosLivros.append(falha);
+        } finally {
+            if (requisicaoAtual === requisicaoPesquisaLivros) resultadosLivros.removeAttribute("aria-busy");
         }
     }
 

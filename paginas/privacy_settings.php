@@ -26,10 +26,11 @@ function interacaoPermitida(PDO $conn,string $tipo,int $dono,int $visitante): bo
 }
 function validarNovoPost(array $entrada,array $config): array
 {
-    $limites=['titulo_post'=>90,'conteudo_post'=>10000,'legenda'=>2000];$dados=[];
+    $limites=['titulo_post'=>90,'conteudo_post'=>(($entrada['formato']??'')==='editor'?2000:10000),'legenda'=>2000];$dados=[];
     foreach($limites as $campo=>$limite){$v=$entrada[$campo]??'';if(!is_string($v)||mb_strlen(trim($v))>$limite)throw new InvalidArgumentException('Revise o tamanho dos textos da publicação.');$dados[$campo]=trim($v);}
-    if($dados['titulo_post']===''||$dados['conteudo_post']==='')throw new InvalidArgumentException('Escreva o título e o texto da publicação.');
-    $dados['visibilidade']=$config['visibilidade_posts'];
+    if($dados['conteudo_post']==='')throw new InvalidArgumentException('Escreva o texto da publicação.');
+    if($dados['titulo_post']==='')$dados['titulo_post']=mb_substr(explode("\n",$dados['conteudo_post'])[0],0,90);
+    $dados['visibilidade']=($entrada['visibilidade_escolhida']??'')==='privado'?'privado':$config['visibilidade_posts'];
     $dados['conteudo_sensivel']=!empty($entrada['conteudo_sensivel']);$dados['conteudo_adulto']=!empty($entrada['conteudo_adulto']);
     return $dados;
 }

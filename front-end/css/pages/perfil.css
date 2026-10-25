@@ -926,6 +926,9 @@
     font-size: .58rem;
 }
 
+.lista-livro-resultado .lista-livro-origem { color: var(--color-accent); }
+.lista-resultados-aviso { padding: .35rem .45rem; color: var(--text-secondary); font-size: .62rem; line-height: 1.4; }
+
 .lista-livro-resultado button {
     margin-left: auto;
     color: var(--color-accent);

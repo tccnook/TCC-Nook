@@ -1,4 +1,11 @@
 <?php
+function identificadorAutor(string $nome): string
+{
+    $nome = strtr(mb_strtolower($nome), ['á'=>'a','à'=>'a','â'=>'a','ã'=>'a','ä'=>'a','é'=>'e','è'=>'e','ê'=>'e','ë'=>'e','í'=>'i','ì'=>'i','î'=>'i','ï'=>'i','ó'=>'o','ò'=>'o','ô'=>'o','õ'=>'o','ö'=>'o','ú'=>'u','ù'=>'u','û'=>'u','ü'=>'u','ç'=>'c','ñ'=>'n']);
+    $ascii = iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $nome);
+    return trim(preg_replace('/[^a-z0-9]+/', '.', strtolower($ascii !== false ? $ascii : $nome)), '.');
+}
+
 function normalizarAutores(array $dados, array $excluir = []): array
 {
     $resultado = []; $ids = array_fill_keys($excluir, true); $nomes = [];

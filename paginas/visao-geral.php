@@ -3,6 +3,7 @@
 
 require_once __DIR__.'/reading_goal_support.php';
 $_SESSION['goal_csrf'] ??= bin2hex(random_bytes(32));
+$_SESSION['top5_csrf'] ??= bin2hex(random_bytes(32));
 /* ---------- FUNÇÕES ---------- */
 
 function buscar_dados($conn, $sql, $params, $todos = false){
@@ -206,7 +207,7 @@ $maior_livro_lido=buscar_dados($conn,"SELECT l.titulo_livro,l.paginas,COUNT(cp.i
                                     <?php if (!empty($livro['capa_url'])): ?>
                                         <img src="<?= htmlspecialchars($livro['capa_url']) ?>" alt="Capa de <?= htmlspecialchars($livro['titulo_livro']) ?>" loading="lazy">
                                     <?php else: ?>
-                                        <span class="sem-capa">Capa não disponível</span>
+                                        <img src="/TCC-Nook/img/livro-sem-capa.svg" alt="Capa de <?= htmlspecialchars($livro['titulo_livro']) ?>" loading="lazy">
                                     <?php endif; ?>
                                 </a>
                             </section>
@@ -236,7 +237,7 @@ $maior_livro_lido=buscar_dados($conn,"SELECT l.titulo_livro,l.paginas,COUNT(cp.i
                                 <?php if (!empty($livroLido['capa_url'])): ?>
                                     <img src="<?= htmlspecialchars($livroLido['capa_url']) ?>" alt="Capa de <?= htmlspecialchars($livroLido['titulo_livro']) ?>" loading="lazy">
                                 <?php else: ?>
-                                    <span class="sem-capa">Sem capa</span>
+                                    <img src="/TCC-Nook/img/livro-sem-capa.svg" alt="Capa de <?= htmlspecialchars($livroLido['titulo_livro']) ?>" loading="lazy">
                                 <?php endif; ?>
                                 <span><?= htmlspecialchars($livroLido['titulo_livro']) ?></span>
                             </a>
@@ -385,7 +386,7 @@ $maior_livro_lido=buscar_dados($conn,"SELECT l.titulo_livro,l.paginas,COUNT(cp.i
                         </div>
                         <div class="capas">
                             <?php foreach ($capasLista as $capa): ?>
-                                <img src="<?= htmlspecialchars($capa) ?>" alt="Capa da lista <?= htmlspecialchars($lista['nome_lista']) ?>" loading="lazy">
+                                <img src="<?= htmlspecialchars($capa ?: '/TCC-Nook/img/livro-sem-capa.svg') ?>" alt="Capa da lista <?= htmlspecialchars($lista['nome_lista']) ?>" loading="lazy">
                             <?php endforeach; ?>
                         </div>
                         <ul class="lista-info">
@@ -402,68 +403,39 @@ $maior_livro_lido=buscar_dados($conn,"SELECT l.titulo_livro,l.paginas,COUNT(cp.i
     <?php endif; ?>
 </section>
 
-<dialog id="modalGerenciarTop5" class="top5-modal" <?= isset($_GET['top5']) ? 'data-abrir' : '' ?>>
+<?php
+$dadosLivrosTop5=[];
+foreach(array_merge($livros_lidos_usuario,$livros) as $livroTop5){
+    $capaTop5=$livroTop5['capa_url']?:'../img/livro-sem-capa.svg';
+    if(!preg_match('~^https?://|^/|^\.\./~i',$capaTop5))$capaTop5='../'.$capaTop5;
+    $dadosLivrosTop5[(int)$livroTop5['id_livro']]=['id'=>(int)$livroTop5['id_livro'],'titulo'=>$livroTop5['titulo_livro'],'capa'=>$capaTop5];
+}
+$ordemTop5=[];for($pos=1;$pos<=5;$pos++)$ordemTop5[]=isset($livros_top5_por_posicao[$pos])?(int)$livros_top5_por_posicao[$pos]['id_livro']:null;
+?>
+<dialog id="modalGerenciarTop5" class="top5-modal" aria-labelledby="top5-titulo" aria-describedby="top5-instrucoes" data-csrf="<?=htmlspecialchars($_SESSION['top5_csrf'],ENT_QUOTES,'UTF-8')?>" <?= isset($_GET['top5']) ? 'data-abrir' : '' ?>>
     <header class="top5-modal-header">
-        <div><h2>Atualizar Top 5</h2><p>Escolha um livro lido e a posição que ele ocupará.</p></div>
+        <div><h2 id="top5-titulo">Organizar Top 5</h2><p id="top5-instrucoes">Arraste uma capa para a posição desejada. As alterações só serão salvas ao confirmar.</p></div>
         <button type="button" class="top5-modal-close" data-fechar-top5 aria-label="Fechar"><i data-lucide="x"></i></button>
     </header>
-
     <section class="top5-modal-section">
-        <h3>Livros no Top 5</h3>
-        <ol class="top5-modal-ranking">
-            <?php for ($posicaoTop5 = 1; $posicaoTop5 <= 5; $posicaoTop5++): ?>
-                <?php $livro = $livros_top5_por_posicao[$posicaoTop5] ?? null; ?>
-                <li>
-                    <span class="top5-modal-position"><?= $posicaoTop5 ?></span>
-                    <?php if ($livro): ?>
-                        <?php if (!empty($livro['capa_url'])): ?>
-                            <img src="<?= htmlspecialchars($livro['capa_url']) ?>" alt="" loading="lazy">
-                        <?php endif; ?>
-                        <span><?= htmlspecialchars($livro['titulo_livro']) ?></span>
-                        <button type="button" data-remover-top5="<?= (int) $livro['id_livro'] ?>" aria-label="Remover <?= htmlspecialchars($livro['titulo_livro']) ?> do Top 5"><i data-lucide="x"></i></button>
-                    <?php else: ?>
-                        <span class="top5-modal-empty">Posição disponível</span>
-                    <?php endif; ?>
-                </li>
-            <?php endfor; ?>
-        </ol>
+        <h3>Sua ordem de favoritos</h3>
+        <p class="top5-help">Você também pode selecionar um livro e clicar em uma posição. No ranking, use as setas do teclado para mover uma capa.</p>
+        <ol class="top5-modal-ranking" aria-label="Cinco posições do Top 5"></ol>
     </section>
-
     <section class="top5-modal-section">
         <h3>Todos os livros lidos</h3>
-        <?php if ($livros_lidos_usuario): ?>
-            <div class="top5-read-grid">
-                <?php foreach ($livros_lidos_usuario as $livroLido): ?>
-                    <?php
-                    $idLivroLido = (int) $livroLido['id_livro'];
-                    $jaEstaNoTop5 = isset($posicoes_top5[$idLivroLido]);
-                    $maxPosicao = min(5, count($livros) + ($jaEstaNoTop5 ? 0 : 1));
-                    ?>
-                    <article class="top5-read-book">
-                        <button type="button" class="top5-read-select" data-selecionar-top5 aria-expanded="false">
-                            <?php if (!empty($livroLido['capa_url'])): ?>
-                                <img src="<?= htmlspecialchars($livroLido['capa_url']) ?>" alt="" loading="lazy">
-                            <?php else: ?>
-                                <span class="sem-capa">Sem capa</span>
-                            <?php endif; ?>
-                            <span><?= htmlspecialchars($livroLido['titulo_livro']) ?></span>
-                            <?php if ($jaEstaNoTop5): ?><small>No Top 5 · posição <?= $posicoes_top5[$idLivroLido] ?></small><?php endif; ?>
-                        </button>
-                        <div class="top5-position-picker" hidden>
-                            <span>Escolha a posição</span>
-                            <?php for ($posicao = 1; $posicao <= $maxPosicao; $posicao++): ?>
-                                <button type="button" data-promover-top5="<?= $idLivroLido ?>" data-posicao="<?= $posicao ?>"><?= $posicao ?></button>
-                            <?php endfor; ?>
-                        </div>
-                    </article>
-                <?php endforeach; ?>
-            </div>
-        <?php else: ?>
-            <p class="aba-vazia">Marque livros como lidos para adicioná-los ao Top 5.</p>
-        <?php endif; ?>
+        <?php if($livros_lidos_usuario):?><div class="top5-read-grid">
+        <?php foreach($livros_lidos_usuario as $livroLido):$idLivroLido=(int)$livroLido['id_livro'];$dadosLivro=$dadosLivrosTop5[$idLivroLido];?>
+            <article class="top5-read-book"><button type="button" class="top5-read-select" data-top5-book="<?=$idLivroLido?>" aria-pressed="false">
+                <img src="<?=htmlspecialchars($dadosLivro['capa'],ENT_QUOTES,'UTF-8')?>" alt="" loading="lazy" draggable="false" width="130" height="195">
+                <span><?=htmlspecialchars($dadosLivro['titulo'],ENT_QUOTES,'UTF-8')?></span><small data-top5-book-status>Selecionar ou arrastar</small>
+            </button></article>
+        <?php endforeach;?></div><?php else:?><p class="aba-vazia">Marque livros como lidos para adicioná-los ao Top 5.</p><?php endif;?>
     </section>
-    <p class="top5-modal-status" role="status" aria-live="polite"></p>
+    <footer class="top5-modal-footer"><p class="top5-modal-status" role="status" aria-live="polite"></p><div><button type="button" class="top5-cancel" data-fechar-top5>Cancelar</button><button type="button" class="top5-confirm" data-confirmar-top5>Confirmar</button></div></footer>
 </dialog>
+<script type="application/json" id="top5-dados"><?=json_encode(['livros'=>array_values($dadosLivrosTop5),'ordem'=>$ordemTop5],JSON_HEX_TAG|JSON_HEX_AMP|JSON_HEX_APOS|JSON_HEX_QUOT|JSON_UNESCAPED_UNICODE)?></script>
+<script src="../front-end/js/pages/top5-editor.js" defer></script>
 
 <!-- MODAL: GERENCIAR METAS (reabre sozinho depois de filtrar ou excluir) -->
 <dialog id="gerenciarMetas" <?= isset($_GET['metas']) ? 'data-abrir' : '' ?>>
@@ -473,78 +445,8 @@ $maior_livro_lido=buscar_dados($conn,"SELECT l.titulo_livro,l.paginas,COUNT(cp.i
 <?php require __DIR__.'/reading_goal_modal.php'; ?>
 
 <script>
-    const modalTop5 = document.getElementById("modalGerenciarTop5");
     const modalMetas = document.getElementById("gerenciarMetas");
     const modalCriarMeta = document.getElementById("modalCriarMeta");
-
-    document.querySelectorAll("[data-abrir-top5]").forEach((botao) => {
-        botao.addEventListener("click", () => modalTop5.showModal());
-    });
-
-    modalTop5.querySelectorAll("[data-fechar-top5]").forEach((botao) => {
-        botao.addEventListener("click", () => modalTop5.close());
-    });
-
-    if (modalTop5.hasAttribute("data-abrir")) {
-        modalTop5.showModal();
-    }
-
-    modalTop5.addEventListener("click", (evento) => {
-        if (evento.target === modalTop5) modalTop5.close();
-    });
-
-    modalTop5.querySelectorAll("[data-selecionar-top5]").forEach((livro) => {
-        livro.addEventListener("click", () => {
-            const seletor = livro.parentElement.querySelector(".top5-position-picker");
-            const abrir = seletor.hidden;
-            modalTop5.querySelectorAll(".top5-position-picker").forEach((item) => item.hidden = true);
-            modalTop5.querySelectorAll("[data-selecionar-top5]").forEach((item) => item.setAttribute("aria-expanded", "false"));
-            seletor.hidden = !abrir;
-            livro.setAttribute("aria-expanded", String(abrir));
-        });
-    });
-
-    async function atualizarTop5(acao, idLivro, posicao = "") {
-        const dados = new URLSearchParams({ acao, id_livro: idLivro, posicao });
-        const resposta = await fetch("salvar_top5.php", {
-            method: "POST",
-            headers: { "Content-Type": "application/x-www-form-urlencoded", Accept: "application/json" },
-            body: dados
-        });
-        const resultado = await resposta.json();
-        if (!resposta.ok) throw new Error(resultado.mensagem || "Não foi possível atualizar o Top 5.");
-        return resultado;
-    }
-
-    modalTop5.querySelectorAll("[data-promover-top5]").forEach((botao) => {
-        botao.addEventListener("click", async () => {
-            const status = modalTop5.querySelector(".top5-modal-status");
-            botao.disabled = true;
-            try {
-                status.textContent = "Atualizando...";
-                await atualizarTop5("promover", botao.dataset.promoverTop5, botao.dataset.posicao);
-                window.location.assign("perfil.php?aba=visao-geral");
-            } catch (erro) {
-                status.textContent = erro.message;
-                botao.disabled = false;
-            }
-        });
-    });
-
-    document.querySelectorAll("[data-remover-top5]").forEach((botao) => {
-        botao.addEventListener("click", async () => {
-            const status = modalTop5.querySelector(".top5-modal-status");
-            botao.disabled = true;
-            try {
-                status.textContent = "Atualizando...";
-                await atualizarTop5("remover", botao.dataset.removerTop5);
-                window.location.assign("perfil.php?aba=visao-geral");
-            } catch (erro) {
-                status.textContent = erro.message;
-                botao.disabled = false;
-            }
-        });
-    });
 
     document.querySelectorAll("[data-abrir-metas]").forEach((botao) => {
         botao.addEventListener("click", () => modalMetas.showModal());

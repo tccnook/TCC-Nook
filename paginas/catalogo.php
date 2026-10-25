@@ -16,6 +16,9 @@ $conn = $db->conectar();
 require_once __DIR__ . '/schema_support.php';
 require_once __DIR__ . '/category_images.php';
 $schema = schemaProjeto($conn);
+require_once __DIR__.'/catalog_support.php';
+$filtroIdioma=condicaoIdiomaCatalogo($schema);
+$filtroIdiomaSemAlias=condicaoIdiomaCatalogo($schema,'livro');
 
 $id_lista_contexto = filter_var($_GET['lista'] ?? null, FILTER_VALIDATE_INT);
 $lista_contexto = null;
@@ -46,11 +49,11 @@ $stmt = $conn->prepare("SELECT l.id_livro, l.titulo_livro, l.nome_autor, l.capa_
 $stmt->execute([':id_user' => $id_user]);
 $continuar_lendo = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-$stmt = $conn->prepare("SELECT l.id_livro, l.titulo_livro, l.nome_autor, l.capa_url, l.idioma, COUNT(DISTINCT pl.id_preferencia) AS preferencias_em_comum FROM livro l INNER JOIN preferencia_livro pl ON pl.id_livro = l.id_livro INNER JOIN preferencia_user pu ON pu.id_preferencia = pl.id_preferencia WHERE l.visibilidade = 'publico' AND pu.id_user = :id_user AND NOT EXISTS (SELECT 1 FROM progresso_leitura pr WHERE pr.id_user = :id_user_excluir AND pr.id_livro = l.id_livro AND pr.porcentagem_progresso = 100) GROUP BY l.id_livro, l.titulo_livro, l.nome_autor, l.capa_url, l.idioma ORDER BY preferencias_em_comum DESC, CASE WHEN LOWER(COALESCE(l.idioma, '')) LIKE 'pt%' OR LOWER(COALESCE(l.idioma, '')) LIKE 'portugu%' THEN 0 ELSE 1 END, l.titulo_livro LIMIT 12");
+$stmt = $conn->prepare("SELECT l.id_livro, l.titulo_livro, l.nome_autor, l.capa_url, l.idioma, COUNT(DISTINCT pl.id_preferencia) AS preferencias_em_comum FROM livro l INNER JOIN preferencia_livro pl ON pl.id_livro = l.id_livro INNER JOIN preferencia_user pu ON pu.id_preferencia = pl.id_preferencia WHERE l.visibilidade = 'publico' AND $filtroIdioma AND pu.id_user = :id_user AND NOT EXISTS (SELECT 1 FROM progresso_leitura pr WHERE pr.id_user = :id_user_excluir AND pr.id_livro = l.id_livro AND pr.porcentagem_progresso = 100) GROUP BY l.id_livro, l.titulo_livro, l.nome_autor, l.capa_url, l.idioma ORDER BY preferencias_em_comum DESC, CASE WHEN LOWER(COALESCE(l.idioma, '')) LIKE 'pt%' OR LOWER(COALESCE(l.idioma, '')) LIKE 'portugu%' THEN 0 ELSE 1 END, l.titulo_livro LIMIT 12");
 $stmt->execute([':id_user' => $id_user, ':id_user_excluir' => $id_user]);
 $livros_recomendados = $stmt->fetchAll(PDO::FETCH_ASSOC);
 if (!$livros_recomendados) {
-    $stmt = $conn->prepare("SELECT id_livro, titulo_livro, nome_autor, capa_url FROM livro WHERE visibilidade = 'publico' ORDER BY CASE WHEN LOWER(COALESCE(idioma, '')) LIKE 'pt%' OR LOWER(COALESCE(idioma, '')) LIKE 'portugu%' THEN 0 ELSE 1 END, data_publi DESC NULLS LAST LIMIT 12");
+    $stmt = $conn->prepare("SELECT id_livro, titulo_livro, nome_autor, capa_url FROM livro WHERE visibilidade = 'publico' AND $filtroIdiomaSemAlias ORDER BY CASE WHEN LOWER(COALESCE(idioma, '')) LIKE 'pt%' OR LOWER(COALESCE(idioma, '')) LIKE 'portugu%' THEN 0 ELSE 1 END, data_publi DESC NULLS LAST LIMIT 12");
     $stmt->execute();
     $livros_recomendados = $stmt->fetchAll(PDO::FETCH_ASSOC);
 }
@@ -140,7 +143,7 @@ $imagemCatalogo = static function ($caminho) use ($esc) {
                 <?php foreach ($continuar_lendo as $leitura): ?>
                     <?php $progresso = min(100, max(0, (float) $leitura['porcentagem_progresso'])); ?>
                     <a class="catalog-continue-book" href="ler_livro.php?id_livro=<?= (int) $leitura['id_livro'] ?>">
-                        <?php if ($leitura['capa_url']): ?><img src="<?= $imagemCatalogo($leitura['capa_url']) ?>" alt="Capa de <?= $esc($leitura['titulo_livro']) ?>" loading="lazy"><?php else: ?><span class="catalog-continue-cover-empty">Sem capa</span><?php endif; ?>
+                        <?php if ($leitura['capa_url']): ?><img src="<?= $imagemCatalogo($leitura['capa_url']) ?>" alt="Capa de <?= $esc($leitura['titulo_livro']) ?>" loading="lazy"><?php else: ?><img src="/TCC-Nook/img/livro-sem-capa.svg" alt="Capa de <?= $esc($leitura['titulo_livro']) ?>" loading="lazy"><?php endif; ?>
                         <span class="catalog-continue-info"><strong><?= $esc($leitura['titulo_livro']) ?></strong><small><?= $esc($leitura['nome_autor'] ?: 'Autor não informado') ?></small><span class="catalog-progress"><span style="width: <?= $progresso ?>%"></span></span><small><?= round($progresso) ?>% concluído</small></span>
                         <i data-lucide="play"></i>
                     </a>
@@ -155,7 +158,7 @@ $imagemCatalogo = static function ($caminho) use ($esc) {
             <div class="catalog-rail">
                 <?php foreach ($livros_recomendados as $livro): ?>
                     <a class="catalog-rail-book" href="visao_livro.php?id_livro=<?= (int) $livro['id_livro'] ?>">
-                        <span class="catalog-rail-cover"><?php if ($livro['capa_url']): ?><img src="<?= $imagemCatalogo($livro['capa_url']) ?>" alt="Capa de <?= $esc($livro['titulo_livro']) ?>" loading="lazy"><?php else: ?><span>Sem capa</span><?php endif; ?></span>
+                        <span class="catalog-rail-cover"><?php if ($livro['capa_url']): ?><img src="<?= $imagemCatalogo($livro['capa_url']) ?>" alt="Capa de <?= $esc($livro['titulo_livro']) ?>" loading="lazy"><?php else: ?><img src="/TCC-Nook/img/livro-sem-capa.svg" alt="Capa de <?= $esc($livro['titulo_livro']) ?>" loading="lazy"><?php endif; ?></span>
                         <strong><?= $esc($livro['titulo_livro']) ?></strong><small><?= $esc($livro['nome_autor'] ?: 'Autor não informado') ?></small>
                     </a>
                 <?php endforeach; ?>
@@ -169,7 +172,7 @@ $imagemCatalogo = static function ($caminho) use ($esc) {
             <div class="catalog-rail">
                 <?php foreach ($livros_lidos as $livro): ?>
                     <a class="catalog-rail-book" href="visao_livro.php?id_livro=<?= (int) $livro['id_livro'] ?>">
-                        <span class="catalog-rail-cover"><?php if ($livro['capa_url']): ?><img src="<?= $imagemCatalogo($livro['capa_url']) ?>" alt="Capa de <?= $esc($livro['titulo_livro']) ?>" loading="lazy"><?php else: ?><span>Sem capa</span><?php endif; ?></span>
+                        <span class="catalog-rail-cover"><?php if ($livro['capa_url']): ?><img src="<?= $imagemCatalogo($livro['capa_url']) ?>" alt="Capa de <?= $esc($livro['titulo_livro']) ?>" loading="lazy"><?php else: ?><img src="/TCC-Nook/img/livro-sem-capa.svg" alt="Capa de <?= $esc($livro['titulo_livro']) ?>" loading="lazy"><?php endif; ?></span>
                         <strong><?= $esc($livro['titulo_livro']) ?></strong><small><?= $esc($livro['nome_autor'] ?: 'Autor não informado') ?></small>
                     </a>
                 <?php endforeach; ?>
@@ -177,7 +180,6 @@ $imagemCatalogo = static function ($caminho) use ($esc) {
         </section>
     <?php endif; ?>
 
-    <?php if ($autores_sugeridos): ?>
         <section class="catalog-shelf catalog-authors-shelf">
             <header class="catalog-shelf-heading"><div><p>VOZES PARA DESCOBRIR</p><h2>Autores para conhecer</h2></div><a href="pesquisa_autores.php">Explorar autores <i data-lucide="arrow-up-right"></i></a></header>
             <div class="catalog-author-row">
@@ -189,7 +191,6 @@ $imagemCatalogo = static function ($caminho) use ($esc) {
                 <?php endforeach; ?>
             </div>
         </section>
-    <?php endif; ?>
 
     <section class="catalog-results-section" aria-live="polite">
         <header class="catalog-results-header">
@@ -259,7 +260,7 @@ $imagemCatalogo = static function ($caminho) use ($esc) {
             const estrelas = '★'.repeat(Math.round(nota)) + '☆'.repeat(5 - Math.round(nota));
             const imagem = livro.capa_url
                 ? `<img src="${escaparHtml(urlCapa(livro.capa_url))}" alt="Capa de ${escaparHtml(livro.titulo_livro)}" loading="lazy">`
-                : '<span class="catalog-cover-empty">Capa indisponível</span>';
+                : '<img src="/TCC-Nook/img/livro-sem-capa.svg" alt="Livro sem capa" width="140" height="210" loading="lazy">';
             const metadata = [livro.editora, livro.data_publi].filter(Boolean).join(' · ');
             const synopsisText = livro.descricao || livro.sinopse_livro || '';
             const synopsis = synopsisText
@@ -276,23 +277,27 @@ $imagemCatalogo = static function ($caminho) use ($esc) {
                     ? `<button type="button" class="catalog-add-book" data-adicionar-catalogo="${Number(livro.id_livro)}"><i data-lucide="plus"></i> Adicionar à lista</button>`
                     : `<a class="catalog-add-book" href="${escaparHtml(urlLivro)}"><i data-lucide="arrow-up-right"></i> Ver e adicionar</a>`
                 : '';
-            const linkLeitura = livro.origem === 'interna'
+            const linkLeitura = livro.origem === 'nook' ? `leitor_obra.php?id_livro=${encodeURIComponent(livro.id_livro)}` : livro.origem === 'interna'
                 ? `ler_livro.php?id_livro=${encodeURIComponent(livro.id_livro)}`
                 : livro.pdf_disponivel && livro.pdf_url
                     ? livro.pdf_url
+                    : livro.epub_disponivel && livro.epub_url
+                        ? livro.epub_url
                     : ['FULL_READING', 'FULL_PUBLIC_DOMAIN', 'PARTIAL', 'SAMPLE'].includes(livro.status_acesso)
                         ? (livro.preview_url || livro.link_leitura || '')
                         : (livro.id_livro && !livro.status_acesso ? (livro.link_leitura || '') : '');
             const leituraCompleta = ['FULL_READING', 'FULL_PUBLIC_DOMAIN'].includes(livro.status_acesso);
-            const textoLeitura = livro.origem === 'interna'
+            const textoLeitura = ['interna','nook'].includes(livro.origem)
                 ? 'Ler agora'
                 : livro.pdf_disponivel
-                    ? 'Ler PDF'
+                    ? 'Baixar PDF'
+                    : livro.epub_disponivel
+                        ? 'Baixar EPUB'
                     : leituraCompleta
                         ? 'Ler no Google Books'
-                        : 'Abrir leitura';
+                        : (livro.rotulo_leitura || 'Abrir leitura');
             const urlLeitura = linkLeitura
-                ? `<a class="catalog-read-link ${livro.pdf_disponivel ? 'catalog-read-pdf' : 'catalog-read-preview'}" href="${escaparHtml(linkLeitura)}" ${livro.origem === 'interna' ? '' : 'target="_blank" rel="noopener noreferrer"'}><i data-lucide="${livro.pdf_disponivel ? 'file-down' : 'book-open'}"></i> ${textoLeitura}</a>`
+                ? `<a class="catalog-read-link ${livro.pdf_disponivel ? 'catalog-read-pdf' : 'catalog-read-preview'}" href="${escaparHtml(linkLeitura)}" ${['interna','nook'].includes(livro.origem) ? '' : 'target="_blank" rel="noopener noreferrer"'}><i data-lucide="${livro.pdf_disponivel || livro.epub_disponivel ? 'file-down' : 'book-open'}"></i> ${textoLeitura}</a>`
                 : '';
             const urlResenha = livro.id_livro
                 ? `visao_livro.php?id_livro=${encodeURIComponent(livro.id_livro)}&abrir_resenha=1`
@@ -415,6 +420,21 @@ $imagemCatalogo = static function ($caminho) use ($esc) {
     ordemCatalogoCatalogo.addEventListener('change', () => pesquisarLivros(false));
     carregarMaisLivros.addEventListener('click', () => pesquisarLivros(true));
     pesquisarLivros(false);
+    // As sugestões externas usam a mesma busca de autores, com dados locais como estado inicial.
+    fetch('buscar-autores.php').then(response=>{if(!response.ok)throw new Error();return response.json();}).then(data=>{
+        const row=document.querySelector('.catalog-author-row');
+        if(!data.autores?.length)return;
+        row.replaceChildren();
+        data.autores.slice(0,12).forEach(author=>{
+            const link=document.createElement('a');link.className='catalog-author';link.href=author.url;
+            const fallback=document.createElement('span');fallback.className='catalog-author-fallback';fallback.textContent=author.nome.slice(0,1);
+            if(author.foto){const image=document.createElement('img');image.src=author.foto;image.alt='';image.width=80;image.height=80;image.loading='lazy';image.onerror=()=>image.replaceWith(fallback);link.append(image);}else link.append(fallback);
+            const name=document.createElement('strong');name.textContent=author.nome;
+            const context=document.createElement('small');context.textContent=author.contexto||'Conhecer autor';
+            link.append(name,context);row.append(link);
+        });
+    }).catch(()=>{});
 </script>
+<script src="../front-end/js/pages/catalog-shelf-controls.js" defer></script>
 </body>
 </html>

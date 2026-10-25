@@ -22,9 +22,11 @@ $inicio = $inicio !== false ? max(0, min(980, $inicio)) : 0;
 $ordem = is_string($_GET['ordem'] ?? null) ? $_GET['ordem'] : 'titulo';
 $generoNome = '';
 if ($genero !== false && $genero !== '' && $genero > 0) {
-    $stmtGenero = $conn->prepare('SELECT nome_preferencia FROM preferencia WHERE id_preferencia = :id');
+    $stmtGenero = $conn->prepare('SELECT nome_preferencia, preferencia FROM preferencia WHERE id_preferencia = :id');
     $stmtGenero->execute([':id' => $genero]);
-    $generoNome = trim((string) $stmtGenero->fetchColumn());
+    $registroGenero=$stmtGenero->fetch(PDO::FETCH_ASSOC);
+    $temas=['fantasia'=>'fantasy','terror'=>'horror','suspense'=>'thriller','ficcao-cientifica'=>'science fiction','classicos'=>'classics','aventura'=>'adventure','historia'=>'history','poesia'=>'poetry','filosofia'=>'philosophy','misterio'=>'mystery','biografia'=>'biography','hq'=>'comics','distopia'=>'dystopia'];
+    $generoNome=$registroGenero?($temas[$registroGenero['preferencia']]??trim($registroGenero['nome_preferencia'])):'';
 }
 $ordenacoes = [
     'titulo' => 'l.titulo_livro ASC',
@@ -33,6 +35,7 @@ $ordenacoes = [
 ];
 $orderBy = $ordenacoes[$ordem] ?? $ordenacoes['titulo'];
 
+$filtroIdioma=condicaoIdiomaCatalogo($schema);
 $camposOpcionais = implode(', ', array_map(static fn($coluna) => colunaOpcional($schema, 'livro', $coluna, 'l'), ['paginas', 'google_books_id', 'nota_google', 'link_leitura', 'link_compra', 'origem']));
 
 $sql = "
@@ -59,7 +62,7 @@ $sql = "
             AND c.categoria_curtida = 'resenha'
         WHERE r.id_livro = l.id_livro
     ) avaliacao ON true
-    WHERE l.visibilidade = 'publico'
+    WHERE l.visibilidade = 'publico' AND $filtroIdioma
     AND (:nome_vazio = '' OR l.titulo_livro ILIKE :nome_titulo OR l.nome_autor ILIKE :nome_autor)
 ";
 $params = [
@@ -101,28 +104,14 @@ if (function_exists('curl_init')) {
         $consultaApi = 'fiction';
     }
     $parametrosApi = parametrosBuscaLivros($consultaApi, $inicio, $ordem);
-    $dadosGoogle = cacheGoogleBooks($parametrosApi, static function () use ($parametrosApi, $chave_api): ?array {
-        if ($chave_api !== '') { $parametrosApi['key'] = $chave_api; }
-        $ch = curl_init('https://www.googleapis.com/books/v1/volumes?' . http_build_query($parametrosApi));
-        configurarCurlGoogleBooks($ch);
-        curl_setopt_array($ch, [
-            CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_CONNECTTIMEOUT => 2,
-            CURLOPT_TIMEOUT => 5,
-            CURLOPT_ENCODING => '',
-            CURLOPT_USERAGENT => 'Nook/1.0'
-        ]);
-        $resposta = curl_exec($ch);
-        $codigoHttp = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        curl_close($ch);
-        if ($resposta === false || $codigoHttp !== 200) { return null; }
-        $dados = json_decode($resposta, true);
-        return is_array($dados) ? $dados : null;
+    $dadosGoogle = cacheGoogleBooks($parametrosApi+['locale'=>'pt-edicao-1'], static function () use ($parametrosApi, $chave_api): ?array {
+        return buscarVolumesExternos($parametrosApi, $chave_api);
     });
 
     if ($dadosGoogle !== null) {
+        $dadosGoogle=filtrarVolumesPortugues($dadosGoogle);
         $totalGoogle = (int) ($dadosGoogle['totalItems'] ?? 0);
-        $temMaisGoogle = $inicio < 980 && !empty($dadosGoogle['items']) && $inicio + 20 < $totalGoogle;
+        $temMaisGoogle = $inicio < 980 && ($dadosGoogle['quantidade_recebida']??0)>0 && $inicio + 20 < $totalGoogle;
 
         foreach ($dadosGoogle['items'] ?? [] as $itemGoogle) {
             $googleId = $itemGoogle['id'] ?? '';
@@ -146,22 +135,10 @@ if (function_exists('curl_init')) {
                 $descricaoGoogle = trim(html_entity_decode(strip_tags($descricaoGoogle), ENT_QUOTES | ENT_HTML5, 'UTF-8'));
             }
 
-            $acessoGoogle = $itemGoogle['accessInfo'] ?? [];
-            $pdfUrl = $acessoGoogle['pdf']['downloadLink'] ?? null;
-            $pdfDisponivel = !empty($acessoGoogle['pdf']['isAvailable'])
-                && is_string($pdfUrl)
-                && filter_var($pdfUrl, FILTER_VALIDATE_URL)
-                && str_starts_with($pdfUrl, 'https://');
-            $statusAcesso = $acessoGoogle['accessViewStatus'] ?? 'NONE';
-            $readerUrl = $acessoGoogle['webReaderLink'] ?? $infoGoogle['previewLink'] ?? null;
-            $previewDisponivel = in_array($statusAcesso, ['FULL_READING', 'FULL_PUBLIC_DOMAIN', 'PARTIAL', 'SAMPLE'], true)
-                && is_string($readerUrl)
-                && filter_var($readerUrl, FILTER_VALIDATE_URL);
-            if ($previewDisponivel) {
-                $readerUrl = preg_replace('/^http:/i', 'https:', $readerUrl);
-            }
+            $acessoDigital = normalizarAcessoDigitalLivro($itemGoogle);
             $livroGoogle = [
                 'google_books_id' => $googleId,
+                'origem' => $itemGoogle['provider'] ?? 'google_books',
                 'titulo_livro' => $infoGoogle['title'],
                 'subtitulo' => $infoGoogle['subtitle'] ?? null,
                 'nome_autor' => implode(', ', $infoGoogle['authors'] ?? []),
@@ -172,13 +149,16 @@ if (function_exists('curl_init')) {
                 'editora' => $infoGoogle['publisher'] ?? null,
                 'categorias' => $infoGoogle['categories'] ?? [],
                 'identificadores' => $infoGoogle['industryIdentifiers'] ?? [],
-                'preview_url' => $previewDisponivel ? $readerUrl : null,
+                'preview_url' => $acessoDigital['preview_url'],
                 'info_url' => $infoGoogle['infoLink'] ?? null,
-                'pdf_disponivel' => (bool) $pdfDisponivel,
-                'pdf_url' => $pdfDisponivel ? $pdfUrl : null,
-                'status_acesso' => $statusAcesso,
-                'link_leitura' => $pdfDisponivel ? $pdfUrl : ($previewDisponivel ? $readerUrl : null),
-                'link_compra' => $itemGoogle['saleInfo']['buyLink'] ?? null,
+                'pdf_disponivel' => $acessoDigital['pdf_disponivel'],
+                'pdf_url' => $acessoDigital['pdf_url'],
+                'epub_disponivel' => $acessoDigital['epub_disponivel'],
+                'epub_url' => $acessoDigital['epub_url'],
+                'rotulo_leitura' => $acessoDigital['rotulo_leitura'],
+                'status_acesso' => $acessoDigital['status_acesso'],
+                'link_leitura' => $acessoDigital['link_leitura'],
+                'link_compra' => $acessoDigital['link_compra'],
                 'modos_leitura' => $infoGoogle['readingModes'] ?? [],
                 'tipo_publicacao' => $infoGoogle['printType'] ?? null,
                 'classificacao_google' => $infoGoogle['maturityRating'] ?? null,
@@ -202,7 +182,7 @@ if (function_exists('curl_init')) {
             $indicesGoogleLocais[$googleId] = array_key_last($livros);
         }
     } else {
-        $avisoGoogle = 'A busca externa está temporariamente indisponível.';
+        $avisoGoogle = 'As fontes externas estão temporariamente indisponíveis. Os livros publicados no Nook continuam disponíveis.';
     }
 }
 

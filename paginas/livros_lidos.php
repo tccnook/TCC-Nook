@@ -38,7 +38,9 @@ $total_lidos = count($livros_lidos);
                                  alt="Capa de <?= htmlspecialchars($livro_lido['titulo_livro']) ?>"
                                  loading="lazy">
                         <?php else: ?>
-                            <div class="sem-capa">Capa não disponível</div>
+                            <img src="/TCC-Nook/img/livro-sem-capa.svg"
+                                 alt="Capa de <?= htmlspecialchars($livro_lido['titulo_livro']) ?>"
+                                 loading="lazy">
                         <?php endif; ?>
 
                         <?php if($livro_lido['nota_avaliacao'] !== null): ?>

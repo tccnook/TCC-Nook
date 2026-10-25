@@ -61,3 +61,37 @@
 .bookmark-grid svg { color: var(--profile-highlight); }.bookmark-remove { min-height: 44px; font-size: .8rem; text-decoration: underline; }
 @media(max-width:600px) { .bookmark-grid,.bookmark-form { grid-template-columns: 1fr; } }
 .published-book-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:22px;margin-top:24px}.published-book-grid article{padding:22px;background:white;border-radius:8px}.published-book-grid img{object-fit:cover;border-radius:4px}.published-book-grid h3{font-family:Lora,Georgia,serif;margin:12px 0}.published-book-grid p{font-size:.9rem;line-height:1.6}.published-book-grid small{color:#625b6d}@media(max-width:760px){.published-book-grid{grid-template-columns:1fr 1fr}}@media(max-width:440px){.published-book-grid{grid-template-columns:1fr}}
+
+/* Paleta do anexo: painéis de ameixa, texto claro e acentos lavanda. */
+.profile-page { --profile-panel: #302448; --profile-panel-soft: #44385d; --profile-highlight: #c184ff; background: #f6f2eb; }
+.profile-page .sem-banner { background: #271e38; }
+.profile-page .aba :is(.card, .lista-card, .profile-review-card, .published-book-grid article), .profile-page .visao-listas { --text-title: #fff; --text-primary: #fff; --text-secondary: #eee8f4; --text-muted: #ded5e8; --all-white: #44385d; --bg-primary: #302448; background: var(--profile-panel); color: #fff; box-shadow: 0 3px 12px #2b1f4714; }
+.profile-page .aba :is(.card, .lista-card, .profile-review-card, .published-book-grid article) :is(h2, h3) { color: #fff; }
+.profile-page .aba .lista-card { --lista-cor: var(--profile-panel); --lista-texto: #fff; }
+.profile-page .aba .lista-info { background: var(--profile-panel); color: #eee8f4; }
+.profile-page .aba .profile-review-card footer { border-top-color: #67527f; }
+.profile-page .aba .profile-review-card footer :is(a, span, button), .profile-page .aba .bookmark-grid a { color: #eee8f4; }
+.profile-page .aba .published-book-grid small { color: #ded5e8; }
+.profile-page .aba .bookmark-form :is(input, select, textarea), .profile-page .aba .review-share-link { background: var(--profile-panel-soft); color: #fff; border-color: #8a789f; }
+.profile-page .visao-grid .card h2, .profile-page .visao-grid .card h3, .profile-page .visao-listas h2 { color: #fff; }
+.profile-page .visao-grid .autor, .profile-page .visao-grid .aba-vazia, .profile-page .visao-grid .link-card, .profile-page .visao-listas .link-card { color: #eee8f4; }
+.profile-page .mini-card { background: var(--profile-panel-soft); border: 1px solid #67527f; }
+.profile-page .mini-card strong, .profile-page .mini-card svg, .profile-page .meta-numeros strong { color: var(--profile-highlight); }
+.profile-page .mini-card span, .profile-page .mini-card p, .profile-page .mini-card small { color: #eee8f4; }
+.profile-page .top5-adicionar { color: var(--profile-highlight); background: transparent; }
+.profile-page .meta { background: transparent; }
+.profile-page .meta progress { accent-color: var(--profile-highlight); }
+.profile-page .meta progress::-webkit-progress-bar { background: #302448; border: 1px solid #c184ff; border-radius: 20px; }
+.profile-page .meta progress::-webkit-progress-value { background: #c184ff; }
+.profile-page .meta progress::-moz-progress-bar { background: #c184ff; }
+.profile-page .meta-mensagem { color: #e5cd9b; }
+.profile-page .visao-grid .pilula { background: #756096; color: #fff; }
+.profile-page .top5-item > a:not(.top5-book-link) { color: #fff; }
+.profile-page :is(button,a,input,select,textarea):focus-visible, .public-profile :is(a,button):focus-visible { outline: 3px solid #b46dff; outline-offset: 4px; }
+.public-profile > section:not(.public-profile-identity), .public-profile-stats { background: #302448; color: #fff; border-radius: 12px; padding: 24px; }
+.public-profile > section:not(.public-profile-identity) :is(h2,h3,strong), .public-profile-stats dd { color: #fff; }
+.public-profile-books small, .public-profile-stats dt { color: #ddd2e9; }
+.public-profile .public-profile-identity { overflow: hidden; border-radius: 12px; }
+.public-profile .public-profile-banner { height: clamp(160px,20vw,250px); object-fit: cover; }
+.public-profile .published-book-grid article { background: #44385d; color: #fff; }
+.public-profile .published-book-grid small { color: #ded4e9; }

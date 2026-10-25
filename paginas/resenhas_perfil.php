@@ -11,7 +11,7 @@ $escapeResenha=static fn($v)=>htmlspecialchars((string)($v??''),ENT_QUOTES,'UTF-
 <section class="profile-reviews" aria-label="Suas resenhas">
 <?php if(!$resenhasPerfil): ?><p class="aba-vazia">Suas resenhas aparecerão aqui. Abra um livro para escrever a primeira.</p><?php endif; ?>
 <?php foreach($resenhasPerfil as $resenha):
-    $capa=$resenha['capa_url'];if($capa&&!preg_match('~^https?://|^/~i',$capa)&&!str_starts_with($capa,'../'))$capa='../'.$capa;
+    $capa=$resenha['capa_url']?:'/TCC-Nook/img/livro-sem-capa.svg';if($capa&&!preg_match('~^https?://|^/~i',$capa)&&!str_starts_with($capa,'../'))$capa='../'.$capa;
     $url='visao_livro.php?id_livro='.(int)$resenha['id_livro'].'#resenha-'.(int)$resenha['id_resenha']; ?>
 <article class="profile-review-card">
 <div class="profile-review-body"><div class="profile-review-cover"><?php if($capa): ?><img src="<?= $escapeResenha($capa) ?>" alt="Capa de <?= $escapeResenha($resenha['titulo_livro']) ?>" width="120" height="180" loading="lazy"><?php endif; ?><?= estrelas($resenha['nota']??0) ?></div>

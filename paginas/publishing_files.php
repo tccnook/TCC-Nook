@@ -4,16 +4,32 @@ function pastaPublicacoes(): string
 {
     $configured=getenv('NOOK_PRIVATE_STORAGE')?:($_ENV['NOOK_PRIVATE_STORAGE']??'');
     if(!$configured){$envFile=dirname(__DIR__).'/.env';$env=is_file($envFile)?(parse_ini_file($envFile,false,INI_SCANNER_RAW)?:[]):[];$configured=$env['NOOK_PRIVATE_STORAGE']??'';}
-    $dir=$configured?:sys_get_temp_dir().'/nook-publishing-'.substr(hash('sha256',dirname(__DIR__)),0,12);
-    if(!$configured&&is_dir($dir)&&!is_writable($dir))$dir.='-'.(function_exists('posix_geteuid')?posix_geteuid():'web');
-    if(!str_starts_with($dir,'/')||str_starts_with(realpath($dir)?:$dir,realpath(dirname(__DIR__))))throw new RuntimeException('Configure armazenamento privado fora do projeto.');
+    // O diretório de dados do PHP/LAMPP fica fora do DocumentRoot e sobrevive a reinícios.
+    // Em produção NOOK_PRIVATE_STORAGE pode apontar para um volume persistente dedicado.
+    $serverData=dirname((string)php_ini_loaded_file(),2).'/temp';
+    if(!$configured&&(!is_dir($serverData)||!is_writable($serverData)))throw new RuntimeException('Defina NOOK_PRIVATE_STORAGE com uma pasta privada persistente e gravável fora do projeto.');
+    $base=$serverData;
+    $dir=$configured?:$base.'/nook-publications-'.substr(hash('sha256',dirname(__DIR__)),0,12).'-'.(function_exists('posix_geteuid')?posix_geteuid():'web');
+    $root=realpath(dirname(__DIR__));$resolved=realpath($dir)?:$dir;
+    if(!str_starts_with($dir,'/')||$resolved===$root||str_starts_with($resolved,$root.'/'))throw new RuntimeException('Configure armazenamento privado fora do projeto.');
     if(!is_dir($dir)&&!mkdir($dir,0700,true)&&!is_dir($dir))throw new RuntimeException('Armazenamento de livros indisponível.');
+    if(!is_writable($dir))throw new RuntimeException('O armazenamento privado não permite gravar arquivos.');
     return $dir;
 }
 function caminhoPublicacao(string $key): string
 {
     if(!preg_match('/^[a-f0-9]{40}\.(pdf|png|jpg|webp)$/D',$key))throw new InvalidArgumentException('Arquivo inválido.');
-    return pastaPublicacoes().'/'.$key;
+    $path=pastaPublicacoes().'/'.$key;
+    if(!is_file($path)){
+        $legacy=sys_get_temp_dir().'/nook-publishing-'.substr(hash('sha256',dirname(__DIR__)),0,12);
+        foreach([$legacy,$legacy.'-'.(function_exists('posix_geteuid')?posix_geteuid():'web')] as $dir){
+            if(is_readable($dir.'/'.$key)){
+                if(@copy($dir.'/'.$key,$path)){chmod($path,0600);return $path;}
+                return $dir.'/'.$key;
+            }
+        }
+    }
+    return $path;
 }
 function novoArquivoPublicacao(string $ext='pdf'): string{return caminhoPublicacao(bin2hex(random_bytes(20)).'.'.$ext);}
 function sanitizarEscrita(string $html): string
@@ -25,7 +41,8 @@ function sanitizarEscrita(string $html): string
 }
 function executarPdf(array $args,int $seconds=25): string
 {
-    $pipes=[];$proc=proc_open(array_merge(['/usr/bin/timeout','--signal=KILL',(string)$seconds],$args),[0=>['pipe','r'],1=>['pipe','w'],2=>['file','/dev/null','a']],$pipes);
+    $environment=['PATH'=>'/usr/bin:/bin','LANG'=>'C.UTF-8'];
+    $pipes=[];$proc=proc_open(array_merge(['/usr/bin/timeout','--signal=KILL',(string)$seconds],$args),[0=>['pipe','r'],1=>['pipe','w'],2=>['file','/dev/null','a']],$pipes,null,$environment);
     if(!is_resource($proc))throw new RuntimeException('Processamento de PDF indisponível.');fclose($pipes[0]);$out=stream_get_contents($pipes[1],100000);fclose($pipes[1]);$code=proc_close($proc);if($code!==0)throw new InvalidArgumentException('Não foi possível processar este PDF. Envie um documento válido, sem senha.');return $out;
 }
 function paginasPdf(string $path): int

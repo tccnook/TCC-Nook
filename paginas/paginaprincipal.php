@@ -18,27 +18,15 @@ $stmt->execute([':id_user' => $id_user]);
 $usuario = $stmt->fetch(PDO::FETCH_ASSOC) ?: [];
 
 $stmt = $conn->prepare("
-    SELECT p.id_post, p.titulo_post, p.conteudo, p.legenda, p.url_imagem, p.criado_em, p.visibilidade, p.conteudo_sensivel,p.conteudo_adulto, COALESCE(cfg.comentarios, 'todos') AS politica_comentarios,
-           EXISTS(SELECT 1 FROM follow f WHERE f.id_follower=:viewer_comentario AND f.id_following=p.id_user) AS visitante_segue,
+    SELECT p.id_post, p.titulo_post, p.conteudo, p.legenda, p.url_imagem, p.criado_em, p.visibilidade, p.conteudo_sensivel,p.conteudo_adulto,
+           EXISTS(SELECT 1 FROM follow f WHERE f.id_follower=:viewer_visit AND f.id_following=p.id_user) AS visitante_segue,
            u.id_user AS autor_id, u.nome_completo, u.username, c.foto_perfil_url,
            (SELECT COUNT(*) FROM curtida cur WHERE cur.id_coisocurtido = p.id_post AND cur.categoria_curtido = 'post') AS curtidas,
-           EXISTS (SELECT 1 FROM curtida cur WHERE cur.id_coisocurtido = p.id_post AND cur.categoria_curtido = 'post' AND cur.id_user = :viewer_like) AS curtido,
-           COALESCE((
-               SELECT json_agg(json_build_object('comentario', recentes.comentario, 'criado_em', recentes.criado_em, 'username', recentes.username, 'foto', recentes.foto_perfil_url) ORDER BY recentes.criado_em DESC)
-               FROM (
-                   SELECT co.comentario, co.criado_em, uc.username, cc.foto_perfil_url
-                   FROM comentario co
-                   INNER JOIN usuario uc ON uc.id_user = co.id_user
-                   LEFT JOIN conta cc ON cc.id_user = uc.id_user
-                   WHERE co.categoria_curtida = 'post' AND co.id_coisocurtido = p.id_post
-                   ORDER BY co.criado_em DESC
-                   LIMIT 2
-               ) recentes
-           ), '[]'::json) AS comentarios
+           (SELECT COUNT(*) FROM comentario co WHERE co.id_coisocurtido=p.id_post AND co.categoria_curtida='post') AS total_comentarios,
+           EXISTS (SELECT 1 FROM curtida cur WHERE cur.id_coisocurtido = p.id_post AND cur.categoria_curtido = 'post' AND cur.id_user = :viewer_like) AS curtido
     FROM post p
     INNER JOIN usuario u ON u.id_user = p.id_user
     LEFT JOIN conta c ON c.id_user = u.id_user
-    LEFT JOIN configuracao_usuario cfg ON cfg.id_user=u.id_user
     WHERE (p.id_user = :viewer_own OR (p.visibilidade = 'publico' AND p.id_user <> :viewer_other))
     AND (p.id_user = :viewer_filtro OR ((NOT p.conteudo_sensivel OR :sensivel = 1) AND (NOT p.conteudo_adulto OR :adulto = 1)))
     ORDER BY CASE WHEN EXISTS (SELECT 1 FROM follow f WHERE f.id_follower = :viewer_follow AND f.id_following = p.id_user) THEN 0 ELSE 1 END,
@@ -49,10 +37,12 @@ $stmt->execute([
     ':viewer_like' => $id_user,
     ':viewer_own' => $id_user,
     ':viewer_other' => $id_user,
-    ':viewer_follow' => $id_user, ':viewer_comentario'=>$id_user,
+    ':viewer_visit' => $id_user, ':viewer_follow' => $id_user,
     ':viewer_filtro' => $id_user, ':sensivel'=>(int)$configLeitura['permitir_sensivel'], ':adulto'=>(int)$configLeitura['permitir_adulto']
 ]);
 $posts = $stmt->fetchAll(PDO::FETCH_ASSOC);
+require_once __DIR__.'/post_composer_support.php';
+$imagensPosts=imagensDosPosts($conn,array_column($posts,'id_post'));
 
 $stmt = $conn->prepare("
     WITH pessoas_em_comum AS (
@@ -78,6 +68,13 @@ $stmt->execute([
     ':id_user_seguindo' => $id_user
 ]);
 $usuarios_sugeridos = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+$grupos_usuario = [];
+$stmt = $conn->prepare("SELECT c.id_conversa,c.nome_conversa,c.foto_conversa_url,COUNT(DISTINCT participante.id_user) AS total_participantes FROM conversa c INNER JOIN conversa_participante membro ON membro.id_conversa=c.id_conversa AND membro.id_user=:membro INNER JOIN conversa_participante participante ON participante.id_conversa=c.id_conversa WHERE c.tipo='grupo' GROUP BY c.id_conversa,c.nome_conversa,c.foto_conversa_url ORDER BY c.id_conversa DESC LIMIT 5");
+$stmt->execute([':membro' => $id_user]);
+$grupos_usuario = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+$livros_em_alta = $conn->query("SELECT l.id_livro,l.titulo_livro,l.nome_autor,l.capa_url,((SELECT COUNT(*) FROM resenha r WHERE r.id_livro=l.id_livro AND r.visibilidade='publico' AND r.data_publi>CURRENT_TIMESTAMP-INTERVAL '30 days')+(SELECT COUNT(*) FROM progresso_leitura pr WHERE pr.id_livro=l.id_livro AND pr.ultima_leitura>CURRENT_TIMESTAMP-INTERVAL '30 days')) AS atividade FROM livro l WHERE l.visibilidade='publico' ORDER BY atividade DESC,l.data_publi DESC NULLS LAST,l.titulo_livro LIMIT 5")->fetchAll(PDO::FETCH_ASSOC);
 
 $listas_sugeridas = [];
 if (isset($schema['whishlist']['descricao'], $schema['whishlist']['capa_url'], $schema['whishlist']['visibilidade'], $schema['whishlist']['data_criacao'], $schema['whishbook']['ordem'], $schema['whishlist_seguida'])) {
@@ -137,20 +134,31 @@ $fotoFallback = mb_strtoupper(mb_substr($usuario['username'] ?? 'N', 0, 1));
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Lora:wght@400;500;600;700&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
     <title>Início | Nook</title>
-<link rel="stylesheet" href="../front-end/css/pages/home-reference.css">
+<link rel="stylesheet" href="../front-end/css/pages/home-feed.css">
 </head>
 <body>
 <?php require_once __DIR__ . '/header.php'; ?>
 
-<main class="home-page">
+<main class="home-page" data-post-csrf="<?= $esc($_SESSION['post_csrf']) ?>">
     <div class="home-columns">
+        <nav class="home-sidebar" aria-label="Navegação da comunidade">
+            <a class="home-sidebar-link is-current" href="paginaprincipal.php" aria-current="page"><i data-lucide="house" aria-hidden="true"></i><span>Início</span></a>
+            <a class="home-sidebar-link" href="catalogo.php"><i data-lucide="search" aria-hidden="true"></i><span>Explorar</span></a>
+            <a class="home-sidebar-link" href="#grupos-home"><i data-lucide="users-round" aria-hidden="true"></i><span>Comunidades</span></a>
+            <a class="home-sidebar-link" href="conversas.php"><i data-lucide="messages-square" aria-hidden="true"></i><span>Mensagens</span></a>
+            <button class="home-sidebar-link" type="button" data-open-notifications><i data-lucide="bell" aria-hidden="true"></i><span>Notificações</span></button>
+            <a class="home-sidebar-link" href="perfil.php?aba=livros-lidos"><i data-lucide="library-big" aria-hidden="true"></i><span>Biblioteca</span></a>
+            <button class="home-sidebar-link" type="button" data-open-post-home><i data-lucide="square-plus" aria-hidden="true"></i><span>Criar publicação</span></button>
+            <div class="home-sidebar-extra">
+                <p>Suas leituras</p>
+                <a href="catalogo.php"><i data-lucide="book-open-check" aria-hidden="true"></i> Continuar lendo</a>
+                <a href="perfil.php?aba=livros-lidos"><i data-lucide="check-square" aria-hidden="true"></i> Livros lidos</a>
+                <a href="perfil.php?aba=listas-leitura"><i data-lucide="bookmark" aria-hidden="true"></i> Minhas listas</a>
+                <a href="explorar_listas.php"><i data-lucide="list" aria-hidden="true"></i> Explorar listas</a>
+            </div>
+        </nav>
+
         <section class="home-feed-column">
-    <section class="home-welcome">
-        <div><p>SEU CANTINHO DE LEITURA</p><h1>Olá, <?= $esc($primeiroNome) ?>.</h1><span>O que você está lendo hoje?</span></div>
-        <img class="home-welcome-art" src="../img/escrita/livro-aberto.svg" width="260" height="190" alt="">
-    </section>
-
-
             <section class="home-composer">
                 <?php if ($fotoUsuario): ?><img src="<?= $fotoUsuario ?>" alt=""><?php else: ?><span class="home-avatar-fallback"><?= $fotoFallback ?></span><?php endif; ?>
                 <button type="button" data-open-post-home>Compartilhe uma leitura, ideia ou descoberta...</button>
@@ -161,29 +169,24 @@ $fotoFallback = mb_strtoupper(mb_substr($usuario['username'] ?? 'N', 0, 1));
                 <nav class="home-feed-tabs" aria-label="Filtrar publicações"><button type="button" class="is-active" data-feed-mode="todos" aria-pressed="true"><i data-lucide="house"></i> Para você</button><button type="button" data-feed-mode="seguindo" aria-pressed="false"><i data-lucide="users"></i> Seguindo</button><a href="pesquisa_autores.php"><i data-lucide="compass"></i> Descobrir</a><a href="explorar_listas.php"><i data-lucide="list"></i> Listas</a><label><span class="sr-only">Tipo de publicação</span><select data-feed-type><option value="todos">Todos os tipos</option><option value="imagem">Com imagem</option><option value="texto">Somente texto</option></select></label></nav><p class="home-filter-empty" hidden>Nenhuma publicação carregada para este filtro.</p>
                 <?php if ($posts): ?>
                     <?php foreach ($posts as $post): ?>
-                        <?php $comentariosPost = json_decode($post['comentarios'] ?: '[]', true) ?: []; $postCurtido = in_array($post['curtido'], [true, 't', 1, '1'], true); $podeComentarPost=podeInteragir($post['politica_comentarios'],(int)$post['autor_id'],$id_user,false,filter_var($post['visitante_segue'],FILTER_VALIDATE_BOOLEAN)); ?>
-                        <article class="post-card" data-post-id="<?= (int) $post['id_post'] ?>" data-post-following="<?=filter_var($post['visitante_segue'],FILTER_VALIDATE_BOOLEAN)?'1':'0'?>" data-post-type="<?=empty($post['url_imagem'])?'texto':'imagem'?>">
+                        <?php $postCurtido = in_array($post['curtido'], [true, 't', 1, '1'], true); ?>
+                        <article class="post-card" id="post-<?= (int) $post['id_post'] ?>" data-post-id="<?= (int) $post['id_post'] ?>" data-post-following="<?=filter_var($post['visitante_segue'],FILTER_VALIDATE_BOOLEAN)?'1':'0'?>" data-post-type="<?=empty($post['url_imagem'])?'texto':'imagem'?>">
                             <header class="post-author">
                                 <a href="perfil_user_terceiro.php?id_user=<?= (int) $post['autor_id'] ?>">
                                     <?php if (!empty($post['foto_perfil_url'])): ?><img src="<?= $imagemUrl($post['foto_perfil_url']) ?>" alt=""><?php else: ?><span class="home-avatar-fallback"><?= $esc(mb_strtoupper(mb_substr($post['username'], 0, 1))) ?></span><?php endif; ?>
-                                    <span><strong><?= $esc($post['nome_completo']) ?></strong><small>@<?= $esc($post['username']) ?> · <?= $esc(date('d/m/Y H:i', strtotime($post['criado_em']))) ?></small></span>
+                                    <span><strong><?= $esc($post['nome_completo']) ?></strong><small>@<?= $esc($post['username']) ?> · <time datetime="<?= $esc(date(DATE_ATOM, strtotime($post['criado_em']))) ?>"><?= $esc(date('d/m/Y H:i', strtotime($post['criado_em']))) ?></time></small></span>
                                 </a>
                                 <?php if ((int) $post['autor_id'] === $id_user && $post['visibilidade'] === 'privado'): ?><span class="post-private"><i data-lucide="lock-keyhole"></i> Privado</span><?php endif; ?>
+                                <details class="post-menu"><summary aria-label="Mais ações da publicação"><i data-lucide="ellipsis" aria-hidden="true"></i></summary><div><button type="button" data-copiar-link-post="<?= (int)$post['id_post'] ?>">Copiar link</button></div></details>
                             </header>
                             <div class="post-story <?=empty($post['url_imagem'])?'post-story-text-only':''?>">
-                            <?php if (!empty($post['url_imagem'])): ?><img class="post-image" src="<?= $imagemUrl($post['url_imagem']) ?>" alt="Imagem publicada por @<?= $esc($post['username']) ?>" loading="lazy"><?php endif; ?>
-                            <div><h3><?= $esc($post['titulo_post']) ?></h3><p class="post-content"><?= nl2br($esc($post['conteudo'])) ?></p><?php if (!empty($post['legenda'])): ?><p class="post-caption"><?= nl2br($esc($post['legenda'])) ?></p><?php endif;?></div></div>
+                            <div><?php if($post['titulo_post']!==mb_substr(explode("\n",$post['conteudo'])[0],0,90)):?><h3><?= $esc($post['titulo_post']) ?></h3><?php endif;?><p class="post-content"><?= formatarTextoPost($post['conteudo']) ?></p><?php if (!empty($post['legenda'])): ?><p class="post-caption"><?= nl2br($esc($post['legenda'])) ?></p><?php endif;?></div>
+                            <?php $galeriaPost=$imagensPosts[(int)$post['id_post']]??(!empty($post['url_imagem'])?[$post['url_imagem']]:[]);if(count($galeriaPost)>1):?><div class="post-gallery" tabindex="0" role="region" aria-label="Galeria de <?=count($galeriaPost)?> imagens; role horizontalmente para navegar"><?php foreach($galeriaPost as $imgIndex=>$imgUrl):?><figure><img class="post-image" src="<?=$imagemUrl($imgUrl)?>" alt="Imagem <?=$imgIndex+1?> publicada por @<?=$esc($post['username'])?>" loading="lazy"><figcaption><?=$imgIndex+1?> / <?=count($galeriaPost)?></figcaption></figure><?php endforeach;?></div><?php elseif($galeriaPost):?><img class="post-image" src="<?= $imagemUrl($galeriaPost[0]) ?>" alt="Imagem publicada por @<?= $esc($post['username']) ?>" loading="lazy"><?php endif; ?>
+                            </div>
                             <div class="post-actions">
                                 <button type="button" data-curtir-post="<?= (int) $post['id_post'] ?>" aria-pressed="<?= $postCurtido ? 'true' : 'false' ?>" <?= $postCurtido ? 'disabled' : '' ?>><i data-lucide="heart"></i> <span><?= (int) $post['curtidas'] ?></span></button>
-                                <button type="button" <?= $podeComentarPost ? '' : 'disabled title="Comentários limitados pelo autor"' ?> data-focar-comentario="<?= (int) $post['id_post'] ?>"><i data-lucide="message-circle"></i> Comentar</button>
-                            </div>
-                            <div class="post-comments">
-                                <?php foreach ($comentariosPost as $comentario): ?><p><strong>@<?= $esc($comentario['username']) ?></strong> <?= $esc($comentario['comentario']) ?></p><?php endforeach; ?>
-                                <?php if($podeComentarPost): ?><form class="post-comment-form" data-comentar-post="<?= (int) $post['id_post'] ?>">
-                                    <input type="text" name="comentario" maxlength="1000" aria-label="Escreva um comentário" placeholder="Escreva um comentário..." required>
-                                    <button type="submit" aria-label="Enviar comentário"><i data-lucide="send"></i></button>
-                                </form><?php else: ?><p>Os comentários desta publicação estão limitados pelo autor.</p><?php endif; ?>
-                                <p class="post-feedback" role="status" aria-live="polite"></p>
+                                <button type="button" data-abrir-comentarios="<?= (int)$post['id_post'] ?>" aria-label="Ver <?= (int)$post['total_comentarios'] ?> comentários"><i data-lucide="message-circle" aria-hidden="true"></i><span data-contagem-comentarios><?= (int)$post['total_comentarios'] ?></span></button>
+                                <button type="button" data-compartilhar-post="<?= (int)$post['id_post'] ?>" aria-label="Compartilhar publicação"><i data-lucide="share-2" aria-hidden="true"></i><span class="sr-only">Compartilhar</span></button>
                             </div>
                         </article>
                     <?php endforeach; ?>
@@ -198,13 +201,43 @@ $fotoFallback = mb_strtoupper(mb_substr($usuario['username'] ?? 'N', 0, 1));
         <div class="reading-rail">
             <?php foreach ($leituras_em_andamento as $leitura): $progresso = max(0, min(100, (float) $leitura['porcentagem_progresso'])); ?>
             <a class="reading-book" href="ler_livro.php?id_livro=<?= (int) $leitura['id_livro'] ?>">
-                <?php if ($leitura['capa_url']): ?><img src="<?= $imagemUrl($leitura['capa_url']) ?>" alt="" width="56" height="84" loading="lazy"><?php else: ?><span class="reading-cover-empty" aria-hidden="true">Nook</span><?php endif; ?>
+                <?php if ($leitura['capa_url']): ?><img src="<?= $imagemUrl($leitura['capa_url']) ?>" alt="" width="56" height="84" loading="lazy"><?php else: ?><img src="/TCC-Nook/img/livro-sem-capa.svg" alt="" width="56" height="84" loading="lazy"><?php endif; ?>
                 <span><strong><?= $esc($leitura['titulo_livro']) ?></strong><small><?= $esc($leitura['nome_autor']) ?></small><progress max="100" value="<?= $progresso ?>" aria-label="Progresso em <?= $esc($leitura['titulo_livro']) ?>"></progress><small><?= round($progresso) ?>% concluído</small></span>
             </a>
             <?php endforeach; ?>
         </div>
     </section>
     <?php endif; ?>
+
+    <section class="home-section home-groups-suggestions" id="grupos-home" aria-labelledby="grupos-home-title">
+        <header class="home-section-heading"><div><h2 id="grupos-home-title">Seus grupos</h2><p>Conversas com leitores</p></div><a class="home-section-more" href="conversas.php">Ver todos</a></header>
+        <?php if ($grupos_usuario): ?>
+            <div class="home-groups-list">
+                <?php foreach ($grupos_usuario as $grupo): ?>
+                    <a class="home-group-row" href="chat.php?id_conversa=<?= (int)$grupo['id_conversa'] ?>">
+                        <?php if (!empty($grupo['foto_conversa_url'])): ?><img src="<?= $imagemUrl($grupo['foto_conversa_url']) ?>" alt="" loading="lazy"><?php else: ?><span aria-hidden="true"><?= $esc(mb_strtoupper(mb_substr($grupo['nome_conversa'] ?: 'G',0,1))) ?></span><?php endif; ?>
+                        <span><strong><?= $esc($grupo['nome_conversa'] ?: 'Grupo de leitura') ?></strong><small><?= (int)$grupo['total_participantes'] ?> participantes</small></span>
+                        <i data-lucide="chevron-right" aria-hidden="true"></i>
+                    </a>
+                <?php endforeach; ?>
+            </div>
+        <?php else: ?><p class="home-empty">Você ainda não participa de grupos.</p><?php endif; ?>
+        <a class="home-create-group" href="criar_conversa.php"><i data-lucide="plus" aria-hidden="true"></i> Criar grupo de leitura</a>
+    </section>
+
+    <section class="home-section home-trending-books" aria-labelledby="livros-em-alta-title">
+        <header class="home-section-heading"><div><h2 id="livros-em-alta-title">Livros em alta</h2><p>Atividade recente no Nook</p></div><a class="home-section-more" href="catalogo.php">Explorar</a></header>
+        <?php if ($livros_em_alta): ?>
+            <div class="home-trending-list">
+                <?php foreach ($livros_em_alta as $livroAlta): ?>
+                    <a class="home-trending-book" href="visao_livro.php?id_livro=<?= (int)$livroAlta['id_livro'] ?>">
+                        <?php if (!empty($livroAlta['capa_url'])): ?><img class="home-trending-cover" src="<?= $imagemUrl($livroAlta['capa_url']) ?>" alt="" loading="lazy"><?php else: ?><img class="home-trending-cover" src="/TCC-Nook/img/livro-sem-capa.svg" alt="" loading="lazy"><?php endif; ?>
+                        <span><strong><?= $esc($livroAlta['titulo_livro']) ?></strong><small><?= $esc($livroAlta['nome_autor'] ?: 'Autor não informado') ?></small></span>
+                    </a>
+                <?php endforeach; ?>
+            </div>
+        <?php else: ?><p class="home-empty">Os livros mais conversados aparecerão aqui.</p><?php endif; ?>
+    </section>
 
 
     <section class="home-section home-people-suggestions">
@@ -265,55 +298,38 @@ $fotoFallback = mb_strtoupper(mb_substr($usuario['username'] ?? 'N', 0, 1));
 
 </main>
 
+<p id="home-feed-status" class="sr-only" role="status" aria-live="polite"></p>
+
+<dialog class="post-comments-dialog" id="postCommentsDialog" aria-labelledby="post-comments-title">
+    <div class="post-comments-shell">
+        <header class="post-comments-header">
+            <div><p>Conversa da comunidade</p><h2 id="post-comments-title">Publicação</h2></div>
+            <button type="button" data-fechar-comentarios aria-label="Fechar comentários"><i data-lucide="x" aria-hidden="true"></i></button>
+        </header>
+        <article class="post-comments-publication" aria-label="Publicação selecionada">
+            <div data-modal-post-author></div>
+            <div data-modal-post-story></div>
+            <div data-modal-post-actions></div>
+        </article>
+        <section class="post-comments-section" aria-labelledby="post-comments-list-title">
+            <header class="post-comments-list-heading">
+                <h3 id="post-comments-list-title">Comentários <span data-modal-comments-count>(0)</span></h3>
+                <label><span class="sr-only">Ordenar comentários</span><select data-comments-sort><option value="recentes">Mais recentes</option><option value="antigos">Mais antigos</option></select></label>
+            </header>
+            <form class="post-modal-comment-form" data-modal-comment-form>
+                <?php if ($fotoUsuario): ?><img src="<?= $fotoUsuario ?>" alt="" width="40" height="40"><?php else: ?><span class="home-avatar-fallback" aria-hidden="true"><?= $fotoFallback ?></span><?php endif; ?>
+                <label class="sr-only" for="post-modal-comment-input">Escreva um comentário</label>
+                <textarea id="post-modal-comment-input" name="comentario" maxlength="1000" rows="1" placeholder="Escreva um comentário..." required></textarea>
+                <button type="submit" aria-label="Enviar comentário"><i data-lucide="send" aria-hidden="true"></i></button>
+            </form>
+            <p class="post-modal-comment-permission" data-modal-comment-permission hidden>Os comentários desta publicação estão limitados pelo autor.</p>
+            <p class="post-modal-status" data-modal-comment-status role="status" aria-live="polite">Selecione uma publicação para ver os comentários.</p>
+            <div class="post-modal-comment-list" data-modal-comment-list aria-live="polite"></div>
+        </section>
+    </div>
+</dialog>
+
 <?php require_once __DIR__ . '/footer.php'; ?>
-<script>
-    document.querySelectorAll('[data-open-post-home]').forEach((button) => button.addEventListener('click', () => document.getElementById('modalCriarPost').showModal()));
-    document.querySelectorAll('[data-curtir-post]').forEach((button) => button.addEventListener('click', async () => {
-        button.disabled = true;
-        const dados = new FormData();
-        dados.append('acao', 'curtir');
-        dados.append('id_post', button.dataset.curtirPost);
-        try {
-            const response = await fetch('acoes_post.php', { method: 'POST', body: dados, headers: { Accept: 'application/json' } });
-            const result = await response.json();
-            if (!response.ok) throw new Error(result.mensagem);
-            button.setAttribute('aria-pressed', 'true');
-            const count = button.querySelector('span');
-            count.textContent = Number(count.textContent) + 1;
-        } catch (error) { button.disabled = false; }
-    }));
-    document.querySelectorAll('[data-focar-comentario]').forEach((button) => button.addEventListener('click', () => document.querySelector(`[data-comentar-post="${button.dataset.focarComentario}"] input`).focus()));
-    document.querySelectorAll('[data-comentar-post]').forEach((form) => form.addEventListener('submit', async (event) => {
-        event.preventDefault();
-        const input = form.elements.comentario;
-        const status = form.parentElement.querySelector('.post-feedback');
-        const dados = new FormData();
-        dados.append('acao', 'comentar');
-        dados.append('id_post', form.dataset.comentarPost);
-        dados.append('comentario', input.value.trim());
-        try {
-            const response = await fetch('acoes_post.php', { method: 'POST', body: dados, headers: { Accept: 'application/json' } });
-            const result = await response.json();
-            if (!response.ok) throw new Error(result.mensagem);
-            window.location.reload();
-        } catch (error) { status.textContent = error.message || 'Não foi possível comentar.'; }
-    }));
-    document.querySelectorAll('[data-seguir-usuario]').forEach((button) => button.addEventListener('click', async () => {
-        button.disabled = true;
-        const dados = new FormData();
-        dados.append('id_user', button.dataset.seguirUsuario);
-        try {
-            const response = await fetch('seguir_usuario.php', { method: 'POST', body: dados, headers: { Accept: 'application/json' } });
-            const result = await response.json();
-            if (!response.ok) throw new Error(result.mensagem);
-            button.textContent = 'Seguindo';
-            const messageLink = button.parentElement.querySelector('.home-person-message');
-            messageLink.href = `chat.php?id_conversa=${encodeURIComponent(result.id_conversa)}`;
-            messageLink.hidden = false;
-        } catch (error) { button.disabled = false; button.title = error.message; }
-    }));
-    if (window.lucide) lucide.createIcons();
-</script>
 <script src="../front-end/js/pages/home-feed.js" defer></script>
 </body>
 </html>

@@ -88,7 +88,7 @@
 
                     <div class="capas">
                         <?php foreach ($capas as $capa) { ?>
-                            <img src="<?= $capa ?>" alt="Capa do livro">
+                            <img src="<?= htmlspecialchars($capa ?: '/TCC-Nook/img/livro-sem-capa.svg', ENT_QUOTES, 'UTF-8') ?>" alt="Capa do livro">
                         <?php } ?>
                     </div>
 

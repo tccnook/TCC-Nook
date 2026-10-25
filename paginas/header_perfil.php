@@ -108,6 +108,7 @@
                             <a href="#">Notificações</a>
                             <a href="config_user.php">Configurações</a>
                             <a href="minhas_obras.php">Espaço do autor Nook</a>
+                            <?php if(ehAutor($conn,(int)$id_user)):?><a href="perfil_autor.php?id_user=<?= (int)$id_user ?>">Ver perfil de autor</a><?php endif;?>
                         </section>
                     </section>
                 </section>

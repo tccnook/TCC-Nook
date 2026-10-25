@@ -6,12 +6,23 @@ if (!isset($_SESSION['id_user'])) {
 }
 
 $id_user = (int) $_SESSION['id_user'];
+require_once __DIR__.'/catalog_support.php';
+require_once __DIR__.'/author_follow_support.php';
+require_once __DIR__.'/config_api_ex.php';
+$autorExterno=null;
+$openLibraryId=$_GET['open_library_id']??null;
+if(is_string($openLibraryId)&&preg_match('/^OL[0-9]+A$/D',$openLibraryId)){
+    $autorExterno=cacheGoogleBooks(['provider'=>'openlibrary-author','id'=>$openLibraryId],static fn()=>consultarJsonCatalogo('https://openlibrary.org/authors/'.$openLibraryId.'.json'),null,3600);
+    if(!$autorExterno){http_response_code(502);exit('Não foi possível carregar este autor agora. Tente novamente.');}
+}
+$idMembro=filter_var($_GET['id_user']??null,FILTER_VALIDATE_INT,['options'=>['min_range'=>1]]);
 $id_autor = filter_var($_GET['id_autor'] ?? null, FILTER_VALIDATE_INT);
-if (!$id_autor) {
+if (!$id_autor && !$autorExterno && !$idMembro) {
     header('Location: pesquisa_autores.php');
     exit();
 }
 
+$id_autor=$id_autor?:0;
 require_once __DIR__ . '/conexao.php';
 $conn = (new Database())->conectar();
 
@@ -21,17 +32,42 @@ $expressaoIdUsuario = $autorTemUsuarioExplicito ? 'a.id_user' : 'u.id_user';
 $joinUsuario = $autorTemUsuarioExplicito
     ? 'LEFT JOIN usuario u ON u.id_user = a.id_user'
     : 'LEFT JOIN usuario u ON LOWER(u.username) = LOWER(a.autor)';
-$stmt = $conn->prepare("SELECT a.id_autor, a.nome_autor, a.autor, a.bio, a.foto_url, $expressaoIdUsuario AS id_user, u.nome_completo, u.username, u.data_nascimento, conta.bio AS bio_conta, conta.foto_perfil_url FROM autor a $joinUsuario LEFT JOIN conta ON conta.id_user = u.id_user WHERE a.id_autor = :id_autor");
+$stmt = $conn->prepare("SELECT a.id_autor, a.nome_autor, a.autor, a.bio, a.foto_url, $expressaoIdUsuario AS id_user, u.nome_completo, u.username, u.data_nascimento, conta.bio AS bio_conta, conta.foto_perfil_url, conta.banner_url, conta.visibilidade AS perfil_visibilidade FROM autor a $joinUsuario LEFT JOIN conta ON conta.id_user = u.id_user WHERE a.id_autor = :id_autor");
 $stmt->execute([':id_autor' => $id_autor]);
 $autor = $stmt->fetch(PDO::FETCH_ASSOC);
+if($idMembro){
+    $s=$conn->prepare('SELECT u.id_user,u.nome_completo AS nome_autor,u.username AS autor,u.nome_completo,u.username,u.data_nascimento,c.bio,c.bio AS bio_conta,c.foto_perfil_url AS foto_url,c.foto_perfil_url,c.banner_url,c.visibilidade AS perfil_visibilidade FROM usuario u LEFT JOIN conta c USING(id_user) WHERE u.id_user=? AND u.autor_desde IS NOT NULL');$s->execute([$idMembro]);$autor=$s->fetch();
+}
+if($autorExterno){
+    $externalBio=$autorExterno['bio']??'';
+    $autor=['id_autor'=>0,'id_user'=>null,'nome_autor'=>$autorExterno['name'],'autor'=>$openLibraryId,
+        'bio'=>is_array($externalBio)?($externalBio['value']??''):$externalBio,
+        'foto_url'=>!empty($autorExterno['photos'][0])?'https://covers.openlibrary.org/a/id/'.(int)$autorExterno['photos'][0].'-L.jpg':null,
+        'nome_completo'=>null,'username'=>null,'data_nascimento'=>null,'bio_conta'=>null,'foto_perfil_url'=>null,'banner_url'=>null];
+}
+
 if (!$autor) {
     header('Location: pesquisa_autores.php');
     exit();
 }
 
 $ehUsuario = !empty($autor['id_user']);
+$favoritosAutor=$listasAutor=$postsAutor=$generosAutor=$preferidosAutor=[];
+if($ehUsuario){
+    $titularAutor=(int)$autor['id_user'];
+    $s=$conn->prepare("SELECT 1 FROM bloqueio WHERE status_bloqueio='bloqueado' AND ((id_bloqueador=? AND id_bloqueado=?) OR (id_bloqueador=? AND id_bloqueado=?))");$s->execute([$id_user,$titularAutor,$titularAutor,$id_user]);
+    if($s->fetchColumn()||(($autor['perfil_visibilidade']??'publico')!=='publico'&&$titularAutor!==$id_user)){header('Location: perfil_user_terceiro.php?id_user='.$titularAutor);exit;}
+    $s=$conn->prepare("SELECT l.id_livro,l.titulo_livro,l.nome_autor,l.capa_url FROM top5_livros t JOIN livro l USING(id_livro) WHERE t.id_user=? AND l.visibilidade='publico' ORDER BY t.posicao LIMIT 5");$s->execute([$titularAutor]);$favoritosAutor=$s->fetchAll();
+    require_once __DIR__.'/list_view_support.php';
+    $listasAutor=array_slice(array_values(array_filter(buscarListasPerfil($conn,$titularAutor),static fn($lista)=>(int)$lista['id_dono']===$titularAutor&&$lista['visibilidade']==='publica')),0,3);
+    // Somente posts públicos sem conteúdo sensível neste resumo de perfil.
+    $s=$conn->prepare("SELECT id_post,titulo_post,conteudo,criado_em FROM post WHERE id_user=? AND visibilidade='publico' AND NOT conteudo_sensivel AND NOT conteudo_adulto ORDER BY criado_em DESC LIMIT 4");$s->execute([$titularAutor]);$postsAutor=$s->fetchAll();
+    $s=$conn->prepare('SELECT p.nome_preferencia FROM preferencia p JOIN preferencia_user pu USING(id_preferencia) WHERE pu.id_user=? ORDER BY p.nome_preferencia LIMIT 8');$s->execute([$titularAutor]);$generosAutor=$s->fetchAll(PDO::FETCH_COLUMN);
+    $s=$conn->prepare('SELECT a.id_autor,a.nome_autor,a.foto_url FROM autor a JOIN autor_user au USING(id_autor) WHERE au.id_user=? ORDER BY a.nome_autor LIMIT 5');$s->execute([$titularAutor]);$preferidosAutor=$s->fetchAll();
+}
+
 $nomeAutor = $ehUsuario ? ($autor['nome_completo'] ?: $autor['nome_autor']) : ($autor['nome_autor'] ?: $autor['autor']);
-$username = $autor['username'] ?: $autor['autor'];
+$username = identificadorAutor($nomeAutor);
 $fotoAutor = $ehUsuario && !empty($autor['foto_perfil_url']) ? $autor['foto_perfil_url'] : $autor['foto_url'];
 $bioAutor = $ehUsuario ? ($autor['bio_conta'] ?: $autor['bio']) : $autor['bio'];
 $idade = null;
@@ -39,37 +75,50 @@ if ($ehUsuario && !empty($autor['data_nascimento'])) {
     $idade = (new DateTime($autor['data_nascimento']))->diff(new DateTime('today'))->y;
 }
 
-$stmt = $conn->prepare('SELECT COUNT(DISTINCT id_follower) FROM follow_autor WHERE id_autor = :id_autor');
-$stmt->execute([':id_autor' => $id_autor]);
+// Reutiliza o cadastro existente para seguir um autor vindo da Open Library.
+if ($autorExterno) {
+    $stmt=$conn->prepare('SELECT id_autor FROM autor WHERE autor=? OR LOWER(TRIM(nome_autor))=LOWER(?) ORDER BY id_autor LIMIT 1');
+    $stmt->execute(['openlibrary-'.$openLibraryId, mb_substr(trim($nomeAutor),0,90)]);
+    $id_autor=(int)($stmt->fetchColumn() ?: 0);
+}
+$tabelaFollow=$ehUsuario?'follow':'follow_autor';
+$colunaFollow=$ehUsuario?'id_following':'id_autor';
+$destinoFollow=$ehUsuario?(int)$autor['id_user']:$id_autor;
+$_SESSION['author_csrf']??=bin2hex(random_bytes(32));
+$stmt = $conn->prepare("SELECT COUNT(DISTINCT id_follower) FROM $tabelaFollow WHERE $colunaFollow = :id_autor");
+$stmt->execute([':id_autor' => $destinoFollow]);
 $totalSeguidores = (int) $stmt->fetchColumn();
 
-$stmt = $conn->prepare('SELECT EXISTS (SELECT 1 FROM follow_autor WHERE id_follower = :id_user AND id_autor = :id_autor)');
-$stmt->execute([':id_user' => $id_user, ':id_autor' => $id_autor]);
+$stmt = $conn->prepare("SELECT EXISTS (SELECT 1 FROM $tabelaFollow WHERE id_follower = :id_user AND $colunaFollow = :id_autor)");
+$stmt->execute([':id_user' => $id_user, ':id_autor' => $destinoFollow]);
 $seguindo = in_array($stmt->fetchColumn(), [true, 1, '1', 't'], true);
 
 if (isset($_POST['acao_autor'])) {
-    $acaoAutor = $_POST['acao_autor'];
-    if ($acaoAutor === 'seguir') {
-        $stmt = $conn->query("SELECT column_name FROM information_schema.columns WHERE table_schema = current_schema() AND table_name = 'follow_autor'");
-        $colunasFollowAutor = $stmt->fetchAll(PDO::FETCH_COLUMN);
-        if (in_array('status', $colunasFollowAutor, true)) {
-            $stmt = $conn->prepare("INSERT INTO follow_autor (id_follower, id_autor, status) VALUES (:id_user, :id_autor, 'seguindo') ON CONFLICT (id_follower, id_autor) DO NOTHING");
-        } elseif (in_array('status_follow', $colunasFollowAutor, true)) {
-            $stmt = $conn->prepare("INSERT INTO follow_autor (id_follower, id_autor, status_follow) VALUES (:id_user, :id_autor, 'seguindo') ON CONFLICT (id_follower, id_autor) DO NOTHING");
-        } else {
-            $stmt = $conn->prepare('INSERT INTO follow_autor (id_follower, id_autor) VALUES (:id_user, :id_autor) ON CONFLICT (id_follower, id_autor) DO NOTHING');
-        }
-        $stmt->execute([':id_user' => $id_user, ':id_autor' => $id_autor]);
-    } elseif ($acaoAutor === 'deixar') {
-        $stmt = $conn->prepare('DELETE FROM follow_autor WHERE id_follower = :id_user AND id_autor = :id_autor');
-        $stmt->execute([':id_user' => $id_user, ':id_autor' => $id_autor]);
+    if (!is_string($_POST['csrf']??null) || !hash_equals($_SESSION['author_csrf'],$_POST['csrf']) || ($ehUsuario && (int)$autor['id_user']===$id_user)) {
+        http_response_code(403);exit('Ação não permitida. Recarregue o perfil.');
     }
-    header('Location: perfil_autor.php?id_autor=' . $id_autor);
+    $acaoAutor=$_POST['acao_autor'];
+    if (!in_array($acaoAutor,['seguir','deixar'],true)) {http_response_code(400);exit('Ação inválida.');}
+    try {
+        $conn->beginTransaction();
+        if ($autorExterno && !$destinoFollow && $acaoAutor==='seguir') {
+            $destinoFollow=registrarAutorExterno($conn,['nome'=>$nomeAutor,'foto'=>$fotoAutor,'bio'=>$bioAutor]);
+        }
+        if ($destinoFollow) alterarSeguimentoAutor($conn,$id_user,$destinoFollow,$ehUsuario,$acaoAutor==='seguir');
+        $conn->commit();
+    } catch (Throwable $erro) {
+        if ($conn->inTransaction()) $conn->rollBack();
+        http_response_code(503);exit('Não foi possível atualizar o acompanhamento. Tente novamente.');
+    }
+    $parametro=$autorExterno?'open_library_id='.rawurlencode($openLibraryId):($idMembro?'id_user='.$idMembro:'id_autor='.$id_autor);
+    header('Location: perfil_autor.php?'.$parametro);
     exit();
 }
 
+require_once __DIR__.'/schema_support.php';
+$filtroIdioma=condicaoIdiomaCatalogo(schemaProjeto($conn));
 $nomeChaveAutor = trim((string) ($autor['nome_autor'] ?: $nomeAutor));
-$stmt = $conn->prepare("SELECT l.id_livro, l.google_books_id, l.titulo_livro, l.nome_autor, l.capa_url, l.data_publi, l.idioma, l.sinopse_livro, l.link_leitura FROM livro l WHERE l.visibilidade = 'publico' AND (LOWER(TRIM(l.nome_autor)) = LOWER(TRIM(:nome_autor)) OR LOWER(TRIM(l.nome_autor)) = LOWER(TRIM(:nome_exibido))) ORDER BY l.data_publi ASC NULLS LAST, l.titulo_livro ASC");
+$stmt = $conn->prepare("SELECT l.id_livro, l.google_books_id, l.titulo_livro, l.nome_autor, l.capa_url, l.data_publi, l.idioma, l.sinopse_livro, l.link_leitura FROM livro l WHERE l.visibilidade = 'publico' AND $filtroIdioma AND (LOWER(TRIM(l.nome_autor)) = LOWER(TRIM(:nome_autor)) OR LOWER(TRIM(l.nome_autor)) = LOWER(TRIM(:nome_exibido))) ORDER BY l.data_publi ASC NULLS LAST, l.titulo_livro ASC");
 $stmt->execute([':nome_autor' => $nomeChaveAutor, ':nome_exibido' => $nomeAutor]);
 $livrosBanco = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
@@ -108,15 +157,9 @@ if ($nomeChaveAutor !== '' && function_exists('curl_init')) {
         'orderBy' => 'relevance',
         'printType' => 'books'
     ];
-    if ($chave_api !== '') $parametrosApi['key'] = $chave_api;
-    $curl = curl_init('https://www.googleapis.com/books/v1/volumes?' . http_build_query($parametrosApi));
-    configurarCurlGoogleBooks($curl);
-    curl_setopt_array($curl, [CURLOPT_RETURNTRANSFER => true, CURLOPT_TIMEOUT => 10, CURLOPT_USERAGENT => 'Nook/1.0']);
-    $resposta = curl_exec($curl);
-    $statusGoogle = curl_getinfo($curl, CURLINFO_HTTP_CODE);
-    curl_close($curl);
-    if ($resposta !== false && $statusGoogle === 200) {
-        $dadosGoogle = json_decode($resposta, true) ?: [];
+    $dadosGoogle=cacheGoogleBooks(['provider'=>'author-books','q'=>$nomeChaveAutor,'locale'=>'pt-edicao-1'],static fn()=>buscarVolumesExternos($parametrosApi,$chave_api));
+    if ($dadosGoogle !== null) {
+        $dadosGoogle=filtrarVolumesPortugues($dadosGoogle);
         foreach ($dadosGoogle['items'] ?? [] as $itemGoogle) {
             $info = $itemGoogle['volumeInfo'] ?? [];
             if (empty($info['title'])) continue;
@@ -140,7 +183,7 @@ if ($nomeChaveAutor !== '' && function_exists('curl_init')) {
             ];
         }
     } else {
-        $avisoGoogle = 'Não foi possível atualizar as obras na Google Books agora; mostrando as obras disponíveis no acervo.';
+        $avisoGoogle = 'As fontes externas estão indisponíveis agora. Mostrando as obras disponíveis no acervo.';
     }
 }
 
@@ -275,8 +318,8 @@ if ($descricaoBiografica !== '' && (!$principalCategoria || in_array(mb_strtolow
     }
 }
 
-$stmt = $conn->prepare("SELECT u.nome_completo, u.username, c.foto_perfil_url FROM follow_autor fa INNER JOIN usuario u ON u.id_user = fa.id_follower LEFT JOIN conta c ON c.id_user = u.id_user WHERE fa.id_autor = :id_autor ORDER BY u.nome_completo ASC LIMIT 50");
-$stmt->execute([':id_autor' => $id_autor]);
+$stmt = $conn->prepare("SELECT u.id_user, u.nome_completo, u.username, c.foto_perfil_url FROM $tabelaFollow fa INNER JOIN usuario u ON u.id_user = fa.id_follower LEFT JOIN conta c ON c.id_user = u.id_user WHERE fa.$colunaFollow = :id_autor ORDER BY u.nome_completo ASC LIMIT 50");
+$stmt->execute([':id_autor' => $destinoFollow]);
 $seguidores = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 $esc = static fn($valor) => htmlspecialchars((string) ($valor ?? ''), ENT_QUOTES, 'UTF-8');
@@ -304,25 +347,26 @@ $urlObra = static function (array $livro) {
     <link href="https://fonts.googleapis.com/css2?family=Lora:wght@400;500;600;700&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
     <title><?= $esc($nomeAutor) ?> | Nook</title>
 </head>
-<body>
+<body class="author-profile-page">
 <?php require_once __DIR__ . '/header.php'; ?>
 <main class="author-page <?= $ehUsuario ? 'author-page--member' : 'author-page--biographical' ?>">
     <a class="author-back" href="pesquisa_autores.php"><i data-lucide="arrow-left"></i> Explorar autores</a>
 
-    <section class="author-hero">
+    <section class="author-hero" id="autor">
+        <div class="author-banner" aria-hidden="true"><?php if(!empty($autor['banner_url'])):?><img src="<?= $imagemUrl($autor['banner_url']) ?>" alt=""><?php endif;?></div>
         <div class="author-portrait-wrap">
             <?php if ($fotoAutor): ?><img class="author-portrait" src="<?= $imagemUrl($fotoAutor) ?>" alt="Retrato de <?= $esc($nomeAutor) ?>">
             <?php else: ?><div class="author-portrait author-portrait-fallback" aria-hidden="true"><?= $esc(mb_strtoupper(mb_substr($nomeAutor, 0, 1))) ?></div><?php endif; ?>
         </div>
         <div class="author-identity">
-            <p class="author-eyebrow"><?= $ehUsuario ? 'AUTOR DA COMUNIDADE' : 'PERFIL LITERÁRIO' ?></p>
+            <p class="author-badge"><?= $ehUsuario ? 'Autor Nook' : 'Autor' ?></p>
             <h1><?= $esc($nomeAutor) ?></h1>
             <p class="author-handle">@<?= $esc($username) ?></p>
             <?php if ($descricaoBiografica !== ''): ?><p class="author-description"><?= $esc($descricaoBiografica) ?></p><?php endif; ?>
             <p class="author-bio"><?= nl2br($esc($biografia)) ?></p>
             <?php if ($fonteBiografia): ?><a class="author-bio-source" href="<?= $esc($fonteBiografia) ?>" target="_blank" rel="noopener noreferrer">Fonte biográfica: Wikipédia</a><?php endif; ?>
-            <?php if ($ehUsuario && (int) $autor['id_user'] !== $id_user): ?>
-                <form method="POST" class="author-follow-form">
+            <?php if (!$ehUsuario || (int) $autor['id_user'] !== $id_user): ?>
+                <form method="POST" class="author-follow-form"><input type="hidden" name="csrf" value="<?= $esc($_SESSION['author_csrf']) ?>">
                     <button class="author-follow-button" type="submit" name="acao_autor" value="<?= $seguindo ? 'deixar' : 'seguir' ?>">
                         <i data-lucide="<?= $seguindo ? 'user-minus' : 'user-plus' ?>"></i><?= $seguindo ? 'Deixar de seguir' : 'Seguir autor' ?>
                     </button>
@@ -335,6 +379,9 @@ $urlObra = static function (array $livro) {
         </div>
     </section>
 
+    <nav class="author-profile-nav" aria-label="Seções do autor"><a href="#autor">Visão geral</a><a href="#obras-autor">Livros</a><a href="#sobre-autor">Sobre o autor</a><?php if($ehUsuario):?><a href="#listas-autor">Listas</a><a href="#publicacoes-autor">Publicações</a><?php endif;?></nav>
+    <div class="author-profile-layout">
+    <aside class="author-profile-aside">
     <section class="author-facts" aria-label="Resumo do autor">
         <?php if ($idade !== null): ?><article><span><?= $esc($idadeRotulo) ?></span><strong><?= $idade ?> anos</strong></article><?php endif; ?>
         <article><span>Obras no acervo</span><strong><?= count($livros) ?></strong></article>
@@ -342,7 +389,7 @@ $urlObra = static function (array $livro) {
         <article><span>Principal categoria</span><strong><?= $esc($principalCategoria ?: 'Ainda sem classificação') ?></strong></article>
     </section>
 
-    <section class="author-summary">
+    <section class="author-summary" id="sobre-autor">
         <div class="author-summary-copy">
             <p class="author-eyebrow">TRAJETÓRIA LITERÁRIA</p>
             <h2>Sobre <?= $esc($ehUsuario ? $nomeAutor : $autor['nome_autor']) ?></h2>
@@ -366,7 +413,15 @@ $urlObra = static function (array $livro) {
         <?php endif; ?>
     </section>
 
-    <section class="author-books-section">
+    <?php if($ehUsuario):?>
+    <section class="author-member-panel"><h2>Gêneros favoritos</h2><div class="author-preferences"><?php foreach($generosAutor as $generoAutor):?><span><?= $esc($generoAutor) ?></span><?php endforeach;?></div><?php if(!$generosAutor):?><p>Ainda não há gêneros favoritos.</p><?php endif;?></section>
+    <section class="author-member-panel"><h2>Autores favoritos</h2><div class="author-preferred-authors"><?php foreach($preferidosAutor as $preferidoAutor):?><a href="perfil_autor.php?id_autor=<?= (int)$preferidoAutor['id_autor'] ?>"><?php if($preferidoAutor['foto_url']):?><img src="<?= $imagemUrl($preferidoAutor['foto_url']) ?>" alt="" width="56" height="56" loading="lazy"><?php endif;?><span><?= $esc($preferidoAutor['nome_autor']) ?></span></a><?php endforeach;?></div><?php if(!$preferidosAutor):?><p>Ainda não há autores favoritos.</p><?php endif;?></section>
+    <?php endif;?></aside>
+    <div class="author-profile-main">
+    <?php if($ehUsuario):?>
+    <section class="author-member-panel" id="favoritos-autor"><h2>Livros favoritos</h2><div class="author-favorite-books"><?php foreach($favoritosAutor as $favoritoAutor):?><a href="visao_livro.php?id_livro=<?= (int)$favoritoAutor['id_livro'] ?>"><img src="<?= $imagemUrl($favoritoAutor['capa_url']?:'img/livro-sem-capa.svg') ?>" alt="Capa de <?= $esc($favoritoAutor['titulo_livro']) ?>" width="140" height="210" loading="lazy"><strong><?= $esc($favoritoAutor['titulo_livro']) ?></strong><small><?= $esc($favoritoAutor['nome_autor']) ?></small></a><?php endforeach;?></div><?php if(!$favoritosAutor):?><p>Este autor ainda não compartilhou seus livros favoritos.</p><?php endif;?></section>
+    <?php endif;?>
+    <section class="author-books-section" id="obras-autor">
         <header class="author-section-heading">
             <div><p class="author-eyebrow">BIBLIOGRAFIA</p><h2>Obras de <?= $esc($nomeAutor) ?></h2></div>
             <span><?= count($livros) ?> <?= count($livros) === 1 ? 'livro' : 'livros' ?></span>
@@ -378,7 +433,7 @@ $urlObra = static function (array $livro) {
                     <a class="author-book" href="<?= $esc($urlObra($livro)) ?>">
                         <span class="author-book-cover">
                             <?php if ($livro['capa']): ?><img src="<?= $imagemUrl($livro['capa']) ?>" alt="Capa de <?= $esc($livro['titulo']) ?>" loading="lazy">
-                            <?php else: ?><span>Sem capa</span><?php endif; ?>
+                            <?php else: ?><img src="/TCC-Nook/img/livro-sem-capa.svg" alt="Capa de <?= $esc($livro['titulo']) ?>" loading="lazy"><?php endif; ?>
                         </span>
                         <span class="author-book-title"><?= $esc($livro['titulo']) ?></span>
                         <span class="author-book-meta"><?= $esc($anoPublicacao($livro['data']) ?: 'Data não informada') ?><?= $livro['idioma'] ? ' · ' . $esc(strtoupper($livro['idioma'])) : '' ?></span>
@@ -387,6 +442,11 @@ $urlObra = static function (array $livro) {
             </div>
         <?php else: ?><p class="author-empty">Não encontramos livros associados a este autor no acervo.</p><?php endif; ?>
     </section>
+    <?php if($ehUsuario):?>
+    <section class="author-member-panel" id="listas-autor"><h2>Listas públicas</h2><div class="author-public-lists"><?php foreach($listasAutor as $listaAutor):?><a href="ver_lista.php?id=<?= (int)$listaAutor['id'] ?>"><div class="author-list-covers"><?php foreach(json_decode($listaAutor['capas']??'[]',true)?:[] as $capaLista):?><?php if($capaLista):?><img src="<?= $imagemUrl($capaLista) ?>" alt="" width="70" height="105" loading="lazy"><?php endif;?><?php endforeach;?></div><strong><?= $esc($listaAutor['nome_lista']) ?></strong><small><?= (int)$listaAutor['quantidade_livros'] ?> livros</small></a><?php endforeach;?></div><?php if(!$listasAutor):?><p>Este autor ainda não compartilhou listas públicas.</p><?php endif;?></section>
+    <section class="author-member-panel" id="publicacoes-autor"><h2>Publicações recentes</h2><div class="author-recent-posts"><?php foreach($postsAutor as $postAutor):?><article><strong><?= $esc($nomeAutor) ?></strong><small><?= date('d/m/Y',strtotime($postAutor['criado_em'])) ?></small><h3><?= $esc($postAutor['titulo_post']) ?></h3><p><?= nl2br($esc(mb_strimwidth($postAutor['conteudo'],0,450,'…'))) ?></p></article><?php endforeach;?></div><?php if(!$postsAutor):?><p>Ainda não há publicações para mostrar.</p><?php endif;?></section>
+    <?php endif;?>
+    </div></div>
 </main>
 
 <dialog id="modalSeguidoresAutor" class="author-followers-dialog">

@@ -1,0 +1,11 @@
+const assert=require('node:assert/strict');
+const fs=require('node:fs');
+assert.ok(fs.existsSync('front-end/js/pages/top5-editor.js'),'Falta prévia de arrastar capas sem salvar imediatamente');
+const {moverLivroTop5}=require('../front-end/js/pages/top5-editor.js');
+const initial=[11,22,33,null,null];
+assert.deepEqual(moverLivroTop5(initial,11,2),[33,22,11,null,null]);
+assert.deepEqual(moverLivroTop5(initial,11,4),[null,22,33,null,11]);
+assert.deepEqual(moverLivroTop5(initial,44,1),[11,44,33,null,null]);
+assert.deepEqual(initial,[11,22,33,null,null],'A prévia não deve alterar a ordem salva');
+assert.deepEqual(moverLivroTop5(initial,11,0),initial);
+console.log('PASS: troca de capas, posição vazia, substituição e isolamento da prévia');

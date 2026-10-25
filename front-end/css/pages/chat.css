@@ -448,7 +448,11 @@
         display: flex;
         max-height: 5.2rem;
         overflow-x: auto;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
     }
+
+    .chat-sidebar .inbox-list::-webkit-scrollbar { display: none; }
 
     .chat-sidebar .inbox-conversation {
         display: flex;

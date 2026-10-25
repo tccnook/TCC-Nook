@@ -134,7 +134,7 @@ if (!$capasHero && !empty($lista['capa_url'])) $capasHero = [$lista['capa_url']]
                 <li class="lista-livro-row" data-livro-id="<?= (int) $livro['id_livro'] ?>" data-titulo="<?= $esc(mb_strtolower($livro['titulo_livro'])) ?>">
                     <span class="lista-row-numero"><?= $indice + 1 ?></span>
                     <a class="lista-row-livro" href="visao_livro.php?id_livro=<?= urlencode($livro['id_livro']) ?>">
-                        <?php if ($livro['capa_url']): ?><img src="<?= $imagemUrl($livro['capa_url']) ?>" alt="" loading="lazy"><?php else: ?><span class="lista-row-sem-capa"></span><?php endif; ?>
+                        <?php if ($livro['capa_url']): ?><img src="<?= $imagemUrl($livro['capa_url']) ?>" alt="" loading="lazy"><?php else: ?><img src="/TCC-Nook/img/livro-sem-capa.svg" alt="" loading="lazy"><?php endif; ?>
                         <strong><?= $esc($livro['titulo_livro']) ?></strong>
                     </a>
                     <span><?= $esc($livro['nome_autor'] ?: 'Não informado') ?></span>

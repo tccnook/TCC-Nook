@@ -81,7 +81,7 @@ $imagemPerfil = static function ($value) use ($esc): string {
             <div class="public-profile-books">
                 <?php foreach ($livros as $livro): ?>
                     <a href="visao_livro.php?id_livro=<?= (int) $livro['id_livro'] ?>">
-                        <?php if ($imagemPerfil($livro['capa_url'])): ?><img src="<?= $imagemPerfil($livro['capa_url']) ?>" alt="Capa de <?= $esc($livro['titulo_livro']) ?>" width="160" height="240" loading="lazy"><?php else: ?><span class="profile-cover-empty">Capa indisponível</span><?php endif; ?>
+                        <?php if ($imagemPerfil($livro['capa_url'])): ?><img src="<?= $imagemPerfil($livro['capa_url']) ?>" alt="Capa de <?= $esc($livro['titulo_livro']) ?>" width="160" height="240" loading="lazy"><?php else: ?><img src="/TCC-Nook/img/livro-sem-capa.svg" alt="Livro sem capa" width="160" height="240" loading="lazy"><?php endif; ?>
                         <strong><?= $esc($livro['titulo_livro']) ?></strong><small><?= $esc($livro['nome_autor']) ?></small>
                     </a>
                 <?php endforeach; ?>

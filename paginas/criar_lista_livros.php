@@ -2,6 +2,7 @@
 require_once __DIR__.'/schema_support.php';
 $schemaLista = schemaProjeto($conn);
 require_once __DIR__.'/privacy_settings.php';
+require_once __DIR__.'/catalog_support.php';
 if (!isset($_POST['criar_lista'])) {
     return;
 }
@@ -10,11 +11,34 @@ $nome_lista = trim($_POST['nome_lista'] ?? '');
 $descricao = trim($_POST['descricao'] ?? '');
 $visibilidade = $_POST['visibilidade'] ?? 'publica';
 $tipo_capa = $_POST['tipo_capa'] ?? 'automatica';
-$ids_enviados = $_POST['ids_livros'] ?? [];
-$ids_livros = is_array($ids_enviados)
-    ? array_values(array_unique(array_filter(array_map('intval', $ids_enviados))))
-    : [];
 $erro_lista = '';
+$selecoes_enviadas = $_POST['livros_lista'] ?? null;
+$selecoes_livros = [];
+if (is_array($selecoes_enviadas)) {
+    foreach ($selecoes_enviadas as $selecao) {
+        if (!is_string($selecao)) {
+            $erro_lista = 'A seleção de livros é inválida.';
+            break;
+        }
+        if (preg_match('/^local:([1-9][0-9]*)$/D', $selecao, $match)) {
+            $selecoes_livros[$selecao] = ['tipo' => 'local', 'id' => (int) $match[1]];
+        } elseif (preg_match('/^api:([A-Za-z0-9_-]{1,100})$/D', $selecao, $match)) {
+            $selecoes_livros[$selecao] = ['tipo' => 'api', 'id' => $match[1]];
+        } else {
+            $erro_lista = 'A seleção de livros é inválida.';
+            break;
+        }
+    }
+} else {
+    $ids_enviados = $_POST['ids_livros'] ?? [];
+    if (is_array($ids_enviados)) {
+        foreach ($ids_enviados as $id_enviado) {
+            $id = filter_var($id_enviado, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
+            if ($id !== false) $selecoes_livros['local:' . $id] = ['tipo' => 'local', 'id' => $id];
+        }
+    }
+}
+if (count($selecoes_livros) > 100) $erro_lista = 'Adicione no máximo 100 livros por lista.';
 
 if ($nome_lista === '' || mb_strlen($nome_lista) > 50 || mb_strlen($descricao) > 255) {
     $erro_lista = 'Informe um nome e uma descrição dentro dos limites.';
@@ -45,8 +69,26 @@ if ($tipo_capa === 'manual') {
 }
 
 try {
+    $volumes_externos = [];
+    foreach ($selecoes_livros as $selecao) {
+        if ($selecao['tipo'] !== 'api') continue;
+        $volume = consultarVolumeExternoPorId($selecao['id']);
+        if (!$volume) throw new DomainException('Uma das fontes externas não conseguiu validar o livro. Tente novamente.');
+        $volumes_externos[$selecao['id']] = $volume;
+    }
+
     $destinosMencao=destinosMencoes($conn,$nome_lista.' '.$descricao,(int)$id_user);
     $conn->beginTransaction();
+
+    $ids_livros = [];
+    foreach ($selecoes_livros as $selecao) {
+        if ($selecao['tipo'] === 'local') {
+            $ids_livros[] = $selecao['id'];
+            continue;
+        }
+        $ids_livros[] = importarLivroExternoParaLista($conn, $selecao['id'], $volumes_externos[$selecao['id']], $schemaLista);
+    }
+    $ids_livros = array_values(array_unique($ids_livros));
 
     $capas_livros = [];
     if ($ids_livros) {

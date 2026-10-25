@@ -1,0 +1,32 @@
+<?php
+session_start();if(empty($_SESSION['id_user'])){header('Location: login.php');exit;}
+require_once __DIR__.'/conexao.php';require_once __DIR__.'/worldbuilding_service.php';require_once __DIR__.'/publishing_ui.php';
+$c=(new Database)->conectar();$user=(int)$_SESSION['id_user'];
+try{$obra=obraDoAutor($c,(int)($_GET['id_livro']??0),$user);}catch(InvalidArgumentException $e){http_response_code(404);exit('Obra não encontrada.');}
+$id=(int)$obra['id_livro'];$_SESSION['obra_csrf']??=bin2hex(random_bytes(32));
+$worldSection=(string)($_GET['secao']??'resumo');if(!isset(camposMundo()[$worldSection])){http_response_code(404);exit('Seção não encontrada.');}
+$available=mundoDisponivel($c);$world=$available?carregarMundo($c,$id,$user):array_fill_keys(array_keys(camposMundo()),[]);
+$cover=$obra['capa_url']&&is_file(caminhoPublicacao($obra['capa_url']))?'arquivo_obra.php?id_livro='.$id.'&tipo=capa&rascunho=1':'../img/livro-sem-capa.svg';
+$initial=['mundo'=>$world,'campos'=>camposMundo(),'templates'=>templatesIniciaisMundo(),'capitulos'=>capitulosObra($c,$id),'secao'=>$worldSection,'disponivel'=>$available];
+$titles=['resumo'=>'Worldbuilding','personagem'=>'Personagens','cenario'=>'Cenários','item'=>'Objetos e itens','marco'=>'Linha do tempo','nota'=>'Notas de pesquisa','template'=>'Templates'];
+?>
+<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title><?=eObra($titles[$worldSection])?> · <?=eObra($obra['titulo'])?> | Nook</title><link rel="icon" href="../img/icons/ico-nook/ico-nook.ico"><link href="https://fonts.googleapis.com/css2?family=Lora:wght@400;500;600&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet"><link rel="stylesheet" href="../front-end/css/main.css"><link rel="stylesheet" href="../front-end/css/pages/publishing.css"><link rel="stylesheet" href="../front-end/css/pages/worldbuilding.css"><script src="../front-end/js/pages/writing-shell.js" defer></script><script src="../front-end/js/pages/worldbuilding.js" defer></script></head>
+<body class="author-shell" data-obra-csrf="<?=eObra($_SESSION['obra_csrf'])?>"><?php $headerEscrita=true;require __DIR__.'/header.php';?>
+<main class="world-layout" data-worldbuilding data-livro="<?=$id?>">
+<?php require __DIR__.'/worldbuilding_sidebar.php';?>
+<section class="world-main">
+<nav class="world-breadcrumb" aria-label="Caminho da obra"><a href="editar_obra.php?id_livro=<?=$id?>"><?=eObra($obra['titulo']?:'Sem título')?></a><span aria-hidden="true">›</span><?php if($worldSection!=='resumo'):?><a href="worldbuilding.php?id_livro=<?=$id?>">Worldbuilding</a><span aria-hidden="true">›</span><?php endif;?><span aria-current="page"><?=eObra($titles[$worldSection])?></span></nav>
+<header class="world-heading"><div><h1><?=eObra($titles[$worldSection])?></h1><p data-section-description></p></div><button type="button" class="writing-primary" data-create <?=$available?'':'disabled'?>><?=iconeEscrita('plus')?> <span data-create-label>Novo elemento</span></button></header>
+<?php if(!$available):?><p class="world-notice" role="status">O worldbuilding está aguardando a atualização do banco de dados. Suas obras e seus capítulos continuam disponíveis.</p><?php endif;?>
+<p class="world-status" role="status" aria-live="polite" data-world-status></p>
+<nav class="world-tabs" aria-label="Elementos do universo"><?php foreach(array_slice($titles,0,5,true) as $key=>$title):?><a href="worldbuilding.php?id_livro=<?=$id?>&amp;secao=<?=$key?>" <?=$key===$worldSection?'aria-current="page"':''?>><?=eObra($key==='resumo'?'Visão geral':$title)?></a><?php endforeach;?></nav>
+<div data-overview></div>
+<section class="world-collection" aria-label="Elementos cadastrados" data-collection><h2 class="sr-only">Elementos cadastrados</h2>
+<div class="world-filters"><label class="world-search"><?=iconeEscrita('search')?><span class="sr-only">Buscar elementos</span><input type="search" placeholder="Buscar elementos…" data-search></label><label>Categoria<select data-category><option value="">Todas</option></select></label><label>Ordenar por<select data-sort><option value="recentes">Mais recentes</option><option value="nome">Nome (A–Z)</option><option value="ano">Data crescente</option><option value="ano-desc">Data decrescente</option></select></label><div class="world-view" role="group" aria-label="Exibição"><button type="button" data-view="grid" aria-pressed="true" aria-label="Exibir em grade"><?=iconeEscrita('expand')?></button><button type="button" data-view="list" aria-pressed="false" aria-label="Exibir em lista"><?=iconeEscrita('list')?></button></div></div>
+<p class="world-result-count" data-count></p>
+<div class="world-content"><div class="world-grid" data-cards></div><aside class="world-detail world-panel" data-detail hidden aria-label="Detalhes do elemento"></aside></div>
+</section>
+</section>
+<dialog class="world-dialog" aria-labelledby="world-dialog-title" data-world-dialog><form data-world-form><header class="world-dialog-heading"><div><h2 id="world-dialog-title">Novo elemento</h2><p data-form-help>Guarde os detalhes que dão vida à sua história.</p></div><button type="button" data-close-dialog aria-label="Fechar formulário">×</button></header><div class="world-dialog-columns"><div class="world-form-fields" data-form-fields></div><aside class="world-live-preview"><div class="world-preview-heading"><h3>Pré-visualização</h3><div role="group" aria-label="Tamanho da prévia"><button type="button" data-preview-width="desktop" aria-pressed="true">Desktop</button><button type="button" data-preview-width="mobile" aria-pressed="false">Celular</button></div></div><article class="world-panel" data-live-preview></article></aside></div><footer class="world-dialog-footer"><p role="status" aria-live="polite" data-form-status></p><button type="button" class="writing-secondary" data-close-dialog>Cancelar</button><button type="submit" class="writing-primary" data-submit-ficha>Salvar</button></footer></form></dialog>
+<script type="application/json" id="worldbuilding-initial"><?=json_encode($initial,JSON_HEX_TAG|JSON_HEX_AMP|JSON_HEX_APOS|JSON_HEX_QUOT|JSON_UNESCAPED_UNICODE)?></script>
+</main></body></html>

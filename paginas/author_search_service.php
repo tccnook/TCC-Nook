@@ -36,7 +36,7 @@ function consultarFontesAutores(array $fontes): array
         $cache=is_file($arquivo)?json_decode((string)@file_get_contents($arquivo),true):null;
         if(is_array($cache)&&($cache['expira']??0)>time()){$dados[$nome]=$cache['dados'];continue;}
         if(!$multi){$dados[$nome]=null;continue;}
-        $ch=curl_init($fonte['url']);curl_setopt_array($ch,[CURLOPT_RETURNTRANSFER=>true,CURLOPT_CONNECTTIMEOUT=>2,CURLOPT_TIMEOUT=>5,CURLOPT_ENCODING=>'',CURLOPT_USERAGENT=>'Nook/1.0 (literary community; author search)']);
+        $ch=curl_init($fonte['url']);curl_setopt_array($ch,[CURLOPT_RETURNTRANSFER=>true,CURLOPT_CONNECTTIMEOUT=>4,CURLOPT_TIMEOUT=>12,CURLOPT_ENCODING=>'',CURLOPT_USERAGENT=>'Nook/1.0 (literary community; author search)']);
         if(function_exists('configurarCurlGoogleBooks')&&$nome==='google')configurarCurlGoogleBooks($ch);
         curl_multi_add_handle($multi,$ch);$pendentes[$nome]=[$ch,$arquivo];
     }
