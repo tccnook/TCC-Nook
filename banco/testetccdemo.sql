@@ -2,10 +2,10 @@
 -- PostgreSQL database dump
 --
 
-\restrict 6fIR9iEduYZtjrzzm4wCgmpQxWSPFXhdPrQz0o7c1mxCjrPfNR6hPZpySd0zj2e
+\restrict QxU6PBpHvCTnh8Xag5Y2VE5RqjsBPSPRhTJFYZ2sgD5tokW4zmFtatQA7Uryw36
 
--- Dumped from database version 18.4
--- Dumped by pg_dump version 18.4
+-- Dumped from database version 18.6
+-- Dumped by pg_dump version 18.6
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -31,8 +31,8 @@ CREATE TABLE public.admin (
     id_admin integer NOT NULL,
     nome_completo character varying(100),
     email character varying(100),
-    criacao_conta timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
-    senha character varying(250)
+    senha character varying(250),
+    criacao_conta timestamp without time zone DEFAULT now()
 );
 
 
@@ -61,8 +61,7 @@ CREATE TABLE public.autor (
     nome_autor character varying(90),
     autor character varying(90) NOT NULL,
     bio text,
-    foto_url character varying(250),
-    id_user integer
+    foto_url character varying(250)
 );
 
 
@@ -110,36 +109,6 @@ ALTER TABLE public.autor_user ALTER COLUMN id ADD GENERATED ALWAYS AS IDENTITY (
 
 
 --
--- Name: avaliacao; Type: TABLE; Schema: public; Owner: postgres
---
-
-CREATE TABLE public.avaliacao (
-    id_avaliacao integer NOT NULL,
-    id_user integer,
-    categoria_avaliada character varying(40),
-    id_avaliado integer,
-    nota_avaliacao numeric(3,1),
-    criado_em timestamp without time zone DEFAULT CURRENT_TIMESTAMP
-);
-
-
-ALTER TABLE public.avaliacao OWNER TO postgres;
-
---
--- Name: avaliacao_id_avaliacao_seq; Type: SEQUENCE; Schema: public; Owner: postgres
---
-
-ALTER TABLE public.avaliacao ALTER COLUMN id_avaliacao ADD GENERATED ALWAYS AS IDENTITY (
-    SEQUENCE NAME public.avaliacao_id_avaliacao_seq
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1
-);
-
-
---
 -- Name: bloqueio; Type: TABLE; Schema: public; Owner: postgres
 --
 
@@ -162,7 +131,8 @@ CREATE TABLE public.capitulo (
     titulo_capitulo character varying(100),
     imagem_url_capitulo character varying(250),
     ordem_capitulo integer,
-    id_livro integer
+    id_livro integer,
+    conteudo_html text DEFAULT ''::text NOT NULL
 );
 
 
@@ -218,7 +188,8 @@ CREATE TABLE public.cenario (
     id_cenario integer NOT NULL,
     nome_cenario character varying(100),
     descricao_cenario text,
-    id_livro integer
+    id_livro integer,
+    detalhes_mundo jsonb DEFAULT '{}'::jsonb NOT NULL
 );
 
 
@@ -270,6 +241,59 @@ ALTER TABLE public.comentario ALTER COLUMN id_comentario ADD GENERATED ALWAYS AS
 
 
 --
+-- Name: comentario_obra; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.comentario_obra (
+    id bigint NOT NULL,
+    id_livro integer NOT NULL,
+    id_user integer NOT NULL,
+    texto text NOT NULL,
+    criado_em timestamp with time zone DEFAULT now() NOT NULL,
+    editado_em timestamp with time zone,
+    estado text DEFAULT 'visivel'::text NOT NULL,
+    CONSTRAINT comentario_obra_estado_check CHECK ((estado = ANY (ARRAY['visivel'::text, 'oculto'::text, 'excluido'::text]))),
+    CONSTRAINT comentario_obra_texto_check CHECK (((length(texto) >= 1) AND (length(texto) <= 3000)))
+);
+
+
+ALTER TABLE public.comentario_obra OWNER TO postgres;
+
+--
+-- Name: comentario_obra_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+ALTER TABLE public.comentario_obra ALTER COLUMN id ADD GENERATED ALWAYS AS IDENTITY (
+    SEQUENCE NAME public.comentario_obra_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1
+);
+
+
+--
+-- Name: configuracao_usuario; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.configuracao_usuario (
+    id_user integer NOT NULL,
+    marcacoes text DEFAULT 'todos'::text NOT NULL,
+    comentarios text DEFAULT 'todos'::text NOT NULL,
+    permitir_sensivel boolean DEFAULT true NOT NULL,
+    permitir_adulto boolean DEFAULT false NOT NULL,
+    visibilidade_posts text DEFAULT 'publico'::text NOT NULL,
+    atualizado_em timestamp with time zone DEFAULT now() NOT NULL,
+    CONSTRAINT configuracao_usuario_comentarios_check CHECK ((comentarios = ANY (ARRAY['todos'::text, 'seguidores'::text, 'ninguem'::text]))),
+    CONSTRAINT configuracao_usuario_marcacoes_check CHECK ((marcacoes = ANY (ARRAY['todos'::text, 'seguindo'::text, 'seguidores'::text, 'ninguem'::text]))),
+    CONSTRAINT configuracao_usuario_visibilidade_posts_check CHECK ((visibilidade_posts = ANY (ARRAY['publico'::text, 'privado'::text])))
+);
+
+
+ALTER TABLE public.configuracao_usuario OWNER TO postgres;
+
+--
 -- Name: conta; Type: TABLE; Schema: public; Owner: postgres
 --
 
@@ -279,7 +303,7 @@ CREATE TABLE public.conta (
     bio text,
     visibilidade character varying(20) DEFAULT 'publico'::character varying NOT NULL,
     banner_url character varying(250),
-    CONSTRAINT conta_visibilidade_check CHECK (((visibilidade)::text = ANY ((ARRAY['publico'::character varying, 'privado'::character varying])::text[])))
+    CONSTRAINT conta_visibilidade_check CHECK (((visibilidade)::text = ANY (ARRAY[('publico'::character varying)::text, ('privado'::character varying)::text])))
 );
 
 
@@ -359,29 +383,31 @@ ALTER TABLE public.curtida ALTER COLUMN id_curtida ADD GENERATED ALWAYS AS IDENT
 
 
 --
--- Name: denuncia; Type: TABLE; Schema: public; Owner: postgres
+-- Name: denuncia_obra; Type: TABLE; Schema: public; Owner: postgres
 --
 
-CREATE TABLE public.denuncia (
-    id_denuncia integer NOT NULL,
-    tipo_denunciado character varying(60),
-    id_denunciado integer,
-    id_denunciador integer,
-    denuncia text,
-    status character varying(50) DEFAULT 'pendente'::character varying,
-    emissao timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
-    resolvido timestamp without time zone
+CREATE TABLE public.denuncia_obra (
+    id bigint NOT NULL,
+    id_livro integer NOT NULL,
+    id_user integer NOT NULL,
+    motivo text NOT NULL,
+    detalhes text NOT NULL,
+    estado text DEFAULT 'aberta'::text NOT NULL,
+    criada_em timestamp with time zone DEFAULT now() NOT NULL,
+    CONSTRAINT denuncia_obra_detalhes_check CHECK (((length(detalhes) >= 10) AND (length(detalhes) <= 3000))),
+    CONSTRAINT denuncia_obra_estado_check CHECK ((estado = ANY (ARRAY['aberta'::text, 'resolvida'::text]))),
+    CONSTRAINT denuncia_obra_motivo_check CHECK ((motivo = ANY (ARRAY['plagio'::text, 'direitos'::text, 'inadequado'::text, 'outro'::text])))
 );
 
 
-ALTER TABLE public.denuncia OWNER TO postgres;
+ALTER TABLE public.denuncia_obra OWNER TO postgres;
 
 --
--- Name: denuncia_id_denuncia_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+-- Name: denuncia_obra_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
 --
 
-ALTER TABLE public.denuncia ALTER COLUMN id_denuncia ADD GENERATED ALWAYS AS IDENTITY (
-    SEQUENCE NAME public.denuncia_id_denuncia_seq
+ALTER TABLE public.denuncia_obra ALTER COLUMN id ADD GENERATED ALWAYS AS IDENTITY (
+    SEQUENCE NAME public.denuncia_obra_id_seq
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
@@ -389,6 +415,50 @@ ALTER TABLE public.denuncia ALTER COLUMN id_denuncia ADD GENERATED ALWAYS AS IDE
     CACHE 1
 );
 
+
+--
+-- Name: edicao_livro; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.edicao_livro (
+    id bigint NOT NULL,
+    id_livro integer NOT NULL,
+    numero integer NOT NULL,
+    criada_em timestamp with time zone DEFAULT now() NOT NULL,
+    CONSTRAINT edicao_livro_numero_check CHECK ((numero > 0))
+);
+
+
+ALTER TABLE public.edicao_livro OWNER TO postgres;
+
+--
+-- Name: edicao_livro_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+ALTER TABLE public.edicao_livro ALTER COLUMN id ADD GENERATED ALWAYS AS IDENTITY (
+    SEQUENCE NAME public.edicao_livro_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1
+);
+
+
+--
+-- Name: email_verificacao; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.email_verificacao (
+    id_user integer NOT NULL,
+    token_hash character(64),
+    expira_em timestamp without time zone,
+    verificado_em timestamp without time zone,
+    criado_em timestamp without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL
+);
+
+
+ALTER TABLE public.email_verificacao OWNER TO postgres;
 
 --
 -- Name: follow; Type: TABLE; Schema: public; Owner: postgres
@@ -409,29 +479,12 @@ ALTER TABLE public.follow OWNER TO postgres;
 --
 
 CREATE TABLE public.follow_autor (
-    id integer NOT NULL,
     id_follower integer NOT NULL,
-    id_autor integer NOT NULL,
-    status character varying(50),
-    data_follow timestamp without time zone DEFAULT CURRENT_TIMESTAMP
+    id_autor integer NOT NULL
 );
 
 
 ALTER TABLE public.follow_autor OWNER TO postgres;
-
---
--- Name: follow_autor_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
---
-
-ALTER TABLE public.follow_autor ALTER COLUMN id ADD GENERATED ALWAYS AS IDENTITY (
-    SEQUENCE NAME public.follow_autor_id_seq
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1
-);
-
 
 --
 -- Name: livro; Type: TABLE; Schema: public; Owner: postgres
@@ -445,20 +498,19 @@ CREATE TABLE public.livro (
     nome_autor character varying(100),
     id_user integer,
     sinopse_livro text,
+    capa_url character varying(250),
     data_publi timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
     idioma character varying(90),
     visibilidade character varying(20) DEFAULT 'publico'::character varying NOT NULL,
-    origem character varying(20),
-    interacao_de character varying(20) DEFAULT 'todos'::character varying,
-    capa_url text,
-    google_books_id character varying(50),
+    paginas integer,
+    nota_google numeric(3,2),
+    google_books_id character varying(100),
+    isbn10 character varying(20),
+    isbn13 character varying(20),
+    origem character varying(30),
     link_leitura text,
     link_compra text,
-    nota_google numeric(2,1),
-    paginas integer,
-    isbn10 character varying(10),
-    isbn13 character varying(13),
-    CONSTRAINT livro_visibilidade_check CHECK (((visibilidade)::text = ANY ((ARRAY['publico'::character varying, 'privado'::character varying])::text[])))
+    CONSTRAINT livro_visibilidade_check CHECK (((visibilidade)::text = ANY (ARRAY[('publico'::character varying)::text, ('privado'::character varying)::text])))
 );
 
 
@@ -490,6 +542,68 @@ CREATE TABLE public.livros_lidos (
 
 
 ALTER TABLE public.livros_lidos OWNER TO postgres;
+
+--
+-- Name: marcador_leitura; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.marcador_leitura (
+    id bigint NOT NULL,
+    id_user integer NOT NULL,
+    id_livro integer NOT NULL,
+    trecho text NOT NULL,
+    pagina integer,
+    criado_em timestamp with time zone DEFAULT now() NOT NULL,
+    CONSTRAINT marcador_leitura_pagina_check CHECK ((pagina > 0)),
+    CONSTRAINT marcador_leitura_trecho_check CHECK (((length(trecho) >= 1) AND (length(trecho) <= 2000)))
+);
+
+
+ALTER TABLE public.marcador_leitura OWNER TO postgres;
+
+--
+-- Name: marcador_leitura_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+ALTER TABLE public.marcador_leitura ALTER COLUMN id ADD GENERATED ALWAYS AS IDENTITY (
+    SEQUENCE NAME public.marcador_leitura_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1
+);
+
+
+--
+-- Name: mencao; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.mencao (
+    id bigint NOT NULL,
+    id_origem integer NOT NULL,
+    id_destino integer NOT NULL,
+    categoria text NOT NULL,
+    id_conteudo integer NOT NULL,
+    criado_em timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+ALTER TABLE public.mencao OWNER TO postgres;
+
+--
+-- Name: mencao_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+ALTER TABLE public.mencao ALTER COLUMN id ADD GENERATED ALWAYS AS IDENTITY (
+    SEQUENCE NAME public.mencao_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1
+);
+
 
 --
 -- Name: mensagem; Type: TABLE; Schema: public; Owner: postgres
@@ -535,7 +649,9 @@ CREATE TABLE public.meta_leitura (
     criacao timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
     status character varying(30) DEFAULT 'andamento'::character varying,
     expiracao date,
-    nome_meta character varying(100)
+    nome_meta character varying(100),
+    tipo_meta text DEFAULT 'livros'::text NOT NULL,
+    CONSTRAINT meta_leitura_tipo_meta_check CHECK ((tipo_meta = ANY (ARRAY['livros'::text, 'listas'::text])))
 );
 
 
@@ -556,29 +672,40 @@ ALTER TABLE public.meta_leitura ALTER COLUMN id ADD GENERATED ALWAYS AS IDENTITY
 
 
 --
--- Name: notificacao; Type: TABLE; Schema: public; Owner: postgres
+-- Name: meta_leitura_listas; Type: TABLE; Schema: public; Owner: postgres
 --
 
-CREATE TABLE public.notificacao (
-    id_notificacao integer NOT NULL,
-    id_user_recebido integer NOT NULL,
-    id_user_origem integer,
-    tipo character varying(50) NOT NULL,
-    id_referencia integer,
-    mensagem text,
-    lida boolean DEFAULT false,
-    criada_em timestamp without time zone DEFAULT CURRENT_TIMESTAMP
+CREATE TABLE public.meta_leitura_listas (
+    id_meta integer NOT NULL,
+    id_lista integer NOT NULL
 );
 
 
-ALTER TABLE public.notificacao OWNER TO postgres;
+ALTER TABLE public.meta_leitura_listas OWNER TO postgres;
 
 --
--- Name: notificacao_id_notificacao_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+-- Name: moderacao_obra; Type: TABLE; Schema: public; Owner: postgres
 --
 
-ALTER TABLE public.notificacao ALTER COLUMN id_notificacao ADD GENERATED ALWAYS AS IDENTITY (
-    SEQUENCE NAME public.notificacao_id_notificacao_seq
+CREATE TABLE public.moderacao_obra (
+    id bigint NOT NULL,
+    id_livro integer NOT NULL,
+    id_admin integer NOT NULL,
+    acao text NOT NULL,
+    motivo text NOT NULL,
+    criada_em timestamp with time zone DEFAULT now() NOT NULL,
+    CONSTRAINT moderacao_obra_acao_check CHECK ((acao = ANY (ARRAY['retirar'::text, 'restaurar'::text])))
+);
+
+
+ALTER TABLE public.moderacao_obra OWNER TO postgres;
+
+--
+-- Name: moderacao_obra_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+ALTER TABLE public.moderacao_obra ALTER COLUMN id ADD GENERATED ALWAYS AS IDENTITY (
+    SEQUENCE NAME public.moderacao_obra_id_seq
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
@@ -655,7 +782,8 @@ CREATE TABLE public.personagem (
     idade integer,
     funcao character varying(200),
     descricao_personagem text,
-    id_livro integer
+    id_livro integer,
+    detalhes_mundo jsonb DEFAULT '{}'::jsonb NOT NULL
 );
 
 
@@ -688,8 +816,9 @@ CREATE TABLE public.post (
     criado_em timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
     visibilidade character varying(20) DEFAULT 'publico'::character varying NOT NULL,
     legenda text,
-    interacao_de character varying(20) DEFAULT 'todos'::character varying,
-    CONSTRAINT post_visibilidade_check CHECK (((visibilidade)::text = ANY ((ARRAY['publico'::character varying, 'privado'::character varying])::text[])))
+    conteudo_sensivel boolean DEFAULT false NOT NULL,
+    conteudo_adulto boolean DEFAULT false NOT NULL,
+    CONSTRAINT post_visibilidade_check CHECK (((visibilidade)::text = ANY (ARRAY[('publico'::character varying)::text, ('privado'::character varying)::text])))
 );
 
 
@@ -708,6 +837,20 @@ ALTER TABLE public.post ALTER COLUMN id_post ADD GENERATED ALWAYS AS IDENTITY (
     CACHE 1
 );
 
+
+--
+-- Name: post_imagem; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.post_imagem (
+    id_post integer NOT NULL,
+    ordem smallint NOT NULL,
+    url_imagem text NOT NULL,
+    CONSTRAINT post_imagem_ordem_check CHECK (((ordem >= 1) AND (ordem <= 10)))
+);
+
+
+ALTER TABLE public.post_imagem OWNER TO postgres;
 
 --
 -- Name: preferencia; Type: TABLE; Schema: public; Owner: postgres
@@ -829,6 +972,52 @@ ALTER SEQUENCE public.progresso_leitura_id_progresso_seq OWNED BY public.progres
 
 
 --
+-- Name: progresso_publicacao; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.progresso_publicacao (
+    id_user integer NOT NULL,
+    id_livro integer NOT NULL,
+    id_versao bigint NOT NULL,
+    pagina integer DEFAULT 1 NOT NULL,
+    concluido_em timestamp with time zone,
+    atualizado_em timestamp with time zone DEFAULT now() NOT NULL,
+    CONSTRAINT progresso_publicacao_pagina_check CHECK ((pagina > 0))
+);
+
+
+ALTER TABLE public.progresso_publicacao OWNER TO postgres;
+
+--
+-- Name: publicacao_obra; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.publicacao_obra (
+    id_livro integer NOT NULL,
+    id_autor integer NOT NULL,
+    modalidade text NOT NULL,
+    estado text DEFAULT 'rascunho'::text NOT NULL,
+    titulo text DEFAULT ''::text NOT NULL,
+    resumo text DEFAULT ''::text NOT NULL,
+    id_genero integer,
+    classificacao integer,
+    capa_url text,
+    pdf_rascunho text,
+    revisao integer DEFAULT 1 NOT NULL,
+    atualizado_em timestamp with time zone DEFAULT now() NOT NULL,
+    criado_em timestamp with time zone DEFAULT now() NOT NULL,
+    retirado_em timestamp with time zone,
+    motivo_retirada text,
+    id_versao_atual bigint,
+    CONSTRAINT publicacao_obra_classificacao_check CHECK ((classificacao = ANY (ARRAY[0, 10, 12, 14, 16, 18]))),
+    CONSTRAINT publicacao_obra_estado_check CHECK ((estado = ANY (ARRAY['rascunho'::text, 'publicado'::text, 'arquivado'::text, 'excluido'::text]))),
+    CONSTRAINT publicacao_obra_modalidade_check CHECK ((modalidade = ANY (ARRAY['editor'::text, 'pdf'::text])))
+);
+
+
+ALTER TABLE public.publicacao_obra OWNER TO postgres;
+
+--
 -- Name: recuperacao_senha; Type: TABLE; Schema: public; Owner: postgres
 --
 
@@ -837,7 +1026,9 @@ CREATE TABLE public.recuperacao_senha (
     id_user integer NOT NULL,
     token text NOT NULL,
     expira_em timestamp without time zone NOT NULL,
-    usado boolean DEFAULT false NOT NULL
+    usado boolean DEFAULT false NOT NULL,
+    codigo_hash text,
+    tentativas smallint DEFAULT 0 NOT NULL
 );
 
 
@@ -883,8 +1074,7 @@ CREATE TABLE public.resenha (
     data_publi timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
     id_livro integer,
     visibilidade character varying(20) DEFAULT 'publico'::character varying NOT NULL,
-    interacao_de character varying(20) DEFAULT 'todos'::character varying,
-    CONSTRAINT resenha_visibilidade_check CHECK (((visibilidade)::text = ANY ((ARRAY['publico'::character varying, 'privado'::character varying])::text[])))
+    CONSTRAINT resenha_visibilidade_check CHECK (((visibilidade)::text = ANY (ARRAY[('publico'::character varying)::text, ('privado'::character varying)::text])))
 );
 
 
@@ -905,32 +1095,19 @@ ALTER TABLE public.resenha ALTER COLUMN id_resenha ADD GENERATED ALWAYS AS IDENT
 
 
 --
--- Name: salvos; Type: TABLE; Schema: public; Owner: postgres
+-- Name: sessao_usuario; Type: TABLE; Schema: public; Owner: postgres
 --
 
-CREATE TABLE public.salvos (
-    id integer NOT NULL,
-    id_user integer,
-    categoria_salva character varying(30),
-    id_salvo integer
+CREATE TABLE public.sessao_usuario (
+    assinatura text NOT NULL,
+    id_user integer NOT NULL,
+    dispositivo text NOT NULL,
+    ultimo_acesso timestamp with time zone DEFAULT now() NOT NULL,
+    revogado_em timestamp with time zone
 );
 
 
-ALTER TABLE public.salvos OWNER TO postgres;
-
---
--- Name: salvos_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
---
-
-ALTER TABLE public.salvos ALTER COLUMN id ADD GENERATED ALWAYS AS IDENTITY (
-    SEQUENCE NAME public.salvos_id_seq
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1
-);
-
+ALTER TABLE public.sessao_usuario OWNER TO postgres;
 
 --
 -- Name: top5_livros; Type: TABLE; Schema: public; Owner: postgres
@@ -958,7 +1135,8 @@ CREATE TABLE public.usuario (
     email character varying(90) NOT NULL,
     senha character varying(250) NOT NULL,
     criacao_conta timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
-    google_id character varying(255)
+    google_id character varying(255),
+    autor_desde timestamp with time zone
 );
 
 
@@ -979,6 +1157,42 @@ ALTER TABLE public.usuario ALTER COLUMN id_user ADD GENERATED ALWAYS AS IDENTITY
 
 
 --
+-- Name: versao_publicacao; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.versao_publicacao (
+    id bigint NOT NULL,
+    id_edicao bigint NOT NULL,
+    numero integer NOT NULL,
+    arquivo text NOT NULL,
+    paginas integer NOT NULL,
+    snapshot jsonb NOT NULL,
+    declaracao text NOT NULL,
+    publicada_por integer NOT NULL,
+    publicada_em timestamp with time zone DEFAULT now() NOT NULL,
+    CONSTRAINT versao_publicacao_declaracao_check CHECK ((declaracao = ANY (ARRAY['autoria'::text, 'autorizacao'::text]))),
+    CONSTRAINT versao_publicacao_numero_check CHECK ((numero > 0)),
+    CONSTRAINT versao_publicacao_paginas_check CHECK ((paginas > 0))
+);
+
+
+ALTER TABLE public.versao_publicacao OWNER TO postgres;
+
+--
+-- Name: versao_publicacao_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+ALTER TABLE public.versao_publicacao ALTER COLUMN id ADD GENERATED ALWAYS AS IDENTITY (
+    SEQUENCE NAME public.versao_publicacao_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1
+);
+
+
+--
 -- Name: whishbook; Type: TABLE; Schema: public; Owner: postgres
 --
 
@@ -987,7 +1201,8 @@ CREATE TABLE public.whishbook (
     id_livro integer,
     id_user integer,
     id_whishlist integer,
-    ordem integer
+    ordem integer,
+    adicionado_em timestamp without time zone DEFAULT CURRENT_TIMESTAMP
 );
 
 
@@ -1015,9 +1230,9 @@ CREATE TABLE public.whishlist (
     id integer NOT NULL,
     nome_lista character varying(120),
     id_user integer,
-    descricao character varying(90),
-    visibilidade character varying(10) DEFAULT 'publica'::character varying,
-    tipo_capa character varying(15) DEFAULT 'automatica'::character varying,
+    descricao text DEFAULT ''::text NOT NULL,
+    visibilidade character varying(20) DEFAULT 'privada'::character varying NOT NULL,
+    tipo_capa character varying(20) DEFAULT 'automatica'::character varying NOT NULL,
     capa_url character varying(250),
     data_criacao timestamp without time zone DEFAULT CURRENT_TIMESTAMP
 );
@@ -1040,6 +1255,49 @@ ALTER TABLE public.whishlist ALTER COLUMN id ADD GENERATED ALWAYS AS IDENTITY (
 
 
 --
+-- Name: whishlist_seguida; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.whishlist_seguida (
+    id_user integer NOT NULL,
+    id_whishlist integer NOT NULL
+);
+
+
+ALTER TABLE public.whishlist_seguida OWNER TO postgres;
+
+--
+-- Name: worldbuilding_registro; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.worldbuilding_registro (
+    id bigint NOT NULL,
+    id_livro integer NOT NULL,
+    tipo text NOT NULL,
+    nome character varying(100) NOT NULL,
+    descricao text DEFAULT ''::text NOT NULL,
+    detalhes_mundo jsonb DEFAULT '{}'::jsonb NOT NULL,
+    CONSTRAINT worldbuilding_registro_tipo_check CHECK ((tipo = ANY (ARRAY['resumo'::text, 'item'::text, 'marco'::text, 'nota'::text, 'template'::text])))
+);
+
+
+ALTER TABLE public.worldbuilding_registro OWNER TO postgres;
+
+--
+-- Name: worldbuilding_registro_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+ALTER TABLE public.worldbuilding_registro ALTER COLUMN id ADD GENERATED ALWAYS AS IDENTITY (
+    SEQUENCE NAME public.worldbuilding_registro_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1
+);
+
+
+--
 -- Name: progresso_leitura id_progresso; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
@@ -1050,11 +1308,7 @@ ALTER TABLE ONLY public.progresso_leitura ALTER COLUMN id_progresso SET DEFAULT 
 -- Data for Name: admin; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.admin (id_admin, nome_completo, email, criacao_conta, senha) FROM stdin;
-1	Anselmo Florentino	anselmo@gmail.com	2026-09-21 15:25:34.847507	$2y$10$k1QCqGZEFMIkI2l9XNrxKemJ3Zg7X9swg6ZCI3XGWzKaF51dgr2iK
-2	ADM Caio	admcaio@gmail.com	2026-09-30 19:17:53.985451	$2y$10$xDgH2TJ5yumvUJfQxuvPxuU1xcK59EvY8gtbtyXtWhR2GPuunDuYS
-3	adsadsa	dsadsadsad	2026-09-30 19:22:18.657022	$2y$10$V2M6tXWISPPox1Y.1kd/IOCjzDkbcgQX2d.yJY1hif7bj6V.TGxjK
-4	admteste	admteste@gmail.com	2026-09-30 19:24:34.696481	$2y$10$yNmIKDA31gN2zLbIaXK9eue5Z6CFYm/NV2HYwQmaiHgmh47Xj6Aeq
+COPY public.admin (id_admin, nome_completo, email, senha, criacao_conta) FROM stdin;
 \.
 
 
@@ -1062,16 +1316,16 @@ COPY public.admin (id_admin, nome_completo, email, criacao_conta, senha) FROM st
 -- Data for Name: autor; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.autor (id_autor, nome_autor, autor, bio, foto_url, id_user) FROM stdin;
-1	Machado de Assis	machado	\N	\N	\N
-2	Edgar Allan Paul	edgar	\N	\N	\N
-4	Abel Ferreira	abel	\N	\N	\N
-5	Rick Riordan	rick-riordan	\N	\N	\N
-6	Agatha Christie	agatha-christie	\N	\N	\N
-7	George Orwell	george-orwell	\N	\N	\N
-8	Stephen King	stephen-king	\N	\N	\N
-9	J.R.R. Tolkien	jrr-tolkien	\N	\N	\N
-3	J.K Rowling	jk-rowling	\N	\N	\N
+COPY public.autor (id_autor, nome_autor, autor, bio, foto_url) FROM stdin;
+5	Rick Riordan	rick-riordan	\N	\N
+6	Agatha Christie	agatha-christie	\N	\N
+7	George Orwell	george-orwell	\N	\N
+8	Stephen King	stephen-king	\N	\N
+9	J.R.R. Tolkien	jrr-tolkien	\N	\N
+3	J.K Rowling	jk-rowling	\N	\N
+1	Machado de Assis	machado-de-assis	\N	\N
+2	Edgar Allan Paul	edgar-allan-paul	\N	\N
+4	Abel Ferreira	abel-ferreira	\N	\N
 \.
 
 
@@ -1080,9 +1334,6 @@ COPY public.autor (id_autor, nome_autor, autor, bio, foto_url, id_user) FROM std
 --
 
 COPY public.autor_user (id_user, id_autor, id) FROM stdin;
-9	2	1
-9	6	2
-9	8	3
 24	1	4
 24	2	5
 24	3	6
@@ -1099,52 +1350,16 @@ COPY public.autor_user (id_user, id_autor, id) FROM stdin;
 29	4	20
 29	6	21
 29	8	22
-30	1	23
-30	2	24
-30	4	25
-30	5	26
-30	6	27
-31	2	28
-31	7	29
-31	8	30
-31	9	31
-31	3	32
-32	4	33
-32	6	34
-32	8	35
-32	9	36
-32	3	37
-33	1	38
-33	2	39
-33	4	40
-33	5	41
-33	7	42
-34	1	43
-34	4	44
-34	6	45
-34	8	46
-34	3	47
-\.
-
-
---
--- Data for Name: avaliacao; Type: TABLE DATA; Schema: public; Owner: postgres
---
-
-COPY public.avaliacao (id_avaliacao, id_user, categoria_avaliada, id_avaliado, nota_avaliacao, criado_em) FROM stdin;
-1	19	livro	5	5.0	2026-10-03 00:49:53.690756
-2	30	livro	1	1.5	2026-10-05 11:51:32.877292
-5	30	resenha	3	4.5	2026-10-05 11:53:53.561511
-3	30	resenha	1	4.5	2026-10-05 11:53:53.537273
-4	30	resenha	4	4.5	2026-10-05 11:53:53.56
-7	19	livro	4	5.0	2026-10-08 22:42:56.372829
-9	19	livro	3	5.0	2026-10-08 23:31:32.498329
-8	19	livro	2	3.0	2026-10-08 23:31:23.620161
-10	19	resenha	2	5.0	2026-10-14 14:51:44.012627
-11	19	resenha	4	4.5	2026-10-15 15:00:21.978254
-12	19	resenha	3	4.5	2026-10-15 15:00:21.982316
-13	19	resenha	1	5.0	2026-10-15 15:00:21.983833
-6	19	livro	1	5.0	2026-10-08 20:21:46.690921
+34	7	33
+34	8	34
+34	9	35
+34	2	36
+34	4	37
+35	5	38
+35	7	39
+35	8	40
+35	3	41
+35	1	42
 \.
 
 
@@ -1160,22 +1375,28 @@ COPY public.bloqueio (id_bloqueador, id_bloqueado, status_bloqueio, data_bloquei
 -- Data for Name: capitulo; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.capitulo (id_capitulo, titulo_capitulo, imagem_url_capitulo, ordem_capitulo, id_livro) FROM stdin;
-1	DE COMO ITAGUAÖ GANHOU UMA CASA DE ORATES	\N	1	1
-2	TORRENTES DE LOUCOS	\N	2	1
-3	DEUS SABE O QUE FAZ	\N	3	1
-4	UMA TEORIA NOVA	\N	4	1
-5	O TERROR	\N	5	1
-6	A CARTOMANTE	\N	1	2
-7	98	\N	1	3
-8	99	\N	2	3
-9	100	\N	3	3
-10	101	\N	4	3
-11	OS CAMPOS	\N	1	4
-12	OS CASTELOS	\N	2	4
-13	EU NUNCA GUARDEI REBANHOS	\N	1	5
-14	MEU OLHAR	\N	2	5
-15	AO ENTARDECER	\N	3	5
+COPY public.capitulo (id_capitulo, titulo_capitulo, imagem_url_capitulo, ordem_capitulo, id_livro, conteudo_html) FROM stdin;
+1	DE COMO ITAGUAÖ GANHOU UMA CASA DE ORATES	\N	1	1	
+2	TORRENTES DE LOUCOS	\N	2	1	
+3	DEUS SABE O QUE FAZ	\N	3	1	
+4	UMA TEORIA NOVA	\N	4	1	
+5	O TERROR	\N	5	1	
+6	A CARTOMANTE	\N	1	2	
+7	98	\N	1	3	
+8	99	\N	2	3	
+9	100	\N	3	3	
+10	101	\N	4	3	
+11	OS CAMPOS	\N	1	4	
+12	OS CASTELOS	\N	2	4	
+13	EU NUNCA GUARDEI REBANHOS	\N	1	5	
+14	MEU OLHAR	\N	2	5	
+15	AO ENTARDECER	\N	3	5	
+34	outro capitulo teste	\N	2	22	<h3>texto teste do livro de teste</h3><blockquote>çfalksjdfçalskdjf 'sadfasdfasd'  lfkçasjdfçlaskdjfçalskdjfçslakjfa</blockquote>
+33	capitulo teste	\N	1	22	<p>Isso é um capítulo teste de como vai ser o livro escrito, eu estou escrevendo coisas aleatórias para compor pelo menos bastante texto de uma página real, depois eu vou tentar escrever uma história de verdade para ver como funciona isso aqui, eu quero ver se fica bom e se é legal escrever aqui, eu acho que escrever aqui é igual escrever em um docs comum porém depois eu preciso adicionar todas as outras coisas nessa criação de livro aqui né, eu preciso colocar todo o wordbuild junto pra pessoa poder modificar as coisas</p>
+30	Prelúdio	\N	1	19	
+31	Inicio da história	\N	2	19	<p>parapararaprpara</p>
+32	Prefácio	\N	1	21	<p>Isso aqui é um teste para ver como vai ficar a prévia do livro quando for aberto em uma nova guia</p>
+71	Prefácio	\N	1	58	<p style="text-align:left">Eu vou começar a escrever essa história insana de teste para ver como fica e depois eu vou tentar visualizar tudo</p>
 \.
 
 
@@ -1191,7 +1412,7 @@ COPY public.cena (id_cena, nome_cena, descricao, id_livro) FROM stdin;
 -- Data for Name: cenario; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.cenario (id_cenario, nome_cenario, descricao_cenario, id_livro) FROM stdin;
+COPY public.cenario (id_cenario, nome_cenario, descricao_cenario, id_livro, detalhes_mundo) FROM stdin;
 \.
 
 
@@ -1213,22 +1434,34 @@ COPY public.comentario (id_comentario, id_user, categoria_curtida, id_coisocurti
 11	19	post	3	\N	Agora ele subiu dnv	2026-08-18 17:07:11.280932
 12	19	post	3	\N	continua subindo	2026-08-18 17:07:29.271428
 13	19	post	3	\N	Olá Mundo	2026-08-18 17:12:44.883935
-14	19	livro	2	\N	Livro Foda	2026-08-24 13:18:15.826824
-15	19	livro	2	\N	Livro Maneirasso	2026-08-24 13:18:39.532703
-16	19	livro	2	\N	Livro Super Bomb stico	2026-08-24 13:18:46.868897
-17	19	livro	2	\N	Livro Super Super Hiper Mega Blaster Ultra Stonks	2026-08-24 13:18:57.083883
-18	19	livro	2	\N	sdgdfgd	2026-08-24 14:00:46.299182
-19	19	livro	2	\N	fsdfsdfsad	2026-08-24 14:10:37.887971
-20	31	livro	2	\N	vou ler	2026-08-30 14:20:43.823762
-21	19	livro	2	\N	Comwntário 1	2026-09-10 18:57:02.465614
-22	33	livro	1	\N	Vou ler	2026-09-17 08:27:46.547945
-23	19	livro	2	\N	Estou Ansioso para ler este Livro	2026-09-21 15:02:42.178663
-24	19	resenha	3	\N	khgk	2026-10-15 15:32:54.39631
-25	19	resenha	3	\N	fsdfsdfsdfsd	2026-10-15 15:37:28.115446
-26	19	resenha	3	\N	hygregsgfsdg	2026-10-15 15:37:55.766752
-27	19	resenha	4	\N	fdsfds	2026-10-15 15:39:39.50867
-28	19	resenha	1	\N	fdsfsdafsdf	2026-10-15 15:39:48.342875
-29	19	resenha	3	\N	fsdfsdfsdafsdaf	2026-10-15 15:40:03.454618
+14	34	livro	5	\N	não é uma bela bosta, é bem legal	2026-10-02 07:52:11.08751
+15	34	livro	2	5	o livro é realmente do balaco baco hein, slk tropa	2026-10-05 18:51:55.876024
+16	34	livro	5	5	poh, vou falar que o livro até que foi legal, mas assim, estava esperando mais tlgd? O livro é interessante e o começo é muito bom mas depois fica meio merda. Porém apesar de tudo eu gostei bastante do livro e recomendo bastante para que outras pessoas comprem ou leiam esse livro.	2026-10-05 19:35:34.694379
+17	35	resenha	1	3	\N	2026-10-20 18:57:03.04111
+18	35	resenha	2	5	\N	2026-10-20 19:09:10.590107
+22	35	post	3	\N	poh, tem muitos comentários	2026-10-22 22:14:07.5671
+23	35	post	3	\N	tá aparecendo em primeiro	2026-10-22 22:14:21.107943
+24	35	post	3	\N	acho que está certo isso aqui	2026-10-22 22:14:28.29232
+26	35	post	3	\N	agora dá pra ordenar os comentários mais recentes ou mais antigos	2026-10-22 22:14:56.068012
+32	35	resenha	3	5	\N	2026-10-23 07:41:50.980469
+33	35	livro	56	\N	ainda preciso ler esse livro!	2026-10-23 07:43:05.576176
+\.
+
+
+--
+-- Data for Name: comentario_obra; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.comentario_obra (id, id_livro, id_user, texto, criado_em, editado_em, estado) FROM stdin;
+\.
+
+
+--
+-- Data for Name: configuracao_usuario; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.configuracao_usuario (id_user, marcacoes, comentarios, permitir_sensivel, permitir_adulto, visibilidade_posts, atualizado_em) FROM stdin;
+35	todos	seguidores	t	f	publico	2026-10-20 19:08:42.631103-03
 \.
 
 
@@ -1237,15 +1470,10 @@ COPY public.comentario (id_comentario, id_user, categoria_curtida, id_coisocurti
 --
 
 COPY public.conta (id_user, foto_perfil_url, bio, visibilidade, banner_url) FROM stdin;
-3	foto_do_gomez	Zagueiro Paraguaio, dono da sele‡Æo paraguaia e maior capitÆo da hist¢ria do Palmeiras	publico	\N
 28	\N	\N	publico	\N
 29	\N	\N	publico	\N
-19	img/foto_perfil/4f3a97f338ba0c7c65039d97f02cc401.webp	Apenas um cara tranquilo que gosta do palmeiras	publico	img/banner_perfil/25cfe8fb7c9a8d15943d86263f962fda.webp
-30	\N	\N	publico	\N
-31	\N	\N	publico	\N
-32	\N	\N	publico	\N
-33	\N	\N	publico	\N
-34	\N	\N	publico	\N
+34	img/foto_perfil/3ed8d904af47acd0575117521bd2ff00.webp	Eu amo carregar livros\r\nEu serei o maior leitor de livros de todos os tempos	publico	img/banner_perfil/bcc9a04a2a207f6b3838b012cac3c432.webp
+35	img/foto_perfil/38389a8252d444a365b3637b7c2ee853.webp	Eu sou o maior amante de livros de todos os tempos\r\neu vou ler todos os livros de todos os tempos	publico	img/banner_perfil/d6e03b9ebab35b30eac75c32179e4e47.webp
 \.
 
 
@@ -1254,11 +1482,7 @@ COPY public.conta (id_user, foto_perfil_url, bio, visibilidade, banner_url) FROM
 --
 
 COPY public.conversa (id_conversa, tipo, nome_conversa, foto_conversa_url, id_dono, criacao) FROM stdin;
-1	direct	user1-user2	\N	\N	2026-08-27 20:08:10.699724
-2	grupo	clube do livro 67	\N	19	2026-08-27 20:45:26.346048
-3	grupo	Grupo 67Resenha	../img/foto_grupo/6aabe09ee0fd1.	34	2026-09-17 09:44:14.92208
-4	grupo	Grupo Teste TCC	../img/foto_grupo/6ab172f1b5f87.	30	2026-09-21 15:09:53.746472
-5	grupo	grupo teste 1	\N	19	2026-10-15 16:01:52.504852
+1	direct	muxys	img/foto_perfil/3ed8d904af47acd0575117521bd2ff00.webp	35	2026-10-20 18:16:06.889677
 \.
 
 
@@ -1267,12 +1491,8 @@ COPY public.conversa (id_conversa, tipo, nome_conversa, foto_conversa_url, id_do
 --
 
 COPY public.conversa_participante (id_conversa, id_user, cargo, joinet_at, last_read_message) FROM stdin;
-1	30	comum	2026-08-27 20:09:02.562336	2026-08-27 20:09:02.562336
-1	19	comum	2026-08-27 20:09:08.602164	2026-08-27 20:09:08.602164
-2	30	comum	2026-08-27 20:46:33.427347	\N
-3	34	admin	2026-09-17 09:44:14.926528	\N
-4	30	admin	2026-09-21 15:09:53.753392	\N
-5	19	admin	2026-10-15 16:01:52.509906	\N
+1	35	Integrante	2026-10-20 18:16:06.889677	2026-10-20 18:16:06.889677
+1	34	Integrante	2026-10-20 18:16:06.889677	2026-10-20 18:16:06.889677
 \.
 
 
@@ -1284,19 +1504,31 @@ COPY public.curtida (id_curtida, id_user, categoria_curtido, id_coisocurtido) FR
 1	19	post	1
 2	19	post	2
 3	19	post	3
-4	19	livro	4
 \.
 
 
 --
--- Data for Name: denuncia; Type: TABLE DATA; Schema: public; Owner: postgres
+-- Data for Name: denuncia_obra; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.denuncia (id_denuncia, tipo_denunciado, id_denunciado, id_denunciador, denuncia, status, emissao, resolvido) FROM stdin;
-1	livro	1	19	Livro Pornogr fico	pendente	2026-09-21 08:22:18.342363	\N
-2	usuario	20	19	Me chamou de bobao	pendente	2026-09-21 08:22:49.67354	\N
-3	\N	2	19	 O livro está apresentando erros de gramática nos acentos	pendente	2026-09-30 20:22:01.510916	\N
-4	\N	3	19	 fsdfdsfds	pendente	2026-09-30 21:19:45.914591	\N
+COPY public.denuncia_obra (id, id_livro, id_user, motivo, detalhes, estado, criada_em) FROM stdin;
+\.
+
+
+--
+-- Data for Name: edicao_livro; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.edicao_livro (id, id_livro, numero, criada_em) FROM stdin;
+29	22	1	2026-10-22 19:43:35.913532-03
+\.
+
+
+--
+-- Data for Name: email_verificacao; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.email_verificacao (id_user, token_hash, expira_em, verificado_em, criado_em) FROM stdin;
 \.
 
 
@@ -1305,24 +1537,7 @@ COPY public.denuncia (id_denuncia, tipo_denunciado, id_denunciado, id_denunciado
 --
 
 COPY public.follow (id_follower, id_following, status_follow, data_follow) FROM stdin;
-19	3	\N	2026-09-18 15:26:01.174957
-19	9	\N	2026-09-18 15:26:04.545183
-19	14	\N	2026-09-18 15:26:07.209834
-19	16	\N	2026-09-18 15:26:08.785045
-3	19	\N	2026-09-18 15:26:13.924745
-9	19	\N	2026-09-18 15:26:20.422184
-14	19	\N	2026-09-18 15:26:24.056625
-16	19	\N	2026-09-18 15:26:26.516342
-19	30	\N	2026-10-15 16:00:13.690491
-19	31	\N	2026-10-15 16:00:15.506568
-19	32	\N	2026-10-15 16:00:17.506738
-19	33	\N	2026-10-15 16:00:19.114582
-19	34	\N	2026-10-15 16:00:20.924348
-30	19	\N	2026-10-15 16:00:26.827765
-31	19	\N	2026-10-15 16:00:28.987027
-32	19	\N	2026-10-15 16:00:31.171712
-33	19	\N	2026-10-15 16:00:33.35506
-34	19	\N	2026-10-15 16:00:35.453094
+35	34	seguindo	2026-10-20 18:16:06.889677
 \.
 
 
@@ -1330,7 +1545,7 @@ COPY public.follow (id_follower, id_following, status_follow, data_follow) FROM 
 -- Data for Name: follow_autor; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.follow_autor (id, id_follower, id_autor, status, data_follow) FROM stdin;
+COPY public.follow_autor (id_follower, id_autor) FROM stdin;
 \.
 
 
@@ -1338,12 +1553,25 @@ COPY public.follow_autor (id, id_follower, id_autor, status, data_follow) FROM s
 -- Data for Name: livro; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.livro (id_livro, titulo_livro, resumo_livro, class_ind, nome_autor, id_user, sinopse_livro, data_publi, idioma, visibilidade, origem, interacao_de, capa_url, google_books_id, link_leitura, link_compra, nota_google, paginas, isbn10, isbn13) FROM stdin;
-3	A Semana	""A Semana", de Machado de Assis, re£ne uma s‚rie de cr“nicas publicadas originalmente em jornais, nas quais o autor observa acontecimentos cotidianos, pol¡ticos e sociais de seu tempo. Com uma escrita marcada pela ironia, pelo humor e pela reflexÆo, Machado transforma situa‡äes aparentemente simples em oportunidades para analisar o comportamento humano e as contradi‡äes da sociedade. Ao comentar fatos da vida p£blica e do dia a dia, o autor questiona costumes, valores e atitudes presentes na sociedade brasileira. A obra se destaca pela capacidade de unir cr¡tica social e entretenimento, apresentando uma visÆo inteligente e muitas vezes bem-humorada da realidade.	12	Machado de Assis	\N	""A Semana", de Machado de Assis, re£ne cr“nicas em que o autor aborda acontecimentos cotidianos e questäes sociais e pol¡ticas de sua ‚poca. Com ironia, humor e olhar cr¡tico, Machado transforma fatos comuns em reflexäes sobre a sociedade e o comportamento humano. A obra apresenta um retrato interessante e perspicaz do Brasil de seu tempo.	2026-08-10 12:53:45.173089	Portugues-BR	publico	interna	todos	\N	\N	\N	\N	\N	\N	\N	\N
-4	Mensagem	Mensagem, de Fernando Pessoa, ‚ uma obra po‚tica que revisita a hist¢ria e os s¡mbolos de Portugal, destacando figuras como reis, navegadores e her¢is nacionais. Dividido em trˆs partes, o livro apresenta a forma‡Æo, a realiza‡Æo e a queda simb¢lica do imp‚rio portuguˆs, relacionando o passado glorioso do pa¡s a um futuro de renova‡Æo. Por meio de poemas marcados pelo nacionalismo, pelo simbolismo e pelo misticismo, Pessoa reflete sobre o destino de Portugal e sobre a importƒncia de sua identidade hist¢rica. A obra tamb‚m aborda o sonho de um novo per¡odo de grandeza, representado pelo retorno simb¢lico de D. SebastiÆo e pelo surgimento de um novo imp‚rio, agora ligado … cultura e ao esp¡rito	10	JoÆo Pessoa	\N	Mensagem, de Fernando Pessoa, re£ne poemas que celebram e reinterpretam a hist¢ria, os her¢is e os mitos de Portugal. A obra percorre momentos fundamentais da trajet¢ria portuguesa e transforma o passado em uma reflexÆo sobre o destino e o futuro do pa¡s. Entre simbolismo, patriotismo e misticismo, Pessoa constr¢i uma visÆo po‚tica de renascimento e de uma nova grandeza portuguesa.	2026-08-10 13:06:38.938784	Portugues-BR	publico	interna	todos	\N	\N	\N	\N	\N	\N	\N	\N
-2	A Cartomante	"A Cartomante", de Machado de Assis, conta a hist¢ria de Camilo e Rita, dois amigos que se envolvem em um relacionamento amoroso proibido, apesar de Rita ser casada com Vilela, amigo de Camilo. Com medo de que o marido descubra a trai‡Æo, Rita procura uma cartomante, que lhe garante que nada de ruim acontecer . Camilo inicialmente duvida desse tipo de previsÆo, mas, diante de acontecimentos que despertam seu medo e sua inseguran‡a, tamb‚m acaba recorrendo … cartomante. Ap¢s receber uma previsÆo tranquilizadora, ele segue confiante para encontrar Vilela, sem imaginar o destino que o aguarda. A narrativa combina suspense, ironia e cr¡tica … supersti‡Æo, mostrando como os personagens tentam encontrar seguran‡a em cren‡as diante da incerteza.	12	Machado de Assis	\N	"A Cartomante", de Machado de Assis, acompanha Camilo e Rita, dois amantes que vivem um relacionamento secreto, enquanto Vilela, marido de Rita e amigo de Camilo, come‡a a despertar preocupa‡Æo no casal. Em meio ao medo de serem descobertos, Rita procura uma cartomante em busca de respostas. A partir da¡, a hist¢ria conduz os personagens por uma sequˆncia de tensÆo e acontecimentos inesperados, marcada por suspense, ironia e uma reviravolta surpreendente.	2026-08-10 12:42:47.362398	Portugues-BR	publico	interna	todos	\N	\N	\N	\N	\N	\N	\N	\N
-1	O Alienista	O Alienista, de Machado de Assis, conta a hist¢ria de SimÆo Bacamarte, um m‚dico que decide estudar a mente humana e compreender os limites entre a razÆo e a loucura. Para realizar suas pesquisas, ele cria a Casa Verde, onde come‡a a internar pessoas consideradas mentalmente desequilibradas. Com o passar do tempo, Bacamarte amplia tanto seus crit‚rios que grande parte da popula‡Æo de Itagua¡ acaba sendo considerada louca. Depois, ele muda sua teoria e passa a acreditar que aqueles que apresentam equil¡brio perfeito sÆo os verdadeiros anormais. No final, conclui que ele pr¢prio possui essa caracter¡stica e decide se internar na Casa Verde. A obra utiliza ironia e humor para criticar o abuso da ciˆncia, do poder e a dificuldade de definir o que ‚ realmente normal.	12	Machado de Assis	\N	O Alienista, de Machado de Assis, acompanha SimÆo Bacamarte, um m‚dico que se dedica a estudar a loucura e cria a Casa Verde, um local destinado … interna‡Æo de pessoas consideradas desequilibradas. Por‚m, sua busca pela defini‡Æo da normalidade faz com que cada vez mais habitantes de Itagua¡ sejam considerados loucos. A obra apresenta, de forma ir“nica e humor¡stica, uma cr¡tica ao excesso de poder, ao cientificismo e … dificuldade de determinar os limites entre a razÆo e a loucura.	2026-08-10 11:37:10.803001	Portugues-BR	publico	interna	todos	\N	\N	\N	\N	\N	\N	\N	\N
-5	Guardador de Rebanhos	Guardador de Rebanhos, de Fernando Pessoa, escrito sob o heter“nimo Alberto Caeiro, ‚ um conjunto de poemas que apresenta uma visÆo simples, direta e profundamente ligada … natureza. O eu l¡rico rejeita interpreta‡äes filos¢ficas e metaf¡sicas do mundo e prefere observar as coisas exatamente como elas sÆo. Para Caeiro, pensar demais sobre a realidade pode afastar o ser humano da experiˆncia verdadeira de simplesmente ver, sentir e existir. A natureza, os animais, as  rvores, as flores, o c‚u e as sensa‡äes cotidianas tornam-se elementos centrais de sua poesia. O poema tamb‚m questiona conceitos tradicionais sobre Deus, espiritualidade e transcendˆncia, defendendo uma esp‚cie de rela‡Æo concreta e imediata com o mundo.	10	JoÆo Pessoa	\N	Guardador de Rebanhos acompanha o olhar de um eu l¡rico que se apresenta como um pastor que guarda rebanhos, embora esses rebanhos sejam, sobretudo, pensamentos e sensa‡äes. Ao observar a natureza, ele desenvolve uma filosofia baseada na simplicidade, recusando explica‡äes abstratas e procurando enxergar o mundo sem atribuir-lhe significados ocultos. Ao longo da obra, a natureza funciona como fonte de conhecimento e verdade, enquanto o pensamento excessivo ‚ visto como algo que complica aquilo que deveria ser simples. A obra constr¢i, assim, uma reflexÆo po‚tica sobre a existˆncia, a percep‡Æo e a rela‡Æo do ser humano com a realidade.	2026-08-10 13:21:21.325504	Portugues-BR	publico	interna	todos	\N	\N	\N	\N	\N	\N	\N	\N
+COPY public.livro (id_livro, titulo_livro, resumo_livro, class_ind, nome_autor, id_user, sinopse_livro, capa_url, data_publi, idioma, visibilidade, paginas, nota_google, google_books_id, isbn10, isbn13, origem, link_leitura, link_compra) FROM stdin;
+2	A Cartomante	"A Cartomante", de Machado de Assis, conta a hist¢ria de Camilo e Rita, dois amigos que se envolvem em um relacionamento amoroso proibido, apesar de Rita ser casada com Vilela, amigo de Camilo. Com medo de que o marido descubra a trai‡Æo, Rita procura uma cartomante, que lhe garante que nada de ruim acontecer . Camilo inicialmente duvida desse tipo de previsÆo, mas, diante de acontecimentos que despertam seu medo e sua inseguran‡a, tamb‚m acaba recorrendo … cartomante. Ap¢s receber uma previsÆo tranquilizadora, ele segue confiante para encontrar Vilela, sem imaginar o destino que o aguarda. A narrativa combina suspense, ironia e cr¡tica … supersti‡Æo, mostrando como os personagens tentam encontrar seguran‡a em cren‡as diante da incerteza.	12	Machado de Assis	\N	"A Cartomante", de Machado de Assis, acompanha Camilo e Rita, dois amantes que vivem um relacionamento secreto, enquanto Vilela, marido de Rita e amigo de Camilo, come‡a a despertar preocupa‡Æo no casal. Em meio ao medo de serem descobertos, Rita procura uma cartomante em busca de respostas. A partir da¡, a hist¢ria conduz os personagens por uma sequˆncia de tensÆo e acontecimentos inesperados, marcada por suspense, ironia e uma reviravolta surpreendente.	../img/capas_livros/cartomante-capa.jpeg	2026-08-10 12:42:47.362398	Portugues-BR	publico	\N	\N	\N	\N	\N	\N	\N	\N
+3	A Semana	""A Semana", de Machado de Assis, re£ne uma s‚rie de cr“nicas publicadas originalmente em jornais, nas quais o autor observa acontecimentos cotidianos, pol¡ticos e sociais de seu tempo. Com uma escrita marcada pela ironia, pelo humor e pela reflexÆo, Machado transforma situa‡äes aparentemente simples em oportunidades para analisar o comportamento humano e as contradi‡äes da sociedade. Ao comentar fatos da vida p£blica e do dia a dia, o autor questiona costumes, valores e atitudes presentes na sociedade brasileira. A obra se destaca pela capacidade de unir cr¡tica social e entretenimento, apresentando uma visÆo inteligente e muitas vezes bem-humorada da realidade.	12	Machado de Assis	\N	""A Semana", de Machado de Assis, re£ne cr“nicas em que o autor aborda acontecimentos cotidianos e questäes sociais e pol¡ticas de sua ‚poca. Com ironia, humor e olhar cr¡tico, Machado transforma fatos comuns em reflexäes sobre a sociedade e o comportamento humano. A obra apresenta um retrato interessante e perspicaz do Brasil de seu tempo.	../img/capas_livros/semana-capa.jpeg	2026-08-10 12:53:45.173089	Portugues-BR	publico	\N	\N	\N	\N	\N	\N	\N	\N
+4	Mensagem	Mensagem, de Fernando Pessoa, ‚ uma obra po‚tica que revisita a hist¢ria e os s¡mbolos de Portugal, destacando figuras como reis, navegadores e her¢is nacionais. Dividido em trˆs partes, o livro apresenta a forma‡Æo, a realiza‡Æo e a queda simb¢lica do imp‚rio portuguˆs, relacionando o passado glorioso do pa¡s a um futuro de renova‡Æo. Por meio de poemas marcados pelo nacionalismo, pelo simbolismo e pelo misticismo, Pessoa reflete sobre o destino de Portugal e sobre a importƒncia de sua identidade hist¢rica. A obra tamb‚m aborda o sonho de um novo per¡odo de grandeza, representado pelo retorno simb¢lico de D. SebastiÆo e pelo surgimento de um novo imp‚rio, agora ligado … cultura e ao esp¡rito	10	JoÆo Pessoa	\N	Mensagem, de Fernando Pessoa, re£ne poemas que celebram e reinterpretam a hist¢ria, os her¢is e os mitos de Portugal. A obra percorre momentos fundamentais da trajet¢ria portuguesa e transforma o passado em uma reflexÆo sobre o destino e o futuro do pa¡s. Entre simbolismo, patriotismo e misticismo, Pessoa constr¢i uma visÆo po‚tica de renascimento e de uma nova grandeza portuguesa.	../img/capas_livros/mensagem-capa.jpeg	2026-08-10 13:06:38.938784	Portugues-BR	publico	\N	\N	\N	\N	\N	\N	\N	\N
+1	O Alienista	O Alienista, de Machado de Assis, conta a hist¢ria de SimÆo Bacamarte, um m‚dico que decide estudar a mente humana e compreender os limites entre a razÆo e a loucura. Para realizar suas pesquisas, ele cria a Casa Verde, onde come‡a a internar pessoas consideradas mentalmente desequilibradas. Com o passar do tempo, Bacamarte amplia tanto seus crit‚rios que grande parte da popula‡Æo de Itagua¡ acaba sendo considerada louca. Depois, ele muda sua teoria e passa a acreditar que aqueles que apresentam equil¡brio perfeito sÆo os verdadeiros anormais. No final, conclui que ele pr¢prio possui essa caracter¡stica e decide se internar na Casa Verde. A obra utiliza ironia e humor para criticar o abuso da ciˆncia, do poder e a dificuldade de definir o que ‚ realmente normal.	12	Machado de Assis	\N	O Alienista, de Machado de Assis, acompanha SimÆo Bacamarte, um m‚dico que se dedica a estudar a loucura e cria a Casa Verde, um local destinado … interna‡Æo de pessoas consideradas desequilibradas. Por‚m, sua busca pela defini‡Æo da normalidade faz com que cada vez mais habitantes de Itagua¡ sejam considerados loucos. A obra apresenta, de forma ir“nica e humor¡stica, uma cr¡tica ao excesso de poder, ao cientificismo e … dificuldade de determinar os limites entre a razÆo e a loucura.	../img/capas_livros/alienista-capa.jpeg	2026-08-10 11:37:10.803001	Portugues-BR	publico	\N	\N	\N	\N	\N	\N	\N	\N
+5	Guardador de Rebanhos	Guardador de Rebanhos, de Fernando Pessoa, escrito sob o heter“nimo Alberto Caeiro, ‚ um conjunto de poemas que apresenta uma visÆo simples, direta e profundamente ligada … natureza. O eu l¡rico rejeita interpreta‡äes filos¢ficas e metaf¡sicas do mundo e prefere observar as coisas exatamente como elas sÆo. Para Caeiro, pensar demais sobre a realidade pode afastar o ser humano da experiˆncia verdadeira de simplesmente ver, sentir e existir. A natureza, os animais, as  rvores, as flores, o c‚u e as sensa‡äes cotidianas tornam-se elementos centrais de sua poesia. O poema tamb‚m questiona conceitos tradicionais sobre Deus, espiritualidade e transcendˆncia, defendendo uma esp‚cie de rela‡Æo concreta e imediata com o mundo.	10	JoÆo Pessoa	\N	Guardador de Rebanhos acompanha o olhar de um eu l¡rico que se apresenta como um pastor que guarda rebanhos, embora esses rebanhos sejam, sobretudo, pensamentos e sensa‡äes. Ao observar a natureza, ele desenvolve uma filosofia baseada na simplicidade, recusando explica‡äes abstratas e procurando enxergar o mundo sem atribuir-lhe significados ocultos. Ao longo da obra, a natureza funciona como fonte de conhecimento e verdade, enquanto o pensamento excessivo ‚ visto como algo que complica aquilo que deveria ser simples. A obra constr¢i, assim, uma reflexÆo po‚tica sobre a existˆncia, a percep‡Æo e a rela‡Æo do ser humano com a realidade.	../img/capas_livros/rebanhos-capa.jpg	2026-08-10 13:21:21.325504	Portugues-BR	publico	\N	\N	\N	\N	\N	\N	\N	\N
+41	Ficciones	\N	0	Jorge Luis Borges	\N	A collection of his short stories in which Borges often uses the labyrinth as a literary device to expound his ideas on all aspects of human life and endeavor.\r\n\r\n\r\n----------\r\nContains:\r\n[Tlön, Uqbar, Orbis Tertius](https://openlibrary.org/works/OL444914W)	https://covers.openlibrary.org/b/id/10832290-L.jpg	1945-01-01 00:00:00	pt	publico	\N	\N	OL110971W	\N	\N	openlibrary	\N	\N
+89	Sem título	\N	0	murillo oliveira	35	\N	/TCC-Nook/img/livro-sem-capa.svg	\N	pt-BR	privado	\N	\N	\N	\N	\N	nook	\N	\N
+19	Sem título	\N	0	murillo oliveira	35	\N	/TCC-Nook/img/livro-sem-capa.svg	\N	pt-BR	privado	\N	\N	\N	\N	\N	nook	\N	\N
+20	Sem título	\N	0	murillo oliveira	35	\N	/TCC-Nook/img/livro-sem-capa.svg	\N	pt-BR	privado	\N	\N	\N	\N	\N	nook	\N	\N
+21	Sem título	\N	0	murillo oliveira	35	\N	/TCC-Nook/img/livro-sem-capa.svg	\N	pt-BR	privado	\N	\N	\N	\N	\N	nook	\N	\N
+23	Sem título	\N	0	murillo oliveira	35	\N	/TCC-Nook/img/livro-sem-capa.svg	\N	pt-BR	privado	\N	\N	\N	\N	\N	nook	\N	\N
+56	A Torre Negra: A Escolha dos Três	\N	0	Stephen King	\N	\N	https://covers.openlibrary.org/b/id/15117963-L.jpg	2004-01-01 00:00:00	pt	publico	416	\N	OL81616W	\N	\N	openlibrary	\N	\N
+22	Livro de teste real	resumo teste do livro teste pra testar a capa teste com um resumo teste uma história teste e tudo é um teste	0	murillo oliveira	35	resumo teste do livro teste pra testar a capa teste com um resumo teste uma história teste e tudo é um teste	/TCC-Nook/paginas/arquivo_obra.php?id_livro=22&tipo=capa&versao=53	2026-10-22 19:43:35.913532	pt-BR	publico	3	\N	\N	\N	\N	nook	\N	\N
+57	O Iluminado	\N	0	Stephen King	\N	O romance, magistralmente levado ao cinema por Stanley Kubrick, continua apaixonando (e aterrorizando) novas gerações de leitores. A luta assustadora entre dois mundos. Um menino e o desejo assassino de poderosas forças malignas. Uma família refém do mal. Nesta guerra sem testemunhas, vencerá o mais forte. Danny Torrance não é um menino comum. É capaz de ouvir pensamentos e transportar-se no tempo. Danny é iluminado. Será uma maldição ou uma bênção? A resposta pode estar guardada na imponência assustadora do hotel Overlook. Em O iluminado, quando Jack Torrance consegue o emprego de zelador no velho hotel, todos os problemas da família parecem estar solucionados. Não mais o desemprego e as noites de bebedeiras. Não mais o sofrimento da esposa, Wendy. Tranquilidade e ar puro para o pequeno Danny livrar-se das convulsões que assustam a família. Só que o Overlook não é um hotel comum. O tempo esqueceu-se de enterrar velhos ódios e de cicatrizar antigas feridas, e espíritos malignos ainda residem nos corredores. O hotel é uma chaga aberta de ressentimento e desejo de vingança. É uma sentença de morte. E somente os poderes de Danny podem fazer frente à disseminação do mal.	https://covers.openlibrary.org/b/id/14834369-L.jpg	2012-11-19 00:00:00	pt	publico	464	\N	OL81633W	\N	\N	openlibrary	\N	\N
+36	New Adventures of Mary-Kate & Ashley #28: The Case of the Mall Mystery	\N	0	Ilse Wagner	\N	\N	https://covers.openlibrary.org/b/id/44727-L.jpg	2002-01-01 00:00:00	\N	publico	\N	\N	OL272602W	\N	\N	openlibrary	\N	\N
+37	Dom Casmurro	\N	0	Machado de Assis	\N	**Dom Casmurro**, publicado pela primeira vez em 1899, é um dos romances realistas mais importantes de Machado de Assis, considerado por alguns sua obra-prima. O livro narra a história de Bento Gonçalves desde sua juventude, abordando temas como religião, adultério e ambiguidade moral.	https://covers.openlibrary.org/b/id/647501-L.jpg	1900-01-01 00:00:00	pt	publico	\N	\N	OL1003040W	\N	\N	openlibrary	\N	\N
+58	Sem título	\N	0	murillo oliveira	35	\N	/TCC-Nook/img/livro-sem-capa.svg	\N	pt-BR	privado	\N	\N	\N	\N	\N	nook	\N	\N
+65	O Grande Deus Pã and Outros Contos de Horror	\N	0	Jan Wigmar, Arthur Machen	\N	\N	\N	2020-01-01 00:00:00	pt	publico	\N	\N	OL30583123W	\N	\N	openlibrary	\N	\N
 \.
 
 
@@ -1353,29 +1581,38 @@ COPY public.livro (id_livro, titulo_livro, resumo_livro, class_ind, nome_autor, 
 
 COPY public.livros_lidos (id_user, id_livro, atualizado_em) FROM stdin;
 19	1	2026-08-10 13:49:14.580055
+19	2	2026-08-10 13:49:21.595999
+19	3	2026-08-10 13:49:23.684314
 19	4	2026-08-10 13:49:26.221843
 19	5	2026-08-10 13:49:28.566783
-30	5	2026-08-25 22:12:47.098388
-30	2	2026-08-25 22:15:17.079871
-30	3	2026-08-27 19:29:31.765005
-30	1	2026-08-27 19:31:47.177067
-30	4	2026-08-27 19:32:46.433212
-31	2	2026-08-30 14:21:22.934148
-32	2	2026-09-10 18:50:54.014548
-32	3	2026-09-10 18:51:40.118059
-32	5	2026-09-10 18:52:03.931163
-32	4	2026-09-10 18:52:38.981492
-32	1	2026-09-10 18:53:09.506054
-33	1	2026-09-17 08:29:07.898566
-33	2	2026-09-17 08:29:57.339934
-33	3	2026-09-17 08:30:20.955738
-33	5	2026-09-17 08:30:45.051362
-33	4	2026-09-17 08:31:10.488405
-34	4	2026-09-17 09:40:38.145239
-34	3	2026-09-17 09:42:29.102553
-34	2	2026-09-17 09:43:05.872828
-19	2	2026-09-21 15:03:34.140158
-19	3	2026-09-21 15:04:17.686989
+34	2	2026-10-05 18:52:22.295254
+34	3	2026-10-05 19:27:51.158463
+35	2	2026-10-20 19:08:06.151731
+35	4	2026-10-20 19:12:28.075284
+35	1	2026-10-20 19:12:31.294114
+35	5	2026-10-20 19:12:34.086945
+35	3	2026-10-20 19:12:37.187583
+35	22	2026-10-22 21:44:42.572302
+35	56	2026-10-23 07:39:10.323089
+\.
+
+
+--
+-- Data for Name: marcador_leitura; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.marcador_leitura (id, id_user, id_livro, trecho, pagina, criado_em) FROM stdin;
+1	35	2	essa parte do livro eu quero me lembrar	12	2026-10-20 19:53:43.191781-03
+2	35	1	eu não posso esquecer disso	34	2026-10-20 19:55:14.888373-03
+3	35	37	eu preciso lembrar de ler isso aqui	\N	2026-10-22 19:42:35.401645-03
+\.
+
+
+--
+-- Data for Name: mencao; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.mencao (id, id_origem, id_destino, categoria, id_conteudo, criado_em) FROM stdin;
 \.
 
 
@@ -1384,39 +1621,9 @@ COPY public.livros_lidos (id_user, id_livro, atualizado_em) FROM stdin;
 --
 
 COPY public.mensagem (id_mensagem, id_conversa, id_envio, tipo, conteudo, criacao, editado_em, delatado_em) FROM stdin;
-9	1	30	texto	Ol  Mundo	2026-08-27 20:33:20.541968	\N	\N
-10	1	19	texto	Salve Tropinha	2026-08-27 20:33:46.213105	\N	\N
-11	1	19	texto	Como voce esta?	2026-08-27 20:33:55.894076	\N	\N
-12	1	30	texto	Bem, e voce?	2026-08-27 20:34:05.637821	\N	\N
-14	1	30	texto	Nicee	2026-08-27 20:34:23.675835	\N	\N
-13	1	19	texto	Bem tamb‚m	2026-08-27 20:34:14.524381	2026-08-27 20:38:31.690605	\N
-15	1	19	texto	SIX SEVEEN	2026-08-27 20:34:32.317812	\N	2026-08-27 20:39:35.939614
-16	2	19	texto	Salve Tropinha	2026-08-27 20:48:00.545473	\N	2026-09-21 15:08:28.314272
-17	2	30	texto	Sauda‡äes Geogr ficas	2026-08-27 20:48:16.248576	\N	2026-09-21 15:08:28.314272
-18	2	19	texto	Esses cara mano	2026-08-27 20:48:27.328694	\N	2026-09-21 15:08:28.314272
-19	2	30	texto	SIX SEVEENN	2026-08-27 20:48:41.273687	\N	2026-09-21 15:08:28.314272
-20	2	30	texto	Teste 1	2026-08-27 20:51:03.703862	\N	2026-09-21 15:08:28.314272
-23	2	19	texto	teste front end 1	2026-09-01 21:20:58.045978	2026-09-01 21:21:21.631498	2026-09-21 15:08:28.314272
-25	2	30	texto	teste síncrono	2026-09-01 21:26:00.611395	\N	2026-09-21 15:08:28.314272
-26	2	30	texto	olá mundo, teste síncrono	2026-09-01 21:28:13.19032	\N	2026-09-21 15:08:28.314272
-27	2	30	texto	teste síncrono 2	2026-09-01 21:30:08.766183	\N	2026-09-21 15:08:28.314272
-28	2	30	texto	teste síncrono 3	2026-09-01 21:30:18.198854	\N	2026-09-21 15:08:28.314272
-29	2	30	texto	ta funcionando poha	2026-09-01 21:30:29.788734	\N	2026-09-21 15:08:28.314272
-30	2	30	texto	mensagem 1	2026-09-01 21:31:28.144485	\N	2026-09-21 15:08:28.314272
-31	2	30	texto	menagem 2	2026-09-01 21:31:56.075382	\N	2026-09-21 15:08:28.314272
-32	2	19	texto	Eu sou o Caico	2026-09-01 21:37:25.954768	\N	2026-09-21 15:08:28.314272
-33	2	30	texto	eu sou o userteste1	2026-09-01 21:38:08.583555	\N	2026-09-21 15:08:28.314272
-34	2	30	texto	e eu continuo sendo o caico	2026-09-01 21:38:18.871322	\N	2026-09-21 15:08:28.314272
-35	2	19	texto	eu sou o caico	2026-09-01 21:41:45.973748	\N	2026-09-21 15:08:28.314272
-36	2	30	texto	e eu sou o userteste1	2026-09-01 21:41:57.645729	\N	2026-09-21 15:08:28.314272
-37	2	19	texto	abrindo em navegadores separados os IDs são preservados	2026-09-01 21:42:12.220211	\N	2026-09-21 15:08:28.314272
-38	2	30	texto	mas quando abre no mesmo navegador o último ID aberto predomina	2026-09-01 21:42:32.943205	\N	2026-09-21 15:08:28.314272
-41	2	19	texto	123	2026-09-01 21:49:30.551136	\N	2026-09-21 15:08:28.314272
-42	2	30	texto	123456	2026-09-01 21:49:45.498302	\N	2026-09-21 15:08:28.314272
-43	2	30	texto	oi	2026-09-03 08:45:51.457603	\N	2026-09-21 15:08:28.314272
-44	2	19	texto	Saudações de Hoje	2026-09-10 18:55:43.871256	\N	2026-09-21 15:08:28.314272
-45	2	19	texto	Mensagem 2	2026-09-10 18:56:00.22785	\N	2026-09-21 15:08:28.314272
-47	2	30	texto	Boa Tarde Mundo	2026-09-21 15:06:46.645086	2026-09-21 15:07:18.265303	2026-09-21 15:08:28.314272
+1	1	35	texto	aaaaaaaa	2026-10-20 18:16:13.073127	2026-10-20 18:16:13.073127	2026-10-20 18:16:13.073127
+2	1	35	texto	seu baitola	2026-10-20 18:16:17.426735	2026-10-20 18:16:17.426735	2026-10-20 18:16:17.426735
+3	1	35	texto	pah	2026-10-24 08:30:29.278608	2026-10-24 08:30:29.278608	2026-10-24 08:30:29.278608
 \.
 
 
@@ -1424,22 +1631,30 @@ COPY public.mensagem (id_mensagem, id_conversa, id_envio, tipo, conteudo, criaca
 -- Data for Name: meta_leitura; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.meta_leitura (id, id_user, periodo, num_livros, criacao, status, expiracao, nome_meta) FROM stdin;
-8	19	semanal	6	2026-08-16 21:43:51.885478	expirado	2026-08-23	meta de drama
-9	19	semanal	1	2026-08-17 13:32:04.349551	concluida	2026-08-24	Meta do Miguel
-6	19	semanal	50	2026-08-13 18:36:50.420783	andamento	2027-08-13	meta do ano
-10	19	semanal	20	2026-08-24 09:10:52.388167	expirado	2026-08-31	meta xxxx
-11	32	mensal	4	2026-09-10 18:54:34.632162	andamento	2026-10-10	Meta de Setembro
-12	34	anual	2	2026-09-17 09:41:58.349238	concluida	2027-09-17	Metinha Bacana
-13	19	mensal	2	2026-09-21 15:01:23.690974	concluida	2026-10-21	meta do anselmo
+COPY public.meta_leitura (id, id_user, periodo, num_livros, criacao, status, expiracao, nome_meta, tipo_meta) FROM stdin;
+6	19	anual	200	2026-08-13 18:36:50.420783	andamento	2027-08-13	meta do ano	livros
+19	34	anual	4	2026-10-05 19:30:20.488347	andamento	2027-10-05	tenho que ler nessa porra	livros
+5	19	mensal	20	2026-08-13 18:36:13.450308	expirado	2026-09-12	meta do mês	livros
+8	19	semanal	6	2026-08-16 21:43:51.885478	expirado	2026-08-23	meta de drama	livros
+9	19	semanal	1	2026-08-17 13:32:04.349551	expirado	2026-08-24	Meta do Miguel	livros
+7	19	mensal	1	2026-08-16 20:34:51.764024	expirado	2026-09-15	Meta irada livros	livros
+22	35	mensal	16	2026-10-22 19:11:09.661027	andamento	2026-11-22	Minha meta de leitura	livros
 \.
 
 
 --
--- Data for Name: notificacao; Type: TABLE DATA; Schema: public; Owner: postgres
+-- Data for Name: meta_leitura_listas; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.notificacao (id_notificacao, id_user_recebido, id_user_origem, tipo, id_referencia, mensagem, lida, criada_em) FROM stdin;
+COPY public.meta_leitura_listas (id_meta, id_lista) FROM stdin;
+\.
+
+
+--
+-- Data for Name: moderacao_obra; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.moderacao_obra (id, id_livro, id_admin, acao, motivo, criada_em) FROM stdin;
 \.
 
 
@@ -1817,21 +2032,6 @@ COPY public.paragrafo (id_paragrafo, texto_paragrafo, imagem_paragrafo_url, orde
 --
 
 COPY public.paragrafo_resenha (id_paragrafo_resenha, texto_paragrafo_resenha, id_resenha, ordem_paragrafo_resenha) FROM stdin;
-1	O Livro o Alienista escrito por Machado de Assis ‚ uma obra-prima cl ssica da literatura brasileira, mas o que ser  que ele quer dizer?	1	1
-2	Na hist¢ria, o Alienista que inicialmente julgava todos da cidade loucos, at‚ que uma hora ele pensa se na verdade o louco pode ser ele.	1	2
-3	Ele entÆo decide se trancar no hosp¡cio onde colocava os loucos at‚ que pudesse se autotratar.	1	3
-4	A reflexÆo sobre como as denomina‡äes humanas podem ser flu¡das e flex¡veis de acordo com o julgamento de cada um!	1	4
-5	O Livro a Cartomante ‚ bem maneiro	2	1
-6	Tem uns trechos bem interessantes	2	2
-7	Tem uns trechos bem eu achei muito bom	2	3
-8	O Livro O Alienista de Machado de Assis ‚ muito legal	3	1
-9	O Livro O Alienista de Machado de Assis ‚ muito legal	3	2
-10	O Livro O Alienista de Machado de Assis ‚ muito legal	3	3
-11	O Livro O Alienista de Machado de Assis ‚ muito legal	3	4
-12	O Livro O Alienista de Machado de Assis ‚ muito legal	4	1
-13	O Livro O Alienista de Machado de Assis ‚ muito legal	4	2
-14	O Livro O Alienista de Machado de Assis ‚ muito legal	4	3
-15	O Livro O Alienista de Machado de Assis ‚ muito legal	4	4
 \.
 
 
@@ -1839,7 +2039,7 @@ COPY public.paragrafo_resenha (id_paragrafo_resenha, texto_paragrafo_resenha, id
 -- Data for Name: personagem; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.personagem (id_personagem, nome_personagem, genero, idade, funcao, descricao_personagem, id_livro) FROM stdin;
+COPY public.personagem (id_personagem, nome_personagem, genero, idade, funcao, descricao_personagem, id_livro, detalhes_mundo) FROM stdin;
 \.
 
 
@@ -1847,9 +2047,17 @@ COPY public.personagem (id_personagem, nome_personagem, genero, idade, funcao, d
 -- Data for Name: post; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.post (id_post, titulo_post, id_user, url_imagem, conteudo, criado_em, visibilidade, legenda, interacao_de) FROM stdin;
-2	POST MANEIRO	19	\N	Hoje eu acordei e vi o Miguel dando a bunda	2026-08-17 13:54:58.379895	publico	ele tava rebolando lentinho	todos
-3	POST TESTE	19	\N	esse post é um test	2026-08-18 16:59:40.151209	publico	vamos ver se funciona	todos
+COPY public.post (id_post, titulo_post, id_user, url_imagem, conteudo, criado_em, visibilidade, legenda, conteudo_sensivel, conteudo_adulto) FROM stdin;
+2	POST MANEIRO	19	\N	Hoje eu acordei e vi o Miguel dando a bunda	2026-08-17 13:54:58.379895	publico	ele tava rebolando lentinho	f	f
+3	POST TESTE	19	\N	esse post é um test	2026-08-18 16:59:40.151209	publico	vamos ver se funciona	f	f
+\.
+
+
+--
+-- Data for Name: post_imagem; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.post_imagem (id_post, ordem, url_imagem) FROM stdin;
 \.
 
 
@@ -1883,6 +2091,9 @@ COPY public.preferencia (id_preferencia, nome_preferencia, preferencia) FROM std
 27	Poesia	poesia
 28	Gastronomia	gastronomia
 29	Mitologia	mitologia
+30	Mistério	misterio
+31	Clássico	classicos
+33	Distopia	distopia
 \.
 
 
@@ -1901,6 +2112,7 @@ COPY public.preferencia_livro (id, id_preferencia, id_livro) FROM stdin;
 8	7	4
 9	7	5
 10	8	5
+63	10	22
 \.
 
 
@@ -1909,9 +2121,6 @@ COPY public.preferencia_livro (id, id_preferencia, id_livro) FROM stdin;
 --
 
 COPY public.preferencia_user (id_user, id_preferencia, id) FROM stdin;
-9	1	1
-9	6	2
-9	13	3
 24	1	4
 24	2	5
 24	3	6
@@ -1928,31 +2137,36 @@ COPY public.preferencia_user (id_user, id_preferencia, id) FROM stdin;
 29	12	20
 29	17	21
 29	26	22
-30	1	23
-30	2	24
-30	3	25
-30	6	26
-30	7	27
-31	7	28
-31	8	29
-31	10	30
-31	11	31
-31	29	32
-32	3	33
-32	10	34
-32	11	35
-32	13	36
-32	17	37
-33	1	38
-33	6	39
-33	12	40
-33	16	41
-33	18	42
-34	1	43
-34	6	44
-34	11	45
-34	12	46
-34	27	47
+\N	10	28
+\N	11	29
+\N	14	30
+\N	16	31
+\N	29	32
+\N	10	33
+\N	11	34
+\N	14	35
+\N	16	36
+\N	29	37
+\N	10	38
+\N	11	39
+\N	14	40
+\N	16	41
+\N	29	42
+\N	10	43
+\N	11	44
+\N	14	45
+\N	16	46
+\N	29	47
+34	1	78
+34	10	79
+34	11	80
+34	14	81
+34	16	82
+35	1	83
+35	2	84
+35	7	85
+35	9	86
+35	13	87
 \.
 
 
@@ -1961,31 +2175,37 @@ COPY public.preferencia_user (id_user, id_preferencia, id) FROM stdin;
 --
 
 COPY public.progresso_leitura (id_progresso, id_user, id_livro, capitulo_atual, porcentagem_progresso, ultima_leitura) FROM stdin;
-1	19	1	5	100.00	2026-08-24 08:26:56.264076
-4	19	5	3	100.00	2026-08-24 08:28:28.659305
-5	19	4	2	100.00	2026-08-24 08:28:57.71822
-19	33	2	1	100.00	2026-09-17 08:29:57.338285
-7	30	5	3	100.00	2026-08-25 22:12:47.091858
-8	30	2	1	100.00	2026-08-25 22:15:17.070437
-20	33	3	4	100.00	2026-09-17 08:30:20.93438
-21	33	5	3	100.00	2026-09-17 08:30:45.029828
-22	33	4	2	100.00	2026-09-17 08:31:10.466424
-23	34	4	2	100.00	2026-09-17 09:40:38.143299
-10	30	3	4	100.00	2026-08-27 19:29:31.757391
-24	34	3	4	100.00	2026-09-17 09:42:29.096129
-25	34	2	1	100.00	2026-09-17 09:43:05.870433
-6	30	1	5	100.00	2026-08-27 19:31:47.168934
-2	19	2	1	100.00	2026-09-21 15:03:34.115764
-9	30	4	2	100.00	2026-08-27 19:32:46.431264
-11	31	2	1	100.00	2026-08-30 14:21:22.9296
-12	31	1	1	0.00	2026-08-30 14:22:18.99065
-13	32	2	1	100.00	2026-09-10 18:50:54.010903
-14	32	3	4	100.00	2026-09-10 18:51:40.097764
-3	19	3	4	100.00	2026-09-21 15:04:17.663729
-15	32	5	3	100.00	2026-09-10 18:52:03.907356
-16	32	4	2	100.00	2026-09-10 18:52:38.978568
-17	32	1	5	100.00	2026-09-10 18:53:09.483657
-18	33	1	5	100.00	2026-09-17 08:29:07.87644
+3	35	2	1	100.00	2026-10-20 19:08:06.151731
+5	35	4	2	100.00	2026-10-20 19:12:28.075284
+6	35	1	5	100.00	2026-10-20 19:12:31.294114
+7	35	5	3	100.00	2026-10-20 19:12:34.086945
+8	35	3	4	100.00	2026-10-20 19:12:37.187583
+99	35	56	1	100.00	2026-10-23 07:39:10.323089
+62	35	22	1	100.00	2026-10-22 21:45:10.749138
+\.
+
+
+--
+-- Data for Name: progresso_publicacao; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.progresso_publicacao (id_user, id_livro, id_versao, pagina, concluido_em, atualizado_em) FROM stdin;
+35	22	53	1	2026-10-22 21:44:42.572302-03	2026-10-22 21:45:10.749138-03
+\.
+
+
+--
+-- Data for Name: publicacao_obra; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.publicacao_obra (id_livro, id_autor, modalidade, estado, titulo, resumo, id_genero, classificacao, capa_url, pdf_rascunho, revisao, atualizado_em, criado_em, retirado_em, motivo_retirada, id_versao_atual) FROM stdin;
+58	35	editor	rascunho	Ainda não tem título certo	Este livro é do  balaco baco mas eu ainda não sei sobre o que é	10	10	e0f264051e4ec9ec0ade310d0effc82d8f34cbaf.png	\N	18	2026-10-22 21:58:30.376757-03	2026-10-22 21:55:00.003622-03	\N	\N	\N
+22	35	editor	publicado	Livro de teste real	resumo teste do livro teste pra testar a capa teste com um resumo teste uma história teste e tudo é um teste	10	0	e438c31d58461c336c0c389fa0bb8199d265ac3e.webp	\N	37	2026-10-22 19:43:35.913532-03	2026-10-20 19:49:55.772642-03	\N	\N	53
+19	35	editor	excluido			\N	\N	a69c4dc9fd52a6a290e6a931f8b408487bf9c609.webp	\N	14	2026-10-20 19:44:32.592729-03	2026-10-20 19:40:48.533691-03	\N	\N	\N
+20	35	pdf	rascunho			\N	\N	\N	\N	1	2026-10-20 19:44:35.886045-03	2026-10-20 19:44:35.886045-03	\N	\N	\N
+21	35	editor	arquivado	Livro irado de teste		17	0	\N	\N	8	2026-10-20 19:48:28.026284-03	2026-10-20 19:47:09.56507-03	\N	\N	\N
+23	35	pdf	rascunho	Livro de teste	um livro teste com um resumo teste pra testar a capa teste dos testes de resumo e teste de publicação	14	0	c3a209c7a84d5970f55c1eff4d95d621a7f4f105.webp	\N	8	2026-10-20 20:32:31.174303-03	2026-10-20 20:11:25.74665-03	\N	\N	\N
+89	35	editor	rascunho	Livro de teste	livro teste	\N	\N	\N	\N	3	2026-10-24 09:34:38.112265-03	2026-10-24 09:34:28.918866-03	\N	\N	\N
 \.
 
 
@@ -1993,11 +2213,12 @@ COPY public.progresso_leitura (id_progresso, id_user, id_livro, capitulo_atual, 
 -- Data for Name: recuperacao_senha; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.recuperacao_senha (id_recuperacao, id_user, token, expira_em, usado) FROM stdin;
-3	19	8727e2129763237457fe0177f3988048fc2747d3bafdcb5a4cb3d6cf451fc9fd	2026-08-07 15:40:13	t
-4	27	8aa12f41246f5fbb5025766e44d11cc25eaef9f4d0c3dda780c2510c23ff9d68	2026-08-10 22:34:27	t
-5	28	d9ac25f22c46833b6160a655f8d4e1f63cb73b72d4d2ebb9853060f6b187e636	2026-08-17 01:52:14	f
-6	19	89e2d93f37900f37fea3845a65f37dcc631c6277b1c61a4340a7553553b62de0	2026-08-17 02:56:37	t
+COPY public.recuperacao_senha (id_recuperacao, id_user, token, expira_em, usado, codigo_hash, tentativas) FROM stdin;
+3	19	8727e2129763237457fe0177f3988048fc2747d3bafdcb5a4cb3d6cf451fc9fd	2026-08-07 15:40:13	t	\N	0
+4	27	8aa12f41246f5fbb5025766e44d11cc25eaef9f4d0c3dda780c2510c23ff9d68	2026-08-10 22:34:27	t	\N	0
+5	28	d9ac25f22c46833b6160a655f8d4e1f63cb73b72d4d2ebb9853060f6b187e636	2026-08-17 01:52:14	f	\N	0
+6	19	89e2d93f37900f37fea3845a65f37dcc631c6277b1c61a4340a7553553b62de0	2026-08-17 02:56:37	t	\N	0
+8	34	97af34ec90b8e1985b18fc155bf28c48e357b48efa35c89ff2dc5ced12494f32	2026-09-27 16:36:24	f	\N	0
 \.
 
 
@@ -2013,19 +2234,24 @@ COPY public.rel_worldbuild (id_cena, id_cenario, id_personagem) FROM stdin;
 -- Data for Name: resenha; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.resenha (id_resenha, titulo_resenha, id_user, sinopse, class_ind, data_publi, id_livro, visibilidade, interacao_de) FROM stdin;
-1	An lise do Alienista	19	Nesta resenha pretende-se analisar o livro O Alienista	12	2026-08-20 13:41:58.747008	1	publico	todos
-2	Vendo A Cartomante	19	pretendo analisar o livro A Cartomante	14	2026-08-24 07:55:23.811656	2	publico	todos
-3	Alienistando o Alienista	19	Pretendo alienisar o alienista	10	2026-10-05 11:36:41.390062	1	publico	todos
-4	Alienista	19	Pretendo alienisar o alienista	10	2026-10-05 11:39:33.473146	1	publico	todos
+COPY public.resenha (id_resenha, titulo_resenha, id_user, sinopse, class_ind, data_publi, id_livro, visibilidade) FROM stdin;
+1	IRADO DEMAIS TROPA	35	Eu achei esse livro muito irado e recomendo que se você ainda não leu, leia agora!!! esse livro é maravilhoso!\r\nvocê está perdendo a maior oportunidade da sua vida!	\N	2026-10-20 18:57:03.04111	3	publico
+2	Topzera mesmo	35	esse livro é top tropa	\N	2026-10-20 19:09:10.590107	2	publico
+3	MUITO BOM!	35	Eu acho que esse é o melhor livro que eu já li na minha vida inteira, eu nunca tinha lido algo com tanta qualidade assim.\r\nA forma como o autor insere novos personagens na história e como o sistema de poder é extremamente bem utilizado e desenvolvido, uma das melhores construções de personagens das histórias.\r\nEu não gostei tanto daquela parte que o pistoleiro faz aquilo com o protagonista (não quero dar spoilers para quem pretende ler) mas ainda assim, o livro é muito bom, recomendo!	\N	2026-10-23 07:41:50.980469	56	publico
 \.
 
 
 --
--- Data for Name: salvos; Type: TABLE DATA; Schema: public; Owner: postgres
+-- Data for Name: sessao_usuario; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.salvos (id, id_user, categoria_salva, id_salvo) FROM stdin;
+COPY public.sessao_usuario (assinatura, id_user, dispositivo, ultimo_acesso, revogado_em) FROM stdin;
+06aca74581c0bb4ee102464351a9d3122a2dbcc564e303f076db714040ed986f	35	Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/154.0.0.0 Safari/537.36	2026-10-24 09:34:17.638868-03	\N
+a98ca2f7143489811c1ba667280e23e6832266c4d7deea115ae0c04124b1c09a	14	Python-urllib/3.14	2026-10-23 07:28:49.506097-03	\N
+a58423f310866b73d323ceee882611d02c3f014ac62094973a6020fe78c3fc3b	14	Python-urllib/3.14	2026-10-20 19:21:29.145521-03	2026-10-20 22:34:51.274027-03
+245fda940274261dc0c643d8c270cf2252b14796839bda243797ae4342119aa1	14	Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/154.0.0.0 Safari/537.36	2026-10-20 19:20:39.870474-03	2026-10-20 22:34:51.274027-03
+1d7d950ac34a7708013964c8444b4fb36bb87575f7fae7d60f3236c221fb4dea	19	Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/154.0.0.0 Safari/537.36	2026-10-20 19:20:44.772393-03	2026-10-20 22:34:51.274027-03
+f9563420e0656d6930421a3f7480bec672f939ff77ca9e350bcaf2a4c9ec3849	35	Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/154.0.0.0 Safari/537.36	2026-10-24 08:28:05.569891-03	\N
 \.
 
 
@@ -2034,18 +2260,18 @@ COPY public.salvos (id, id_user, categoria_salva, id_salvo) FROM stdin;
 --
 
 COPY public.top5_livros (id_user, id_livro, posicao, atualizado_em) FROM stdin;
-19	5	2	2026-08-11 21:18:28.213477
-19	1	3	2026-08-12 10:51:44.127281
-30	5	1	2026-09-09 11:58:11.761936
-30	3	2	2026-09-09 11:58:17.854696
-32	3	1	2026-09-10 18:54:09.380581
-33	5	1	2026-09-17 08:32:08.124103
-33	2	2	2026-09-17 08:32:13.442837
-33	1	3	2026-09-17 08:32:18.922046
-33	3	4	2026-09-17 08:32:25.210259
-19	4	4	2026-09-21 15:00:28.58097
-19	2	1	2026-08-10 14:02:13.520825
-19	3	5	2026-09-30 20:22:21.195765
+19	1	2	2026-08-11 21:18:28.213477
+19	5	3	2026-08-12 10:51:44.127281
+19	4	5	2026-08-17 13:30:48.192147
+19	2	4	2026-08-16 20:33:08.892341
+19	3	1	2026-08-10 14:02:13.520825
+34	2	1	2026-10-05 19:31:11.302983
+34	3	2	2026-10-05 19:37:16.796475
+35	56	1	2026-10-24 08:29:02.159876
+35	22	2	2026-10-24 08:29:02.159876
+35	4	3	2026-10-24 08:29:02.159876
+35	2	4	2026-10-24 08:29:02.159876
+35	1	5	2026-10-24 08:29:02.159876
 \.
 
 
@@ -2053,26 +2279,31 @@ COPY public.top5_livros (id_user, id_livro, posicao, atualizado_em) FROM stdin;
 -- Data for Name: usuario; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.usuario (id_user, nome_completo, username, data_nascimento, email, senha, criacao_conta, google_id) FROM stdin;
-3	Gustavo Gomez	Xerife	1994-07-13	gugo@gmail.com	gomez15	2026-07-21 21:58:42.374901	\N
-9	Luiz Antonio Ventura Passoli	bambas	1967-05-05	lpassoli@gmail.com	bamba	2026-07-31 21:58:30.643892	\N
-14	Miguel Campos	viadinho	1960-03-12	miguel@gmail.com	$2y$10$eZYaMKmWYI.NoM0j3EHHwuB5ijcjeLB1hfYDQsMGw//VeTPl4ogGO	2026-08-05 08:50:11.4769	\N
-16	Pedro	podpedro	2001-09-11	pedro@gmail.com	$2y$10$OxRjZpneEul97RzqRrvsd.Cx/fLqgLz9IBk9pVMiwPgVGSXlhm9Yi	2026-08-06 11:15:00.456644	\N
-17	Nook	NOOKADMIN	2026-02-02	tccnook@gmail.com	$2y$10$edZ3VgguFJoAOX7zbZTWY.Ie05aWBEjhQ83TfH8rOt.raSUHm7McW	2026-08-06 11:16:14.282838	115543703945018518444
-18	Paulo	pauladentro	1967-07-12	paulo@gmail.com	$2y$10$U8sBW4gzzPpXLYn2pUNYY.Trzvz8eyge8br3b7TS3rKGBdq6csmW6	2026-08-06 11:17:13.697667	\N
-21	Gabriel	gaybriel	2004-06-22	gabriel@gmail.com	$2y$10$kgtF.n/i.6lRjnBDUOapRelcJ89mlzhYUhRnPpSzN0U3ohbFA/6FK	2026-08-06 15:43:54.598026	\N
-22	Mirian	mii	1912-12-12	mirian@gmail.com	$2y$10$RJQzpg1wk5gYoBeOfPVa0eBeLoraIIeVYrX8V8Pbl/ad9N9i2aVx.	2026-08-06 15:45:03.121692	\N
-23	fsdf	fsdf	1999-09-21	fsdfsdfsdfsdfsdf	$2y$10$JEIPcLrkYrwip/Gl/n/tJO9utlt1RdnbIKzYyHrosCyNYHEnRdC5m	2026-08-06 15:46:16.596591	\N
-24	Usuario1	usuario1	0205-03-12	usuario1@gmail.com	$2y$10$GIFMX/YuDNE18m1ym7WORuAbg58lpeUOj7UKH7001b8Ez5Hr2lVJG	2026-08-06 15:53:11.91489	\N
-27	Projeto LITTERA	luizviado	2000-03-12	projetolittera2026@gmail.com	$2y$10$1K5vbJhwufuVWYg5CberAO6hmFLX/zR8pQJYcNZ6sxuidzf9lgcdS	2026-08-10 17:04:04.083766	109725691836031282460
-28	lucas passoli	Lucas P	2004-09-13	lucaspassoli1309@gmail.com	$2y$10$NOvNUh.2gtHJXV95U3uU/.B7tp3ETcQkNJzy0L0VVpik3MqUwwq8i	2026-08-16 20:20:39.23169	\N
-19	Caio Passoli	caico	2008-09-16	passolicaio@gmail.com	$2y$10$lKNJFtjCN0UedXL6R3mB9OrVqI.F7Zj0LnReH0YurYd5h71xAoTmK	2026-08-06 11:19:29.329523	114771290742095317837
-29	Anselmo Paulo Florentino	selmao	1980-06-09	anselmo@gmail.com	$2y$10$6f.Fv3fslTq5ss5iC91TkuFE16FAWKOIOWyHeH9J7V77vLk2aElfS	2026-08-17 13:28:22.52121	\N
-30	Usuario Teste 1	userteste1	2026-08-25	userteste1@gmail.com	$2y$10$UlhPwFP2adrKH4iBG/8aPONB4xLrul4U1KD7puPbwe5RFw0Cx98YK	2026-08-25 21:48:06.885524	\N
-31	Solanjo	Solanjo_Pinho	1994-09-16	solanjo@gmail.com	$2y$10$q9PyG2wMDsljntArZ0Q7DuhskuW/dYY9G/Vp4kTh2ODQX7Eqik4OW	2026-08-30 14:18:33.65179	\N
-32	Rita Ventura	titita	1972-02-11	titita@gmail.com	$2y$10$4hhhlZ7ZGlxeKVI1jZo3ZeJBNHoa/3uILioOSTJNK8dPIiaWw38mO	2026-09-10 18:48:52.330746	\N
-33	Karen Bostas	kbostas	1967-12-12	kbostas@gmail.com	$2y$10$vve93R40kYXaIw.MrWsx8uRybCkNFWLzwmR.9JedU3P5PfqFfw2R2	2026-09-17 08:26:35.02236	\N
-34	José Fernandes	zezin do grau	1990-04-20	reideles@gmail.com	$2y$10$J2DORY38rUK.tX0Mb5wSDuxLvBZzkcBiHZJYlJGl2GlftyI4QNN8C	2026-09-17 09:38:23.549526	\N
+COPY public.usuario (id_user, nome_completo, username, data_nascimento, email, senha, criacao_conta, google_id, autor_desde) FROM stdin;
+14	Miguel Campos	viadinho	1960-03-12	miguel@gmail.com	$2y$10$eZYaMKmWYI.NoM0j3EHHwuB5ijcjeLB1hfYDQsMGw//VeTPl4ogGO	2026-08-05 08:50:11.4769	\N	\N
+16	Pedro	podpedro	2001-09-11	pedro@gmail.com	$2y$10$OxRjZpneEul97RzqRrvsd.Cx/fLqgLz9IBk9pVMiwPgVGSXlhm9Yi	2026-08-06 11:15:00.456644	\N	\N
+17	Nook	NOOKADMIN	2026-02-02	tccnook@gmail.com	$2y$10$edZ3VgguFJoAOX7zbZTWY.Ie05aWBEjhQ83TfH8rOt.raSUHm7McW	2026-08-06 11:16:14.282838	115543703945018518444	\N
+18	Paulo	pauladentro	1967-07-12	paulo@gmail.com	$2y$10$U8sBW4gzzPpXLYn2pUNYY.Trzvz8eyge8br3b7TS3rKGBdq6csmW6	2026-08-06 11:17:13.697667	\N	\N
+20	Jeuca	jeuquinha	1870-05-12	jeuca@gmail.com	$2y$10$662GeaJa96f.QPgjlImNJOG/1lu0GdUyJ.r9GimSBq8kermA5zZxW	2026-08-06 15:37:05.928915	\N	\N
+21	Gabriel	gaybriel	2004-06-22	gabriel@gmail.com	$2y$10$kgtF.n/i.6lRjnBDUOapRelcJ89mlzhYUhRnPpSzN0U3ohbFA/6FK	2026-08-06 15:43:54.598026	\N	\N
+22	Mirian	mii	1912-12-12	mirian@gmail.com	$2y$10$RJQzpg1wk5gYoBeOfPVa0eBeLoraIIeVYrX8V8Pbl/ad9N9i2aVx.	2026-08-06 15:45:03.121692	\N	\N
+23	fsdf	fsdf	1999-09-21	fsdfsdfsdfsdfsdf	$2y$10$JEIPcLrkYrwip/Gl/n/tJO9utlt1RdnbIKzYyHrosCyNYHEnRdC5m	2026-08-06 15:46:16.596591	\N	\N
+24	Usuario1	usuario1	0205-03-12	usuario1@gmail.com	$2y$10$GIFMX/YuDNE18m1ym7WORuAbg58lpeUOj7UKH7001b8Ez5Hr2lVJG	2026-08-06 15:53:11.91489	\N	\N
+27	Projeto LITTERA	luizviado	2000-03-12	projetolittera2026@gmail.com	$2y$10$1K5vbJhwufuVWYg5CberAO6hmFLX/zR8pQJYcNZ6sxuidzf9lgcdS	2026-08-10 17:04:04.083766	109725691836031282460	\N
+28	lucas passoli	Lucas P	2004-09-13	lucaspassoli1309@gmail.com	$2y$10$NOvNUh.2gtHJXV95U3uU/.B7tp3ETcQkNJzy0L0VVpik3MqUwwq8i	2026-08-16 20:20:39.23169	\N	\N
+19	Caio Passoli	caico	2008-09-16	passolicaio@gmail.com	$2y$10$lKNJFtjCN0UedXL6R3mB9OrVqI.F7Zj0LnReH0YurYd5h71xAoTmK	2026-08-06 11:19:29.329523	114771290742095317837	\N
+29	Anselmo Paulo Florentino	selmao	1980-06-09	anselmo@gmail.com	$2y$10$6f.Fv3fslTq5ss5iC91TkuFE16FAWKOIOWyHeH9J7V77vLk2aElfS	2026-08-17 13:28:22.52121	\N	\N
+34	murillo oliveira	muxys	2008-11-09	murillograndao@gmail.com	$2y$10$Yo1DFFM0EEyc/8.S0sU8IuLkprE1dzGvPR6Lxxk7wZS/HUHPK1M8K	2026-09-07 19:23:26.888366	\N	\N
+35	murillo oliveira	teste_muxys	2008-11-09	murillo.oliveira212@gmail.com	$2y$10$K/g9JWIIQCNJ7I9uM1zZc.BeiXHdqY4KZ6C65SBNIxdxz8lcYqk46	2026-10-20 18:09:24.501171	\N	2026-10-20 19:38:53.847173-03
+\.
+
+
+--
+-- Data for Name: versao_publicacao; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.versao_publicacao (id, id_edicao, numero, arquivo, paginas, snapshot, declaracao, publicada_por, publicada_em) FROM stdin;
+53	29	1	642f0a6c62b121d1faea5268374fd8c21477befa.pdf	3	{"capa": "e438c31d58461c336c0c389fa0bb8199d265ac3e.webp", "resumo": "resumo teste do livro teste pra testar a capa teste com um resumo teste uma história teste e tudo é um teste", "titulo": "Livro de teste real", "capitulos": [{"id": 33, "html": "<p>Isso é um capítulo teste de como vai ser o livro escrito, eu estou escrevendo coisas aleatórias para compor pelo menos bastante texto de uma página real, depois eu vou tentar escrever uma história de verdade para ver como funciona isso aqui, eu quero ver se fica bom e se é legal escrever aqui, eu acho que escrever aqui é igual escrever em um docs comum porém depois eu preciso adicionar todas as outras coisas nessa criação de livro aqui né, eu preciso colocar todo o wordbuild junto pra pessoa poder modificar as coisas</p>", "titulo": "capitulo teste"}, {"id": 34, "html": "<h3>texto teste do livro de teste</h3><blockquote>çfalksjdfçalskdjf 'sadfasdfasd'  lfkçasjdfçlaskdjfçalskdjfçslakjfa</blockquote>", "titulo": "outro capitulo teste"}], "id_genero": 10, "classificacao": 0}	autoria	35	2026-10-22 19:43:35.913532-03
 \.
 
 
@@ -2080,12 +2311,15 @@ COPY public.usuario (id_user, nome_completo, username, data_nascimento, email, s
 -- Data for Name: whishbook; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.whishbook (id, id_livro, id_user, id_whishlist, ordem) FROM stdin;
-1	1	19	1	\N
-2	2	19	1	\N
-3	3	19	1	\N
-4	4	19	1	\N
-6	5	19	1	\N
+COPY public.whishbook (id, id_livro, id_user, id_whishlist, ordem, adicionado_em) FROM stdin;
+1	1	19	1	\N	\N
+2	2	19	1	\N	\N
+3	3	19	1	\N	\N
+4	4	19	1	\N	\N
+6	5	19	1	\N	\N
+7	1	35	2	1	2026-10-20 20:39:54.802005
+8	3	35	2	2	2026-10-20 20:39:54.802005
+9	2	35	2	3	2026-10-20 20:39:54.802005
 \.
 
 
@@ -2094,7 +2328,24 @@ COPY public.whishbook (id, id_livro, id_user, id_whishlist, ordem) FROM stdin;
 --
 
 COPY public.whishlist (id, nome_lista, id_user, descricao, visibilidade, tipo_capa, capa_url, data_criacao) FROM stdin;
-1	J  li	19	\N	publica	automatica	\N	2026-10-15 17:36:10.73042
+1	J  li	19		privada	automatica	\N	\N
+2	lista irada	35	uma lista irada com livros irados	publica	automatica	\N	2026-10-20 20:39:54.802005
+\.
+
+
+--
+-- Data for Name: whishlist_seguida; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.whishlist_seguida (id_user, id_whishlist) FROM stdin;
+\.
+
+
+--
+-- Data for Name: worldbuilding_registro; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.worldbuilding_registro (id, id_livro, tipo, nome, descricao, detalhes_mundo) FROM stdin;
 \.
 
 
@@ -2102,35 +2353,28 @@ COPY public.whishlist (id, nome_lista, id_user, descricao, visibilidade, tipo_ca
 -- Name: admin_id_admin_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.admin_id_admin_seq', 4, true);
+SELECT pg_catalog.setval('public.admin_id_admin_seq', 2, true);
 
 
 --
 -- Name: autor_id_autor_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.autor_id_autor_seq', 9, true);
+SELECT pg_catalog.setval('public.autor_id_autor_seq', 19, true);
 
 
 --
 -- Name: autor_user_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.autor_user_id_seq', 47, true);
-
-
---
--- Name: avaliacao_id_avaliacao_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
---
-
-SELECT pg_catalog.setval('public.avaliacao_id_avaliacao_seq', 13, true);
+SELECT pg_catalog.setval('public.autor_user_id_seq', 42, true);
 
 
 --
 -- Name: capitulo_id_capitulo_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.capitulo_id_capitulo_seq', 15, true);
+SELECT pg_catalog.setval('public.capitulo_id_capitulo_seq', 94, true);
 
 
 --
@@ -2144,70 +2388,91 @@ SELECT pg_catalog.setval('public.cena_id_cena_seq', 1, false);
 -- Name: cenario_id_cenario_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.cenario_id_cenario_seq', 1, false);
+SELECT pg_catalog.setval('public.cenario_id_cenario_seq', 5, true);
 
 
 --
 -- Name: comentario_id_comentario_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.comentario_id_comentario_seq', 29, true);
+SELECT pg_catalog.setval('public.comentario_id_comentario_seq', 36, true);
+
+
+--
+-- Name: comentario_obra_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.comentario_obra_id_seq', 1, true);
 
 
 --
 -- Name: conversa_id_conversa_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.conversa_id_conversa_seq', 5, true);
+SELECT pg_catalog.setval('public.conversa_id_conversa_seq', 1, true);
 
 
 --
 -- Name: curtida_id_curtida_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.curtida_id_curtida_seq', 4, true);
+SELECT pg_catalog.setval('public.curtida_id_curtida_seq', 3, true);
 
 
 --
--- Name: denuncia_id_denuncia_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+-- Name: denuncia_obra_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.denuncia_id_denuncia_seq', 4, true);
+SELECT pg_catalog.setval('public.denuncia_obra_id_seq', 1, true);
 
 
 --
--- Name: follow_autor_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+-- Name: edicao_livro_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.follow_autor_id_seq', 1, false);
+SELECT pg_catalog.setval('public.edicao_livro_id_seq', 41, true);
 
 
 --
 -- Name: livro_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.livro_id_seq', 5, true);
+SELECT pg_catalog.setval('public.livro_id_seq', 89, true);
+
+
+--
+-- Name: marcador_leitura_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.marcador_leitura_id_seq', 3, true);
+
+
+--
+-- Name: mencao_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.mencao_id_seq', 1, false);
 
 
 --
 -- Name: mensagem_id_mensagem_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.mensagem_id_mensagem_seq', 47, true);
+SELECT pg_catalog.setval('public.mensagem_id_mensagem_seq', 3, true);
 
 
 --
 -- Name: meta_leitura_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.meta_leitura_id_seq', 13, true);
+SELECT pg_catalog.setval('public.meta_leitura_id_seq', 23, true);
 
 
 --
--- Name: notificacao_id_notificacao_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+-- Name: moderacao_obra_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.notificacao_id_notificacao_seq', 1, false);
+SELECT pg_catalog.setval('public.moderacao_obra_id_seq', 8, true);
 
 
 --
@@ -2221,91 +2486,106 @@ SELECT pg_catalog.setval('public.paragrafo_id_paragrafo_seq', 362, true);
 -- Name: paragrafo_resenha_id_paragrafo_resenha_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.paragrafo_resenha_id_paragrafo_resenha_seq', 15, true);
+SELECT pg_catalog.setval('public.paragrafo_resenha_id_paragrafo_resenha_seq', 1, false);
 
 
 --
 -- Name: personagem_id_personagem_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.personagem_id_personagem_seq', 1, false);
+SELECT pg_catalog.setval('public.personagem_id_personagem_seq', 5, true);
 
 
 --
 -- Name: post_id_post_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.post_id_post_seq', 4, true);
+SELECT pg_catalog.setval('public.post_id_post_seq', 7, true);
 
 
 --
 -- Name: preferencia_id_preferencia_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.preferencia_id_preferencia_seq', 29, true);
+SELECT pg_catalog.setval('public.preferencia_id_preferencia_seq', 33, true);
 
 
 --
 -- Name: preferencia_livro_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.preferencia_livro_id_seq', 10, true);
+SELECT pg_catalog.setval('public.preferencia_livro_id_seq', 87, true);
 
 
 --
 -- Name: preferencia_user_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.preferencia_user_id_seq', 47, true);
+SELECT pg_catalog.setval('public.preferencia_user_id_seq', 87, true);
 
 
 --
 -- Name: progresso_leitura_id_progresso_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.progresso_leitura_id_progresso_seq', 25, true);
+SELECT pg_catalog.setval('public.progresso_leitura_id_progresso_seq', 111, true);
 
 
 --
 -- Name: recuperacao_senha_id_recuperacao_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.recuperacao_senha_id_recuperacao_seq', 6, true);
+SELECT pg_catalog.setval('public.recuperacao_senha_id_recuperacao_seq', 8, true);
 
 
 --
 -- Name: resenha_id_resenha_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.resenha_id_resenha_seq', 4, true);
-
-
---
--- Name: salvos_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
---
-
-SELECT pg_catalog.setval('public.salvos_id_seq', 1, false);
+SELECT pg_catalog.setval('public.resenha_id_resenha_seq', 3, true);
 
 
 --
 -- Name: usuario_id_user_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.usuario_id_user_seq', 34, true);
+SELECT pg_catalog.setval('public.usuario_id_user_seq', 127, true);
+
+
+--
+-- Name: versao_publicacao_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.versao_publicacao_id_seq', 77, true);
 
 
 --
 -- Name: whishbook_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.whishbook_id_seq', 6, true);
+SELECT pg_catalog.setval('public.whishbook_id_seq', 9, true);
 
 
 --
 -- Name: whishlist_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.whishlist_id_seq', 1, true);
+SELECT pg_catalog.setval('public.whishlist_id_seq', 2, true);
+
+
+--
+-- Name: worldbuilding_registro_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.worldbuilding_registro_id_seq', 5, true);
+
+
+--
+-- Name: admin admin_email_key; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.admin
+    ADD CONSTRAINT admin_email_key UNIQUE (email);
 
 
 --
@@ -2341,22 +2621,6 @@ ALTER TABLE ONLY public.autor_user
 
 
 --
--- Name: avaliacao avaliacao_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
---
-
-ALTER TABLE ONLY public.avaliacao
-    ADD CONSTRAINT avaliacao_pkey PRIMARY KEY (id_avaliacao);
-
-
---
--- Name: avaliacao avaliacao_unica; Type: CONSTRAINT; Schema: public; Owner: postgres
---
-
-ALTER TABLE ONLY public.avaliacao
-    ADD CONSTRAINT avaliacao_unica UNIQUE (id_user, categoria_avaliada, id_avaliado);
-
-
---
 -- Name: capitulo capitulo_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -2381,6 +2645,14 @@ ALTER TABLE ONLY public.cenario
 
 
 --
+-- Name: comentario_obra comentario_obra_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.comentario_obra
+    ADD CONSTRAINT comentario_obra_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: comentario comentario_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -2389,11 +2661,11 @@ ALTER TABLE ONLY public.comentario
 
 
 --
--- Name: conta conta_id_user_unique; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: configuracao_usuario configuracao_usuario_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
-ALTER TABLE ONLY public.conta
-    ADD CONSTRAINT conta_id_user_unique UNIQUE (id_user);
+ALTER TABLE ONLY public.configuracao_usuario
+    ADD CONSTRAINT configuracao_usuario_pkey PRIMARY KEY (id_user);
 
 
 --
@@ -2413,19 +2685,51 @@ ALTER TABLE ONLY public.curtida
 
 
 --
--- Name: denuncia denuncia_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: denuncia_obra denuncia_obra_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
-ALTER TABLE ONLY public.denuncia
-    ADD CONSTRAINT denuncia_pkey PRIMARY KEY (id_denuncia);
+ALTER TABLE ONLY public.denuncia_obra
+    ADD CONSTRAINT denuncia_obra_pkey PRIMARY KEY (id);
 
 
 --
--- Name: follow_autor follow_autor_unico; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: edicao_livro edicao_livro_id_livro_numero_key; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.edicao_livro
+    ADD CONSTRAINT edicao_livro_id_livro_numero_key UNIQUE (id_livro, numero);
+
+
+--
+-- Name: edicao_livro edicao_livro_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.edicao_livro
+    ADD CONSTRAINT edicao_livro_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: email_verificacao email_verificacao_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.email_verificacao
+    ADD CONSTRAINT email_verificacao_pkey PRIMARY KEY (id_user);
+
+
+--
+-- Name: email_verificacao email_verificacao_token_hash_key; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.email_verificacao
+    ADD CONSTRAINT email_verificacao_token_hash_key UNIQUE (token_hash);
+
+
+--
+-- Name: follow_autor follow_autor_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.follow_autor
-    ADD CONSTRAINT follow_autor_unico UNIQUE (id_follower, id_autor);
+    ADD CONSTRAINT follow_autor_pkey PRIMARY KEY (id_follower, id_autor);
 
 
 --
@@ -2437,11 +2741,43 @@ ALTER TABLE ONLY public.livro
 
 
 --
+-- Name: marcador_leitura marcador_leitura_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.marcador_leitura
+    ADD CONSTRAINT marcador_leitura_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: mencao mencao_id_origem_id_destino_categoria_id_conteudo_key; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.mencao
+    ADD CONSTRAINT mencao_id_origem_id_destino_categoria_id_conteudo_key UNIQUE (id_origem, id_destino, categoria, id_conteudo);
+
+
+--
+-- Name: mencao mencao_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.mencao
+    ADD CONSTRAINT mencao_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: mensagem mensagem_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.mensagem
     ADD CONSTRAINT mensagem_pkey PRIMARY KEY (id_mensagem);
+
+
+--
+-- Name: meta_leitura_listas meta_leitura_listas_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.meta_leitura_listas
+    ADD CONSTRAINT meta_leitura_listas_pkey PRIMARY KEY (id_meta, id_lista);
 
 
 --
@@ -2453,11 +2789,11 @@ ALTER TABLE ONLY public.meta_leitura
 
 
 --
--- Name: notificacao notificacao_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: moderacao_obra moderacao_obra_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
-ALTER TABLE ONLY public.notificacao
-    ADD CONSTRAINT notificacao_pkey PRIMARY KEY (id_notificacao);
+ALTER TABLE ONLY public.moderacao_obra
+    ADD CONSTRAINT moderacao_obra_pkey PRIMARY KEY (id);
 
 
 --
@@ -2482,6 +2818,14 @@ ALTER TABLE ONLY public.paragrafo_resenha
 
 ALTER TABLE ONLY public.personagem
     ADD CONSTRAINT personagem_pkey PRIMARY KEY (id_personagem);
+
+
+--
+-- Name: post_imagem post_imagem_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.post_imagem
+    ADD CONSTRAINT post_imagem_pkey PRIMARY KEY (id_post, ordem);
 
 
 --
@@ -2533,6 +2877,22 @@ ALTER TABLE ONLY public.progresso_leitura
 
 
 --
+-- Name: progresso_publicacao progresso_publicacao_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.progresso_publicacao
+    ADD CONSTRAINT progresso_publicacao_pkey PRIMARY KEY (id_user, id_livro);
+
+
+--
+-- Name: publicacao_obra publicacao_obra_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.publicacao_obra
+    ADD CONSTRAINT publicacao_obra_pkey PRIMARY KEY (id_livro);
+
+
+--
 -- Name: recuperacao_senha recuperacao_senha_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -2549,43 +2909,11 @@ ALTER TABLE ONLY public.resenha
 
 
 --
--- Name: salvos salvos_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: sessao_usuario sessao_usuario_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
-ALTER TABLE ONLY public.salvos
-    ADD CONSTRAINT salvos_pkey PRIMARY KEY (id);
-
-
---
--- Name: curtida unique_curtida; Type: CONSTRAINT; Schema: public; Owner: postgres
---
-
-ALTER TABLE ONLY public.curtida
-    ADD CONSTRAINT unique_curtida UNIQUE (id_user, categoria_curtido, id_coisocurtido);
-
-
---
--- Name: follow unique_follow; Type: CONSTRAINT; Schema: public; Owner: postgres
---
-
-ALTER TABLE ONLY public.follow
-    ADD CONSTRAINT unique_follow UNIQUE (id_follower, id_following);
-
-
---
--- Name: follow_autor unique_follow_autor; Type: CONSTRAINT; Schema: public; Owner: postgres
---
-
-ALTER TABLE ONLY public.follow_autor
-    ADD CONSTRAINT unique_follow_autor UNIQUE (id_follower, id_autor);
-
-
---
--- Name: livros_lidos user_livro_lido; Type: CONSTRAINT; Schema: public; Owner: postgres
---
-
-ALTER TABLE ONLY public.livros_lidos
-    ADD CONSTRAINT user_livro_lido UNIQUE (id_user, id_livro);
+ALTER TABLE ONLY public.sessao_usuario
+    ADD CONSTRAINT sessao_usuario_pkey PRIMARY KEY (assinatura);
 
 
 --
@@ -2621,6 +2949,22 @@ ALTER TABLE ONLY public.usuario
 
 
 --
+-- Name: versao_publicacao versao_publicacao_id_edicao_numero_key; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.versao_publicacao
+    ADD CONSTRAINT versao_publicacao_id_edicao_numero_key UNIQUE (id_edicao, numero);
+
+
+--
+-- Name: versao_publicacao versao_publicacao_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.versao_publicacao
+    ADD CONSTRAINT versao_publicacao_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: whishbook whishbook_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -2634,6 +2978,92 @@ ALTER TABLE ONLY public.whishbook
 
 ALTER TABLE ONLY public.whishlist
     ADD CONSTRAINT whishlist_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: whishlist_seguida whishlist_seguida_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.whishlist_seguida
+    ADD CONSTRAINT whishlist_seguida_pkey PRIMARY KEY (id_user, id_whishlist);
+
+
+--
+-- Name: worldbuilding_registro worldbuilding_registro_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.worldbuilding_registro
+    ADD CONSTRAINT worldbuilding_registro_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: comentario_obra_livro; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX comentario_obra_livro ON public.comentario_obra USING btree (id_livro, criado_em DESC);
+
+
+--
+-- Name: comentario_obra_usuario; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX comentario_obra_usuario ON public.comentario_obra USING btree (id_user, criado_em DESC);
+
+
+--
+-- Name: denuncia_obra_estado; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX denuncia_obra_estado ON public.denuncia_obra USING btree (estado, criada_em DESC);
+
+
+--
+-- Name: livro_google_books_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX livro_google_books_idx ON public.livro USING btree (google_books_id) WHERE (google_books_id IS NOT NULL);
+
+
+--
+-- Name: marcador_leitura_usuario_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX marcador_leitura_usuario_idx ON public.marcador_leitura USING btree (id_user, criado_em DESC);
+
+
+--
+-- Name: mencao_destino_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX mencao_destino_idx ON public.mencao USING btree (id_destino, criado_em DESC);
+
+
+--
+-- Name: publicacao_autor_estado; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX publicacao_autor_estado ON public.publicacao_obra USING btree (id_autor, estado, atualizado_em DESC);
+
+
+--
+-- Name: sessao_usuario_user_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX sessao_usuario_user_idx ON public.sessao_usuario USING btree (id_user, ultimo_acesso DESC);
+
+
+--
+-- Name: worldbuilding_obra_tipo; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX worldbuilding_obra_tipo ON public.worldbuilding_registro USING btree (id_livro, tipo);
+
+
+--
+-- Name: worldbuilding_resumo_unico; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE UNIQUE INDEX worldbuilding_resumo_unico ON public.worldbuilding_registro USING btree (id_livro) WHERE (tipo = 'resumo'::text);
 
 
 --
@@ -2693,11 +3123,67 @@ ALTER TABLE ONLY public.rel_worldbuild
 
 
 --
+-- Name: comentario_obra comentario_obra_id_livro_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.comentario_obra
+    ADD CONSTRAINT comentario_obra_id_livro_fkey FOREIGN KEY (id_livro) REFERENCES public.livro(id_livro);
+
+
+--
+-- Name: comentario_obra comentario_obra_id_user_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.comentario_obra
+    ADD CONSTRAINT comentario_obra_id_user_fkey FOREIGN KEY (id_user) REFERENCES public.usuario(id_user);
+
+
+--
+-- Name: configuracao_usuario configuracao_usuario_id_user_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.configuracao_usuario
+    ADD CONSTRAINT configuracao_usuario_id_user_fkey FOREIGN KEY (id_user) REFERENCES public.usuario(id_user) ON DELETE CASCADE;
+
+
+--
 -- Name: conversa conversa_dono; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.conversa
     ADD CONSTRAINT conversa_dono FOREIGN KEY (id_dono) REFERENCES public.usuario(id_user) ON DELETE CASCADE;
+
+
+--
+-- Name: denuncia_obra denuncia_obra_id_livro_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.denuncia_obra
+    ADD CONSTRAINT denuncia_obra_id_livro_fkey FOREIGN KEY (id_livro) REFERENCES public.livro(id_livro);
+
+
+--
+-- Name: denuncia_obra denuncia_obra_id_user_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.denuncia_obra
+    ADD CONSTRAINT denuncia_obra_id_user_fkey FOREIGN KEY (id_user) REFERENCES public.usuario(id_user);
+
+
+--
+-- Name: edicao_livro edicao_livro_id_livro_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.edicao_livro
+    ADD CONSTRAINT edicao_livro_id_livro_fkey FOREIGN KEY (id_livro) REFERENCES public.livro(id_livro);
+
+
+--
+-- Name: email_verificacao email_verificacao_id_user_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.email_verificacao
+    ADD CONSTRAINT email_verificacao_id_user_fkey FOREIGN KEY (id_user) REFERENCES public.usuario(id_user) ON DELETE CASCADE;
 
 
 --
@@ -2717,14 +3203,6 @@ ALTER TABLE ONLY public.conta
 
 
 --
--- Name: denuncia fk_denunciador; Type: FK CONSTRAINT; Schema: public; Owner: postgres
---
-
-ALTER TABLE ONLY public.denuncia
-    ADD CONSTRAINT fk_denunciador FOREIGN KEY (id_denunciador) REFERENCES public.usuario(id_user) ON DELETE CASCADE;
-
-
---
 -- Name: whishbook fk_livro_book; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -2741,22 +3219,6 @@ ALTER TABLE ONLY public.preferencia_livro
 
 
 --
--- Name: notificacao fk_notificacao_user_final; Type: FK CONSTRAINT; Schema: public; Owner: postgres
---
-
-ALTER TABLE ONLY public.notificacao
-    ADD CONSTRAINT fk_notificacao_user_final FOREIGN KEY (id_user_recebido) REFERENCES public.usuario(id_user) ON DELETE CASCADE;
-
-
---
--- Name: notificacao fk_notificacao_user_origem; Type: FK CONSTRAINT; Schema: public; Owner: postgres
---
-
-ALTER TABLE ONLY public.notificacao
-    ADD CONSTRAINT fk_notificacao_user_origem FOREIGN KEY (id_user_origem) REFERENCES public.usuario(id_user) ON DELETE CASCADE;
-
-
---
 -- Name: preferencia_user fk_preferencia; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -2770,6 +3232,14 @@ ALTER TABLE ONLY public.preferencia_user
 
 ALTER TABLE ONLY public.preferencia_livro
     ADD CONSTRAINT fk_preferencia_livro FOREIGN KEY (id_preferencia) REFERENCES public.preferencia(id_preferencia);
+
+
+--
+-- Name: recuperacao_senha fk_recuperacao_senha; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.recuperacao_senha
+    ADD CONSTRAINT fk_recuperacao_senha FOREIGN KEY (id_user) REFERENCES public.usuario(id_user) ON DELETE CASCADE;
 
 
 --
@@ -2829,19 +3299,19 @@ ALTER TABLE ONLY public.whishbook
 
 
 --
--- Name: follow_autor follow_autor_autor; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: follow_autor follow_autor_id_autor_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.follow_autor
-    ADD CONSTRAINT follow_autor_autor FOREIGN KEY (id_autor) REFERENCES public.autor(id_autor) ON DELETE CASCADE;
+    ADD CONSTRAINT follow_autor_id_autor_fkey FOREIGN KEY (id_autor) REFERENCES public.autor(id_autor) ON DELETE CASCADE;
 
 
 --
--- Name: follow_autor follow_autor_usuario; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: follow_autor follow_autor_id_follower_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.follow_autor
-    ADD CONSTRAINT follow_autor_usuario FOREIGN KEY (id_follower) REFERENCES public.usuario(id_user) ON DELETE CASCADE;
+    ADD CONSTRAINT follow_autor_id_follower_fkey FOREIGN KEY (id_follower) REFERENCES public.usuario(id_user) ON DELETE CASCADE;
 
 
 --
@@ -2893,6 +3363,38 @@ ALTER TABLE ONLY public.livro
 
 
 --
+-- Name: marcador_leitura marcador_leitura_id_livro_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.marcador_leitura
+    ADD CONSTRAINT marcador_leitura_id_livro_fkey FOREIGN KEY (id_livro) REFERENCES public.livro(id_livro) ON DELETE CASCADE;
+
+
+--
+-- Name: marcador_leitura marcador_leitura_id_user_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.marcador_leitura
+    ADD CONSTRAINT marcador_leitura_id_user_fkey FOREIGN KEY (id_user) REFERENCES public.usuario(id_user) ON DELETE CASCADE;
+
+
+--
+-- Name: mencao mencao_id_destino_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.mencao
+    ADD CONSTRAINT mencao_id_destino_fkey FOREIGN KEY (id_destino) REFERENCES public.usuario(id_user) ON DELETE CASCADE;
+
+
+--
+-- Name: mencao mencao_id_origem_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.mencao
+    ADD CONSTRAINT mencao_id_origem_fkey FOREIGN KEY (id_origem) REFERENCES public.usuario(id_user) ON DELETE CASCADE;
+
+
+--
 -- Name: mensagem mensagem_conversa; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -2909,11 +3411,43 @@ ALTER TABLE ONLY public.mensagem
 
 
 --
+-- Name: meta_leitura_listas meta_leitura_listas_id_lista_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.meta_leitura_listas
+    ADD CONSTRAINT meta_leitura_listas_id_lista_fkey FOREIGN KEY (id_lista) REFERENCES public.whishlist(id) ON DELETE CASCADE;
+
+
+--
+-- Name: meta_leitura_listas meta_leitura_listas_id_meta_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.meta_leitura_listas
+    ADD CONSTRAINT meta_leitura_listas_id_meta_fkey FOREIGN KEY (id_meta) REFERENCES public.meta_leitura(id) ON DELETE CASCADE;
+
+
+--
 -- Name: meta_leitura meta_user; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.meta_leitura
     ADD CONSTRAINT meta_user FOREIGN KEY (id_user) REFERENCES public.usuario(id_user) ON DELETE CASCADE;
+
+
+--
+-- Name: moderacao_obra moderacao_obra_id_admin_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.moderacao_obra
+    ADD CONSTRAINT moderacao_obra_id_admin_fkey FOREIGN KEY (id_admin) REFERENCES public.admin(id_admin);
+
+
+--
+-- Name: moderacao_obra moderacao_obra_id_livro_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.moderacao_obra
+    ADD CONSTRAINT moderacao_obra_id_livro_fkey FOREIGN KEY (id_livro) REFERENCES public.livro(id_livro);
 
 
 --
@@ -2965,11 +3499,75 @@ ALTER TABLE ONLY public.rel_worldbuild
 
 
 --
+-- Name: post_imagem post_imagem_id_post_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.post_imagem
+    ADD CONSTRAINT post_imagem_id_post_fkey FOREIGN KEY (id_post) REFERENCES public.post(id_post) ON DELETE CASCADE;
+
+
+--
 -- Name: post post_user; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.post
     ADD CONSTRAINT post_user FOREIGN KEY (id_user) REFERENCES public.usuario(id_user) ON DELETE CASCADE;
+
+
+--
+-- Name: progresso_publicacao progresso_publicacao_id_livro_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.progresso_publicacao
+    ADD CONSTRAINT progresso_publicacao_id_livro_fkey FOREIGN KEY (id_livro) REFERENCES public.livro(id_livro);
+
+
+--
+-- Name: progresso_publicacao progresso_publicacao_id_user_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.progresso_publicacao
+    ADD CONSTRAINT progresso_publicacao_id_user_fkey FOREIGN KEY (id_user) REFERENCES public.usuario(id_user);
+
+
+--
+-- Name: progresso_publicacao progresso_publicacao_id_versao_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.progresso_publicacao
+    ADD CONSTRAINT progresso_publicacao_id_versao_fkey FOREIGN KEY (id_versao) REFERENCES public.versao_publicacao(id);
+
+
+--
+-- Name: publicacao_obra publicacao_obra_id_autor_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.publicacao_obra
+    ADD CONSTRAINT publicacao_obra_id_autor_fkey FOREIGN KEY (id_autor) REFERENCES public.usuario(id_user);
+
+
+--
+-- Name: publicacao_obra publicacao_obra_id_genero_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.publicacao_obra
+    ADD CONSTRAINT publicacao_obra_id_genero_fkey FOREIGN KEY (id_genero) REFERENCES public.preferencia(id_preferencia);
+
+
+--
+-- Name: publicacao_obra publicacao_obra_id_livro_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.publicacao_obra
+    ADD CONSTRAINT publicacao_obra_id_livro_fkey FOREIGN KEY (id_livro) REFERENCES public.livro(id_livro);
+
+
+--
+-- Name: publicacao_obra publicacao_obra_id_versao_atual_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.publicacao_obra
+    ADD CONSTRAINT publicacao_obra_id_versao_atual_fkey FOREIGN KEY (id_versao_atual) REFERENCES public.versao_publicacao(id);
 
 
 --
@@ -2989,11 +3587,11 @@ ALTER TABLE ONLY public.resenha
 
 
 --
--- Name: salvos salvo_user; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: sessao_usuario sessao_usuario_id_user_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
-ALTER TABLE ONLY public.salvos
-    ADD CONSTRAINT salvo_user FOREIGN KEY (id_user) REFERENCES public.usuario(id_user) ON DELETE CASCADE;
+ALTER TABLE ONLY public.sessao_usuario
+    ADD CONSTRAINT sessao_usuario_id_user_fkey FOREIGN KEY (id_user) REFERENCES public.usuario(id_user) ON DELETE CASCADE;
 
 
 --
@@ -3021,16 +3619,48 @@ ALTER TABLE ONLY public.progresso_leitura
 
 
 --
--- Name: autor usuario_autor; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: versao_publicacao versao_publicacao_id_edicao_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
-ALTER TABLE ONLY public.autor
-    ADD CONSTRAINT usuario_autor FOREIGN KEY (id_user) REFERENCES public.usuario(id_user);
+ALTER TABLE ONLY public.versao_publicacao
+    ADD CONSTRAINT versao_publicacao_id_edicao_fkey FOREIGN KEY (id_edicao) REFERENCES public.edicao_livro(id);
+
+
+--
+-- Name: versao_publicacao versao_publicacao_publicada_por_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.versao_publicacao
+    ADD CONSTRAINT versao_publicacao_publicada_por_fkey FOREIGN KEY (publicada_por) REFERENCES public.usuario(id_user);
+
+
+--
+-- Name: whishlist_seguida whishlist_seguida_id_user_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.whishlist_seguida
+    ADD CONSTRAINT whishlist_seguida_id_user_fkey FOREIGN KEY (id_user) REFERENCES public.usuario(id_user) ON DELETE CASCADE;
+
+
+--
+-- Name: whishlist_seguida whishlist_seguida_id_whishlist_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.whishlist_seguida
+    ADD CONSTRAINT whishlist_seguida_id_whishlist_fkey FOREIGN KEY (id_whishlist) REFERENCES public.whishlist(id) ON DELETE CASCADE;
+
+
+--
+-- Name: worldbuilding_registro worldbuilding_registro_id_livro_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.worldbuilding_registro
+    ADD CONSTRAINT worldbuilding_registro_id_livro_fkey FOREIGN KEY (id_livro) REFERENCES public.publicacao_obra(id_livro);
 
 
 --
 -- PostgreSQL database dump complete
 --
 
-\unrestrict 6fIR9iEduYZtjrzzm4wCgmpQxWSPFXhdPrQz0o7c1mxCjrPfNR6hPZpySd0zj2e
+\unrestrict QxU6PBpHvCTnh8Xag5Y2VE5RqjsBPSPRhTJFYZ2sgD5tokW4zmFtatQA7Uryw36
 
