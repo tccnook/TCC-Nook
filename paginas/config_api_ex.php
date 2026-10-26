@@ -1,37 +1,8 @@
 <?php
-$projectRoot = dirname(__DIR__);
-$autoloadPath = $projectRoot . '/vendor/autoload.php';
-$variaveisAmbiente = [];
+require_once __DIR__.'/runtime.php';
+$chave_api = trim(nookEnv('GOOGLE_BOOKS_API_KEY'));
+$google_books_ca_bundle = trim(nookEnv('GOOGLE_BOOKS_CA_BUNDLE'));
 
-if (is_file($autoloadPath)) {
-    require_once $autoloadPath;
-}
-
-if (is_file($projectRoot . '/.env')) {
-    if (class_exists(\Dotenv\Dotenv::class)) {
-        \Dotenv\Dotenv::createImmutable($projectRoot)->safeLoad();
-    }
-    $variaveisAmbiente = parse_ini_file($projectRoot . '/.env', false, INI_SCANNER_RAW) ?: [];
-}
-
-$obterVariavelApi = static function (string $nome) use ($variaveisAmbiente): string {
-    $valor = getenv($nome);
-    if (is_string($valor) && trim($valor) !== '') {
-        return trim($valor);
-    }
-    $valor = $_ENV[$nome] ?? null;
-    if (is_string($valor) && trim($valor) !== '') {
-        return trim($valor);
-    }
-    return trim((string) ($variaveisAmbiente[$nome] ?? ''));
-};
-
-$chave_api = $obterVariavelApi('GOOGLE_BOOKS_API_KEY');
-$google_books_ca_bundle = $obterVariavelApi('GOOGLE_BOOKS_CA_BUNDLE');
-
-if ($google_books_ca_bundle === '' && is_file('C:/xampp/php/extras/ssl/googlebooks-cacert.pem')) {
-    $google_books_ca_bundle = 'C:/xampp/php/extras/ssl/googlebooks-cacert.pem';
-}
 if ($google_books_ca_bundle === '' && is_file((string) ini_get('curl.cainfo'))) {
     $google_books_ca_bundle = (string) ini_get('curl.cainfo');
 }

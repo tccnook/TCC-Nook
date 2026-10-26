@@ -9,7 +9,7 @@ if(!isset($_SESSION['id_user'])){
 
 $id_user = $_SESSION['id_user'];
 
-require_once('conexao.php');
+require_once(__DIR__ . "/" . 'conexao.php');
 
 $db = new Database;
 $conn = $db->conectar();
@@ -18,7 +18,7 @@ $conn = $db->conectar();
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
-<link rel="icon" href="/TCC-Nook/img/icons/ico-nook/ico-nook.ico" type="image/x-icon">
+<link rel="icon" href="../img/icons/ico-nook/ico-nook.ico" type="image/x-icon">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title> Criar </title>

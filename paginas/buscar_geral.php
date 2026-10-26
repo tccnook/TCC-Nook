@@ -12,7 +12,7 @@ if (!isset($_SESSION['id_user'])) {
 
 session_write_close();
 
-require_once('conexao.php');
+require_once(__DIR__ . "/" . 'conexao.php');
 
 header('Content-Type: application/json; charset=UTF-8');
 

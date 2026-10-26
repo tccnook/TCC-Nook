@@ -1,7 +1,7 @@
 <?php
 
 session_start();
-require_once('conexao.php');
+require_once(__DIR__ . "/" . 'conexao.php');
 $db = new Database;
 $conn = $db->conectar();
 
@@ -66,8 +66,8 @@ $capitulo_atual = $progresso['capitulo_atual'];
 echo '<a href="visao_livro.php?id_livro='.$id_livro.'"> Voltar </a>';
 
 echo '<h1> '.$livro['titulo_livro'].' </h1>';
-echo '<img src="'.htmlspecialchars($livro['capa_url'] ?: '/TCC-Nook/img/livro-sem-capa.svg', ENT_QUOTES, 'UTF-8').'" data-book-cover alt="Capa do livro" width="500px" height="auto">';
-echo '<script src="/TCC-Nook/front-end/js/book-cover.js" defer></script>';
+echo '<img src="'.htmlspecialchars($livro['capa_url'] ?: '../img/livro-sem-capa.svg', ENT_QUOTES, 'UTF-8').'" data-book-cover alt="Capa do livro" width="500px" height="auto">';
+echo '<script src="../front-end/js/book-cover.js" defer></script>';
 echo '<br>';
 
 // foreach($capitulos as $capitulo){

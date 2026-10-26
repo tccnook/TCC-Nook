@@ -120,17 +120,17 @@
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <link rel="stylesheet" href="/TCC-Nook/front-end/css/core.css">
-        <link rel="stylesheet" href="/TCC-Nook/front-end/css/pages/logup.css">
+        <link rel="stylesheet" href="../front-end/css/core.css">
+        <link rel="stylesheet" href="../front-end/css/pages/logup.css">
 
         <link rel="preconnect" href="https://fonts.googleapis.com">
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
         <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600;1,700&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
 
 
-        <link rel="shortcut icon" href="/TCC-Nook/img/icons/ico-nook/ico-nook.ico" type="image/x-icon">
+        <link rel="shortcut icon" href="../img/icons/ico-nook/ico-nook.ico" type="image/x-icon">
 
-        <script src="/TCC-Nook/front-end/js/pages/logup.js" defer></script>
+        <script src="../front-end/js/pages/logup.js" defer></script>
 
 
         <title> Nook - Cadastro </title>
@@ -139,7 +139,7 @@
         <main>
 
         <div class="logo-nook">
-                <img src="/TCC-Nook/img/logos/logo-deitada.png" alt="">
+                <img src="../img/logos/logo-deitada.png" alt="">
             </div>
             <h1>Criar conta</h1>
         <?php if ($erroCadastro !== ''): ?><p role="alert"><?= htmlspecialchars($erroCadastro, ENT_QUOTES, 'UTF-8') ?></p><?php endif; ?>
@@ -215,7 +215,7 @@
 </section>
 
             <button onclick="window.location.href='google-login.php'" class="google-btn">
-                <img class="ico-google" src="/TCC-Nook/img/icons/plataforms/google-ico.svg" alt="Google">
+                <img class="ico-google" src="../img/icons/plataforms/google-ico.svg" alt="Google">
                 <span>Continuar com o Google</span>
             </button>
 

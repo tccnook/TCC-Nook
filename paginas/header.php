@@ -41,12 +41,12 @@ $configPostHeader=configuracoesUsuario($conn_header,(int)$_SESSION['id_user']);
 <!-- o header só funciona com o lucide; se a página já carregar, não duplica -->
 <script src="https://unpkg.com/lucide@latest"></script>
 
-<script src="/TCC-Nook/front-end/js/book-cover.js" defer></script>
+<script src="../front-end/js/book-cover.js" defer></script>
 <header class="header-global">
     <?php if(!empty($headerEscrita)): ?><button type="button" class="writing-mobile-menu header-btn" data-writing-menu aria-label="Abrir menu de navegação" aria-haspopup="true" aria-expanded="false"><i data-lucide="menu"></i></button><?php endif; ?>
     <!-- logo -->
     <a href="paginaprincipal.php" class="logo-header" aria-label="Ir para o início">
-        <img src="/TCC-Nook/img/logos/logo-fundo-escuro.png" alt="Nook">
+        <img src="../img/logos/logo-fundo-escuro.png" alt="Nook">
     </a>
 
     <!-- pesquisa central (usuários + livros) -->
@@ -86,7 +86,7 @@ $configPostHeader=configuracoesUsuario($conn_header,(int)$_SESSION['id_user']);
                 <?php if (empty($foto_header)): ?>
                     <img src="<?= $foto_default ?>" alt="Foto de perfil">
                 <?php else: ?>
-                    <img src="../<?= htmlspecialchars($foto_header) ?>" alt="Foto de perfil">
+                    <img src="<?= htmlspecialchars(nookPublicUrl($foto_header), ENT_QUOTES, 'UTF-8') ?>" alt="Foto de perfil">
                 <?php endif; ?>
             </button>
             <section class="dropdown-header" id="dropdown-perfil">
@@ -109,15 +109,15 @@ $configPostHeader=configuracoesUsuario($conn_header,(int)$_SESSION['id_user']);
 </nav>
 
 
-<link rel="stylesheet" href="/TCC-Nook/front-end/css/components/post-composer.css">
+<link rel="stylesheet" href="../front-end/css/components/post-composer.css">
 <dialog id="modalCriarPost" class="post-composer-dialog" aria-labelledby="post-composer-title">
-<form id="formCriarPostGlobal" action="/TCC-Nook/paginas/criar-post.php" method="POST" enctype="multipart/form-data">
+<form id="formCriarPostGlobal" action="../paginas/criar-post.php" method="POST" enctype="multipart/form-data">
 <input type="hidden" name="csrf" value="<?= htmlspecialchars($_SESSION['post_csrf'],ENT_QUOTES,'UTF-8') ?>">
 <header class="post-composer-heading"><h2 id="post-composer-title">Criar publicação</h2><button type="button" data-fechar-post aria-label="Fechar editor"><i data-lucide="x"></i></button></header>
 <input type="hidden" name="formato" value="editor">
 <div class="post-composer-columns">
 <section class="post-composer-edit" aria-label="Editar publicação">
-<header class="post-draft-author"><img src="<?= !empty($foto_header)&&is_file(dirname(__DIR__).'/'.$foto_header) ? '../'.htmlspecialchars($foto_header,ENT_QUOTES,'UTF-8') : '/TCC-Nook/img/foto_perfil/foto_perfil_default.png' ?>" alt="" width="44" height="44"><div><strong><?= htmlspecialchars($dados_header['nome_completo']??$username_h,ENT_QUOTES,'UTF-8') ?></strong><label class="post-audience"><span class="sr-only">Visibilidade da publicação</span><select name="visibilidade_escolhida" id="postAudienceGlobal"><?php if($configPostHeader['visibilidade_posts']==='publico'):?><option value="publico">Público</option><?php endif;?><option value="privado">Somente eu</option></select></label></div></header>
+<header class="post-draft-author"><img src="<?= !empty($foto_header)&&is_file(dirname(__DIR__).'/'.$foto_header) ? '../'.htmlspecialchars($foto_header,ENT_QUOTES,'UTF-8') : '../img/foto_perfil/foto_perfil_default.png' ?>" alt="" width="44" height="44"><div><strong><?= htmlspecialchars($dados_header['nome_completo']??$username_h,ENT_QUOTES,'UTF-8') ?></strong><label class="post-audience"><span class="sr-only">Visibilidade da publicação</span><select name="visibilidade_escolhida" id="postAudienceGlobal"><?php if($configPostHeader['visibilidade_posts']==='publico'):?><option value="publico">Público</option><?php endif;?><option value="privado">Somente eu</option></select></label></div></header>
 <label class="sr-only" for="conteudoPostGlobal">Texto da publicação</label><textarea class="post-draft-content" id="conteudoPostGlobal" name="conteudo_post" maxlength="2000" rows="7" placeholder="Que história você quer compartilhar?" required></textarea>
 <div class="post-format-tools" role="toolbar" aria-label="Formatação da publicação"><button type="button" data-post-format="bold" aria-label="Negrito"><strong>B</strong></button><button type="button" data-post-format="italic" aria-label="Itálico"><em>I</em></button><button type="button" data-post-format="list" aria-label="Lista"><i data-lucide="list"></i></button><button type="button" data-post-format="link" aria-label="Inserir link"><i data-lucide="link"></i></button><button type="button" data-post-format="emoji" aria-label="Inserir emoji"><i data-lucide="smile"></i></button><small id="postCharacterCount" aria-live="off">0/2000</small></div>
 <div class="post-draft-media" id="postDraftMedia" hidden><img id="postDraftImage" alt="Prévia da imagem selecionada"><div><button type="button" id="postChangeImage">Trocar imagem</button><button type="button" id="postRemoveImage" aria-label="Remover imagem selecionada">×</button></div></div>
@@ -128,12 +128,12 @@ $configPostHeader=configuracoesUsuario($conn_header,(int)$_SESSION['id_user']);
 <details class="post-extra-fields"><summary>Título ou citação (opcional)</summary><input class="post-draft-title" type="text" id="tituloPostGlobal" name="titulo_post" maxlength="90" placeholder="Título da publicação" aria-label="Título opcional"><textarea class="post-draft-caption" id="legendaPostGlobal" name="legenda" rows="2" maxlength="2000" aria-label="Legenda ou citação opcional" placeholder="Uma citação para guardar…"></textarea></details>
 </section>
 <aside class="post-live-preview" aria-label="Pré-visualização da publicação"><header class="post-preview-heading"><h3>Pré-visualização</h3><div role="group" aria-label="Tamanho da prévia"><button type="button" data-post-device="desktop" aria-pressed="true" aria-label="Prévia em desktop"><i data-lucide="monitor"></i></button><button type="button" data-post-device="mobile" aria-pressed="false" aria-label="Prévia em celular"><i data-lucide="smartphone"></i></button></div></header>
-<article class="post-preview-card" id="postPreviewCard"><header class="post-draft-author"><img src="<?= !empty($foto_header)&&is_file(dirname(__DIR__).'/'.$foto_header) ? '../'.htmlspecialchars($foto_header,ENT_QUOTES,'UTF-8') : '/TCC-Nook/img/foto_perfil/foto_perfil_default.png' ?>" alt="" width="44" height="44"><div><strong><?= htmlspecialchars($dados_header['nome_completo']??$username_h,ENT_QUOTES,'UTF-8') ?></strong><small>Agora mesmo · <span id="postPreviewAudience"><?= $configPostHeader['visibilidade_posts']==='publico'?'Público':'Somente eu' ?></span></small></div></header><h4 id="postPreviewTitle" hidden></h4><div id="postPreviewText" class="post-preview-text">Sua próxima história começa aqui.</div><figure id="postPreviewMedia" hidden><img id="postPreviewImage" alt="Imagem da publicação"><figcaption id="postPreviewImagePosition"></figcaption></figure><p id="postPreviewCaption" hidden></p><p id="postPreviewSensitive" hidden>Conteúdo sensível</p><div class="post-preview-actions" aria-hidden="true"><i data-lucide="heart"></i><i data-lucide="message-circle"></i><i data-lucide="share"></i><i data-lucide="bookmark"></i></div></article></aside>
+<article class="post-preview-card" id="postPreviewCard"><header class="post-draft-author"><img src="<?= !empty($foto_header)&&is_file(dirname(__DIR__).'/'.$foto_header) ? '../'.htmlspecialchars($foto_header,ENT_QUOTES,'UTF-8') : '../img/foto_perfil/foto_perfil_default.png' ?>" alt="" width="44" height="44"><div><strong><?= htmlspecialchars($dados_header['nome_completo']??$username_h,ENT_QUOTES,'UTF-8') ?></strong><small>Agora mesmo · <span id="postPreviewAudience"><?= $configPostHeader['visibilidade_posts']==='publico'?'Público':'Somente eu' ?></span></small></div></header><h4 id="postPreviewTitle" hidden></h4><div id="postPreviewText" class="post-preview-text">Sua próxima história começa aqui.</div><figure id="postPreviewMedia" hidden><img id="postPreviewImage" alt="Imagem da publicação"><figcaption id="postPreviewImagePosition"></figcaption></figure><p id="postPreviewCaption" hidden></p><p id="postPreviewSensitive" hidden>Conteúdo sensível</p><div class="post-preview-actions" aria-hidden="true"><i data-lucide="heart"></i><i data-lucide="message-circle"></i><i data-lucide="share"></i><i data-lucide="bookmark"></i></div></article></aside>
 </div>
 <div class="post-composer-bottom"><details class="post-content-labels"><summary><i data-lucide="eye-off"></i> Marcar como conteúdo sensível</summary><label><input type="checkbox" name="conteudo_sensivel" value="1"> Contém temas sensíveis</label><label><input type="checkbox" name="conteudo_adulto" value="1"> Conteúdo para maiores de 18 anos</label></details><footer class="post-composer-footer"><button type="button" data-fechar-post>Cancelar</button><button type="submit" class="post-submit"><i data-lucide="send"></i> Publicar</button></footer></div>
 <p class="modal-post-status" role="status" aria-live="polite"></p>
 </form></dialog>
-<script src="/TCC-Nook/front-end/js/pages/post-composer.js" defer></script>
+<script src="../front-end/js/pages/post-composer.js" defer></script>
 
 <script<?= isset($scriptNonce)?' nonce="'.htmlspecialchars($scriptNonce,ENT_QUOTES,'UTF-8').'"':'' ?>>
     // ---------- dropdowns (notificações e perfil) ----------
@@ -225,7 +225,7 @@ $configPostHeader=configuracoesUsuario($conn_header,(int)$_SESSION['id_user']);
                     dados.livros.forEach(function (l) {
                         html += `
                             <a class="resultado-item" href="visao_livro.php?id_livro=${encodeURIComponent(l.id_livro)}">
-                                <img src="${escaparHtml(l.capa_url || '/TCC-Nook/img/livro-sem-capa.svg')}" alt="" class="capa">
+                                <img src="${escaparHtml(l.capa_url || '../img/livro-sem-capa.svg')}" alt="" class="capa">
                                 <section>
                                     <strong>${escaparHtml(l.titulo_livro)}</strong>
                                 </section>

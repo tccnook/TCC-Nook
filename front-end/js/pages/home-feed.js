@@ -81,7 +81,7 @@
 		const image = event.target;
 		if (!(image instanceof HTMLImageElement)) return;
 		if (image.matches('.home-trending-cover')) {
-			if (image.getAttribute('src') !== '/TCC-Nook/img/livro-sem-capa.svg') image.src = '/TCC-Nook/img/livro-sem-capa.svg';
+			if (image.getAttribute('src') !== '../img/livro-sem-capa.svg') image.src = '../img/livro-sem-capa.svg';
 		} else if (image.matches('.post-image')) {
 			image.hidden = true;
 			image.alt = 'Imagem da publicação indisponível';

@@ -5,23 +5,23 @@
                 <h2>Siga Nook!</h2>
                 <nav aria-label="Redes sociais do Nook">
                     <a href="https://www.facebook.com/" target="_blank" rel="noopener noreferrer" aria-label="Facebook">
-                        <img src="/TCC-Nook/img/icons/plataforms/facebook-ico.png" alt="">
+                        <img src="../img/icons/plataforms/facebook-ico.png" alt="">
                     </a>
                     <a href="https://x.com/" target="_blank" rel="noopener noreferrer" aria-label="X, antigo Twitter">
-                        <img src="/TCC-Nook/img/icons/plataforms/twitterx-ico.png" alt="">
+                        <img src="../img/icons/plataforms/twitterx-ico.png" alt="">
                     </a>
                     <a href="https://www.instagram.com/projeto_nook/" target="_blank" rel="noopener noreferrer" aria-label="Instagram">
-                        <img src="/TCC-Nook/img/icons/plataforms/instagram-ico.png" alt="">
+                        <img src="../img/icons/plataforms/instagram-ico.png" alt="">
                     </a>
                     <a href="https://www.google.com/" target="_blank" rel="noopener noreferrer" aria-label="Google">
-                        <img src="/TCC-Nook/img/icons/plataforms/google-ico.svg" alt="">
+                        <img src="../img/icons/plataforms/google-ico.svg" alt="">
                     </a>
                 </nav>
             </section>
 
             <section class="footer-contact" aria-labelledby="footer-contact-title">
                 <h2 id="footer-contact-title">Nos Contate!</h2>
-                <form class="footer-email" action="/TCC-Nook/paginas/enviar-contato.php" method="post">
+                <form class="footer-email" action="../paginas/enviar-contato.php" method="post">
                     <input type="email" name="email" aria-label="Seu email" placeholder="Digite seu Email" autocomplete="email" required>
                     <button type="submit">Enviar</button>
                 </form>

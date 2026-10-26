@@ -2,10 +2,7 @@
 @import url('./core.css');
 @import url('./components/modal.css');
 @import url('./layout/footer.css');
-@import url('./layout/header.css');
 @import url('./layout/navbar.css');
-@import url('./themes/dark.css');
-@import url('./themes/light.css');
 
 /* Keep horizontal navigation scrollable without exposing browser scrollbars. */
 :where(

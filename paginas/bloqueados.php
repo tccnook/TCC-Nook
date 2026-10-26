@@ -1,6 +1,6 @@
 <?php //tem que testar
     session_start();
-    require_once('conexao.php');
+    require_once(__DIR__ . "/" . 'conexao.php');
 
     $db = new Database();
     $conn = $db->conectar();
@@ -43,7 +43,7 @@ $settingsPage='blocked';
 $esc=static fn($v)=>htmlspecialchars((string)($v??''),ENT_QUOTES,'UTF-8');
 ?>
 <!DOCTYPE html><html lang="pt-br"><head>
-<link rel="icon" href="/TCC-Nook/img/icons/ico-nook/ico-nook.ico" type="image/x-icon"><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="/TCC-Nook/front-end/css/core.css"><link rel="stylesheet" href="/TCC-Nook/front-end/css/pages/settings.css"><link href="https://fonts.googleapis.com/css2?family=Lora:wght@400;500;600&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet"><script src="https://unpkg.com/lucide@latest"></script><title>Contas bloqueadas | Nook</title></head>
+<link rel="icon" href="../img/icons/ico-nook/ico-nook.ico" type="image/x-icon"><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="../front-end/css/core.css"><link rel="stylesheet" href="../front-end/css/pages/settings.css"><link href="https://fonts.googleapis.com/css2?family=Lora:wght@400;500;600&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet"><script src="https://unpkg.com/lucide@latest"></script><title>Contas bloqueadas | Nook</title></head>
 <body class="settings-page"><div class="settings-layout"><?php require __DIR__.'/settings_sidebar.php'; ?><main class="settings-content">
 <header class="settings-title"><h1>Contas bloqueadas</h1><p>Você pode bloquear as pessoas quando quiser nos perfis delas.</p></header>
 <?php foreach ($users_bloqueados as $bloq): ?>
@@ -51,4 +51,4 @@ $esc=static fn($v)=>htmlspecialchars((string)($v??''),ENT_QUOTES,'UTF-8');
 <form method="POST"><input type="hidden" name="csrf" value="<?= $esc($_SESSION['settings_csrf']) ?>"><input type="hidden" name="id_bloqueado" value="<?= (int)$bloq['id_bloqueado'] ?>"><button name="desbloquear" class="settings-button secondary">Desbloquear usuário</button></form></article>
 <?php endforeach; ?>
 <?php if (!$users_bloqueados): ?><p>Você não tem contas bloqueadas.</p><?php endif; ?>
-</main></div><script src="/TCC-Nook/front-end/js/pages/settings.js"></script></body></html>
+</main></div><script src="../front-end/js/pages/settings.js"></script></body></html>

@@ -1,5 +1,5 @@
 <?php $listasMeta=buscarListasPerfil($conn,(int)$id_user); ?>
-<link rel="stylesheet" href="/TCC-Nook/front-end/css/components/reading-goal.css">
+<link rel="stylesheet" href="../front-end/css/components/reading-goal.css">
 <dialog id="modalCriarMeta" class="reading-goal-dialog" aria-labelledby="reading-goal-title">
 <header class="reading-goal-header"><i data-lucide="chart-pie"></i><div><h2 id="reading-goal-title">Definir meta de leitura</h2><p>Organize seu tempo de leitura e acompanhe o seu progresso.</p></div><button type="button" data-fechar-criar-meta aria-label="Fechar"><i data-lucide="x"></i></button></header>
 <form action="criarmeta.php" method="POST" class="meta-criar-form" id="reading-goal-form"><input type="hidden" name="origem" value="metas"><input type="hidden" name="csrf" value="<?= htmlspecialchars($_SESSION['goal_csrf'],ENT_QUOTES,'UTF-8') ?>">
@@ -13,4 +13,4 @@
 <aside class="reading-goal-hint"><i data-lucide="flame"></i><div><strong>Atinja seus objetivos!</strong><p id="reading-goal-hint-text">Encontre seu ritmo e acompanhe cada leitura.</p></div></aside>
 
 <p role="status" id="reading-goal-status"></p><footer class="form-acoes"><button type="submit" class="button-perfil"><i data-lucide="check"></i> Definir meta</button></footer></form></dialog>
-<script src="/TCC-Nook/front-end/js/pages/reading-goal.js" defer></script>
+<script src="../front-end/js/pages/reading-goal.js" defer></script>

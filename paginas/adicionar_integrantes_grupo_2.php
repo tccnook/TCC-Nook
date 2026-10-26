@@ -23,7 +23,7 @@ if(!isset($_GET['id_conversa'])){
 
 $id_conversa = $_GET['id_conversa'];
 
-require_once('conexao.php');
+require_once(__DIR__ . "/" . 'conexao.php');
 $db = new Database;
 $conn = $db->conectar();
 

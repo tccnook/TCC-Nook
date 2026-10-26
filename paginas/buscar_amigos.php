@@ -9,7 +9,7 @@ if(!isset($_SESSION['id_user'])){
 
 $id_user = $_SESSION['id_user'];
 
-require_once('conexao.php');
+require_once(__DIR__ . "/" . 'conexao.php');
 $db = new Database;
 $conn - $db->conectar();
 

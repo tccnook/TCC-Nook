@@ -38,7 +38,7 @@ $total_lidos = count($livros_lidos);
                                  alt="Capa de <?= htmlspecialchars($livro_lido['titulo_livro']) ?>"
                                  loading="lazy">
                         <?php else: ?>
-                            <img src="/TCC-Nook/img/livro-sem-capa.svg"
+                            <img src="../img/livro-sem-capa.svg"
                                  alt="Capa de <?= htmlspecialchars($livro_lido['titulo_livro']) ?>"
                                  loading="lazy">
                         <?php endif; ?>

@@ -9,7 +9,7 @@ if(!isset($_SESSION['id_user'])){
 
 $id_user = $_SESSION['id_user'];
 
-require_once('conexao.php');
+require_once(__DIR__ . "/" . 'conexao.php');
 
 $db = new Database;
 $conn = $db->conectar();
@@ -72,12 +72,7 @@ if ($temSeguidoresAutor) {
 $autores_sugeridos = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 $esc = static fn($valor) => htmlspecialchars((string) ($valor ?? ''), ENT_QUOTES, 'UTF-8');
-$imagemCatalogo = static function ($caminho) use ($esc) {
-    $caminho = trim((string) ($caminho ?? ''));
-    if ($caminho === '') return '';
-    if (preg_match('~^(https?:)?//|^/~i', $caminho)) return $esc($caminho);
-    return $esc('../' . ltrim($caminho, './'));
-};
+$imagemCatalogo = static fn($caminho) => $esc(nookPublicUrl($caminho));
 ?>
 
 <!DOCTYPE html>
@@ -85,9 +80,9 @@ $imagemCatalogo = static function ($caminho) use ($esc) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="/TCC-Nook/front-end/css/main.css">
-    <link rel="stylesheet" href="/TCC-Nook/front-end/css/pages/catalogo.css">
-    <link rel="shortcut icon" href="/TCC-Nook/img/icons/ico-nook/ico-nook.ico" type="image/x-icon">
+    <link rel="stylesheet" href="../front-end/css/main.css">
+    <link rel="stylesheet" href="../front-end/css/pages/catalogo.css">
+    <link rel="shortcut icon" href="../img/icons/ico-nook/ico-nook.ico" type="image/x-icon">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Lora:wght@400;500;600;700&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -143,7 +138,7 @@ $imagemCatalogo = static function ($caminho) use ($esc) {
                 <?php foreach ($continuar_lendo as $leitura): ?>
                     <?php $progresso = min(100, max(0, (float) $leitura['porcentagem_progresso'])); ?>
                     <a class="catalog-continue-book" href="ler_livro.php?id_livro=<?= (int) $leitura['id_livro'] ?>">
-                        <?php if ($leitura['capa_url']): ?><img src="<?= $imagemCatalogo($leitura['capa_url']) ?>" alt="Capa de <?= $esc($leitura['titulo_livro']) ?>" loading="lazy"><?php else: ?><img src="/TCC-Nook/img/livro-sem-capa.svg" alt="Capa de <?= $esc($leitura['titulo_livro']) ?>" loading="lazy"><?php endif; ?>
+                        <?php if ($leitura['capa_url']): ?><img src="<?= $imagemCatalogo($leitura['capa_url']) ?>" alt="Capa de <?= $esc($leitura['titulo_livro']) ?>" loading="lazy"><?php else: ?><img src="../img/livro-sem-capa.svg" alt="Capa de <?= $esc($leitura['titulo_livro']) ?>" loading="lazy"><?php endif; ?>
                         <span class="catalog-continue-info"><strong><?= $esc($leitura['titulo_livro']) ?></strong><small><?= $esc($leitura['nome_autor'] ?: 'Autor não informado') ?></small><span class="catalog-progress"><span style="width: <?= $progresso ?>%"></span></span><small><?= round($progresso) ?>% concluído</small></span>
                         <i data-lucide="play"></i>
                     </a>
@@ -158,7 +153,7 @@ $imagemCatalogo = static function ($caminho) use ($esc) {
             <div class="catalog-rail">
                 <?php foreach ($livros_recomendados as $livro): ?>
                     <a class="catalog-rail-book" href="visao_livro.php?id_livro=<?= (int) $livro['id_livro'] ?>">
-                        <span class="catalog-rail-cover"><?php if ($livro['capa_url']): ?><img src="<?= $imagemCatalogo($livro['capa_url']) ?>" alt="Capa de <?= $esc($livro['titulo_livro']) ?>" loading="lazy"><?php else: ?><img src="/TCC-Nook/img/livro-sem-capa.svg" alt="Capa de <?= $esc($livro['titulo_livro']) ?>" loading="lazy"><?php endif; ?></span>
+                        <span class="catalog-rail-cover"><?php if ($livro['capa_url']): ?><img src="<?= $imagemCatalogo($livro['capa_url']) ?>" alt="Capa de <?= $esc($livro['titulo_livro']) ?>" loading="lazy"><?php else: ?><img src="../img/livro-sem-capa.svg" alt="Capa de <?= $esc($livro['titulo_livro']) ?>" loading="lazy"><?php endif; ?></span>
                         <strong><?= $esc($livro['titulo_livro']) ?></strong><small><?= $esc($livro['nome_autor'] ?: 'Autor não informado') ?></small>
                     </a>
                 <?php endforeach; ?>
@@ -172,7 +167,7 @@ $imagemCatalogo = static function ($caminho) use ($esc) {
             <div class="catalog-rail">
                 <?php foreach ($livros_lidos as $livro): ?>
                     <a class="catalog-rail-book" href="visao_livro.php?id_livro=<?= (int) $livro['id_livro'] ?>">
-                        <span class="catalog-rail-cover"><?php if ($livro['capa_url']): ?><img src="<?= $imagemCatalogo($livro['capa_url']) ?>" alt="Capa de <?= $esc($livro['titulo_livro']) ?>" loading="lazy"><?php else: ?><img src="/TCC-Nook/img/livro-sem-capa.svg" alt="Capa de <?= $esc($livro['titulo_livro']) ?>" loading="lazy"><?php endif; ?></span>
+                        <span class="catalog-rail-cover"><?php if ($livro['capa_url']): ?><img src="<?= $imagemCatalogo($livro['capa_url']) ?>" alt="Capa de <?= $esc($livro['titulo_livro']) ?>" loading="lazy"><?php else: ?><img src="../img/livro-sem-capa.svg" alt="Capa de <?= $esc($livro['titulo_livro']) ?>" loading="lazy"><?php endif; ?></span>
                         <strong><?= $esc($livro['titulo_livro']) ?></strong><small><?= $esc($livro['nome_autor'] ?: 'Autor não informado') ?></small>
                     </a>
                 <?php endforeach; ?>
@@ -260,7 +255,7 @@ $imagemCatalogo = static function ($caminho) use ($esc) {
             const estrelas = '★'.repeat(Math.round(nota)) + '☆'.repeat(5 - Math.round(nota));
             const imagem = livro.capa_url
                 ? `<img src="${escaparHtml(urlCapa(livro.capa_url))}" alt="Capa de ${escaparHtml(livro.titulo_livro)}" loading="lazy">`
-                : '<img src="/TCC-Nook/img/livro-sem-capa.svg" alt="Livro sem capa" width="140" height="210" loading="lazy">';
+                : '<img src="../img/livro-sem-capa.svg" alt="Livro sem capa" width="140" height="210" loading="lazy">';
             const metadata = [livro.editora, livro.data_publi].filter(Boolean).join(' · ');
             const synopsisText = livro.descricao || livro.sinopse_livro || '';
             const synopsis = synopsisText

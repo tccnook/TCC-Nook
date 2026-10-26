@@ -1,7 +1,7 @@
 <?php
     session_start();
     ob_start();
-    require_once('conexao.php');
+    require_once(__DIR__ . "/" . 'conexao.php');
 
     $db = new Database();
     $conn = $db->conectar();
@@ -185,9 +185,9 @@ $esc = static fn($v)=>htmlspecialchars((string)($v??''),ENT_QUOTES,'UTF-8');
 
 <!DOCTYPE html>
 <html lang="pt-br"><head>
-<link rel="icon" href="/TCC-Nook/img/icons/ico-nook/ico-nook.ico" type="image/x-icon">
+<link rel="icon" href="../img/icons/ico-nook/ico-nook.ico" type="image/x-icon">
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<link rel="stylesheet" href="/TCC-Nook/front-end/css/core.css"><link rel="stylesheet" href="/TCC-Nook/front-end/css/pages/settings.css">
+<link rel="stylesheet" href="../front-end/css/core.css"><link rel="stylesheet" href="../front-end/css/pages/settings.css">
 <link href="https://fonts.googleapis.com/css2?family=Lora:wght@400;500;600&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://unpkg.com/lucide@latest"></script><title>Minha conta | Nook</title></head>
 <body class="settings-page"><div class="settings-layout">
@@ -242,4 +242,4 @@ $opcoes=$secao==='marcacoes'?['todos'=>'Permitir marcação de todos','seguindo'
 <?php endif; ?><button type="submit" class="settings-button">Salvar preferências</button><p role="status" aria-live="polite"></p></form>
 <?php endif; ?>
 
-</main></div><script src="/TCC-Nook/front-end/js/pages/settings.js"></script></body></html>
+</main></div><script src="../front-end/js/pages/settings.js"></script></body></html>

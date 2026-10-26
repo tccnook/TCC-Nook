@@ -364,7 +364,7 @@ $esc = static fn($valor) => htmlspecialchars((string) ($valor ?? ''), ENT_QUOTES
 $avatarLivro = static function($path) use($esc): string {
     if (is_string($path) && preg_match('~^https?://~i',$path)) { return $esc($path); }
     if (is_string($path) && !str_contains($path,'..') && is_file(dirname(__DIR__).'/'.ltrim($path,'/'))) { return $esc('../'.ltrim($path,'/')); }
-    return '/TCC-Nook/img/foto_perfil/foto_perfil_default.png';
+    return '../img/foto_perfil/foto_perfil_default.png';
 };
 $notaMedia = max(0,min(5,$notaMedia));
 $estrelasMedia = estrelasLivro($notaMedia);
@@ -374,12 +374,12 @@ $estrelasMedia = estrelasLivro($notaMedia);
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="/TCC-Nook/front-end/css/main.css">
-    <link rel="stylesheet" href="/TCC-Nook/front-end/css/pages/visao-livro.css">
+    <link rel="stylesheet" href="../front-end/css/main.css">
+    <link rel="stylesheet" href="../front-end/css/pages/visao-livro.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Lora:wght@400;500;600;700&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="shortcut icon" href="/TCC-Nook/img/icons/ico-nook/ico-nook.ico" type="image/x-icon">
+    <link rel="shortcut icon" href="../img/icons/ico-nook/ico-nook.ico" type="image/x-icon">
 
     <title><?= $esc($livro['titulo_livro']) ?> - Nook</title>
 </head>
@@ -395,7 +395,7 @@ $estrelasMedia = estrelasLivro($notaMedia);
             <?php if (!empty($capaExibida)): ?>
                 <img class="book-cover" src="<?= $esc($capaExibida) ?>" alt="Capa de <?= $esc($livro['titulo_livro']) ?>">
             <?php else: ?>
-                <img class="book-cover" src="/TCC-Nook/img/livro-sem-capa.svg" alt="Capa de <?= $esc($livro['titulo_livro']) ?>">
+                <img class="book-cover" src="../img/livro-sem-capa.svg" alt="Capa de <?= $esc($livro['titulo_livro']) ?>">
             <?php endif; ?>
         </div>
 

@@ -207,7 +207,7 @@ $maior_livro_lido=buscar_dados($conn,"SELECT l.titulo_livro,l.paginas,COUNT(cp.i
                                     <?php if (!empty($livro['capa_url'])): ?>
                                         <img src="<?= htmlspecialchars($livro['capa_url']) ?>" alt="Capa de <?= htmlspecialchars($livro['titulo_livro']) ?>" loading="lazy">
                                     <?php else: ?>
-                                        <img src="/TCC-Nook/img/livro-sem-capa.svg" alt="Capa de <?= htmlspecialchars($livro['titulo_livro']) ?>" loading="lazy">
+                                        <img src="../img/livro-sem-capa.svg" alt="Capa de <?= htmlspecialchars($livro['titulo_livro']) ?>" loading="lazy">
                                     <?php endif; ?>
                                 </a>
                             </section>
@@ -237,7 +237,7 @@ $maior_livro_lido=buscar_dados($conn,"SELECT l.titulo_livro,l.paginas,COUNT(cp.i
                                 <?php if (!empty($livroLido['capa_url'])): ?>
                                     <img src="<?= htmlspecialchars($livroLido['capa_url']) ?>" alt="Capa de <?= htmlspecialchars($livroLido['titulo_livro']) ?>" loading="lazy">
                                 <?php else: ?>
-                                    <img src="/TCC-Nook/img/livro-sem-capa.svg" alt="Capa de <?= htmlspecialchars($livroLido['titulo_livro']) ?>" loading="lazy">
+                                    <img src="../img/livro-sem-capa.svg" alt="Capa de <?= htmlspecialchars($livroLido['titulo_livro']) ?>" loading="lazy">
                                 <?php endif; ?>
                                 <span><?= htmlspecialchars($livroLido['titulo_livro']) ?></span>
                             </a>
@@ -386,7 +386,7 @@ $maior_livro_lido=buscar_dados($conn,"SELECT l.titulo_livro,l.paginas,COUNT(cp.i
                         </div>
                         <div class="capas">
                             <?php foreach ($capasLista as $capa): ?>
-                                <img src="<?= htmlspecialchars($capa ?: '/TCC-Nook/img/livro-sem-capa.svg') ?>" alt="Capa da lista <?= htmlspecialchars($lista['nome_lista']) ?>" loading="lazy">
+                                <img src="<?= htmlspecialchars($capa ?: '../img/livro-sem-capa.svg') ?>" alt="Capa da lista <?= htmlspecialchars($lista['nome_lista']) ?>" loading="lazy">
                             <?php endforeach; ?>
                         </div>
                         <ul class="lista-info">
@@ -439,7 +439,7 @@ $ordemTop5=[];for($pos=1;$pos<=5;$pos++)$ordemTop5[]=isset($livros_top5_por_posi
 
 <!-- MODAL: GERENCIAR METAS (reabre sozinho depois de filtrar ou excluir) -->
 <dialog id="gerenciarMetas" <?= isset($_GET['metas']) ? 'data-abrir' : '' ?>>
-    <?php require_once('gerenciarmetas.php'); ?>
+    <?php require_once(__DIR__ . "/" . 'gerenciarmetas.php'); ?>
 </dialog>
 
 <?php require __DIR__.'/reading_goal_modal.php'; ?>

@@ -2,7 +2,7 @@
 
 session_start();
 
-require_once('conexao.php');
+require_once(__DIR__ . "/" . 'conexao.php');
 
 header('Content-Type: application/json; charset=UTF-8');
 

@@ -64,10 +64,10 @@ function autoresLocais(PDO $conn,int $usuario,string $busca=''): array
     foreach($autores as &$autor){
         $p=filter_var($autor['preferido'],FILTER_VALIDATE_BOOLEAN);$r=filter_var($autor['recente'],FILTER_VALIDATE_BOOLEAN);
         $autor['afinidade']=$p?100:($r?80:0);$autor['contexto']=$p?'Entre seus autores favoritos':($r?'Das suas leituras recentes':'');
-        if($autor['foto']&&!preg_match('~^https?://~i',$autor['foto'])){$path=ltrim($autor['foto'],'/');$autor['foto']=is_file(dirname(__DIR__).'/'.$path)?'/TCC-Nook/'.$path:null;}
+        if($autor['foto']&&!preg_match('~^https?://~i',$autor['foto'])){$path=ltrim($autor['foto'],'/');$autor['foto']=is_file(dirname(__DIR__).'/'.$path)?'../'.$path:null;}
     }unset($autor);
     $stmt=$conn->prepare("SELECT u.id_user AS id_usuario,u.nome_completo AS nome,c.foto_perfil_url AS foto,EXISTS(SELECT 1 FROM progresso_leitura pr JOIN livro l USING(id_livro) WHERE pr.id_user=? AND l.id_user=u.id_user AND l.origem='nook' AND pr.ultima_leitura>now()-INTERVAL '90 days') AS recente FROM usuario u LEFT JOIN conta c USING(id_user) WHERE u.autor_desde IS NOT NULL AND (?='' OR u.nome_completo ILIKE ? OR u.username ILIKE ?) AND NOT EXISTS(SELECT 1 FROM bloqueio b WHERE b.status_bloqueio='bloqueado' AND ((b.id_bloqueador=? AND b.id_bloqueado=u.id_user) OR (b.id_bloqueado=? AND b.id_bloqueador=u.id_user))) LIMIT 100");
     $stmt->execute([$usuario,$busca,'%'.$busca.'%','%'.$busca.'%',$usuario,$usuario]);
-    foreach($stmt->fetchAll(PDO::FETCH_ASSOC) as $writer){$writer['afinidade']=filter_var($writer['recente'],FILTER_VALIDATE_BOOLEAN)?80:0;$writer['contexto']=$writer['afinidade']?'Das suas leituras recentes':'';if($writer['foto']&&!preg_match('~^https?://~i',$writer['foto']))$writer['foto']='/TCC-Nook/'.ltrim($writer['foto'],'/');$autores[]=$writer;}
+    foreach($stmt->fetchAll(PDO::FETCH_ASSOC) as $writer){$writer['afinidade']=filter_var($writer['recente'],FILTER_VALIDATE_BOOLEAN)?80:0;$writer['contexto']=$writer['afinidade']?'Das suas leituras recentes':'';if($writer['foto']&&!preg_match('~^https?://~i',$writer['foto']))$writer['foto']='../'.ltrim($writer['foto'],'/');$autores[]=$writer;}
     return unirAutores($autores,$busca);
 }

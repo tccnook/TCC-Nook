@@ -2,6 +2,7 @@
     'use strict';
     const root=document.querySelector('[data-worldbuilding]');if(!root)return;
     const state=JSON.parse(document.getElementById('worldbuilding-initial').textContent);
+    const categories=window.NookWorldCategories;
     const book=root.dataset.livro, section=state.secao, dialog=root.querySelector('[data-world-dialog]'), form=dialog.querySelector('form');
     const labels={resumo:'Worldbuilding',personagem:'Personagens',cenario:'Cenários',item:'Objetos e itens',marco:'Linha do tempo',nota:'Notas de pesquisa',template:'Templates'};
     const actions={resumo:'Editar resumo',personagem:'Novo personagem',cenario:'Novo cenário',item:'Novo item',marco:'Adicionar marco temporal',nota:'Nova nota',template:'Novo template'};
@@ -52,12 +53,39 @@
     }
     function updateCategories(){const control=q('[data-category]');control.replaceChildren(new Option('Todas',''));[...new Set(records().map(r=>r.categoria||r.papel).filter(Boolean))].sort().forEach(c=>control.add(new Option(c,c)));if(section==='template')control.add(new Option('Meus templates','__mine'));}
     function fieldMarkup(name,field,value='',required=false){
+        const customCategory=name==='categoria'&&field[1]==='selecao';
+        let customValue='';
+        if(customCategory){
+            const defaults=field[2], options=categories.options(defaults,state.mundo[type]||[],value);
+            if(value&&!defaults.includes(value)&&!categories.isOther(value)){
+                customValue=value;value=options.find(categories.isOther);
+            }
+            field=[field[0],field[1],options];
+        }
         const [label,kind,limit]=field,id='world-field-'+name,attrs=`id="${id}" name="${name}" ${required?'required':''}`;
         let input;if(kind==='selecao')input=`<select ${attrs}><option value="">Selecione</option>${limit.map(v=>`<option ${v===value?'selected':''}>${escape(v)}</option>`).join('')}</select>`;
         else if(kind==='avaliacao')input=`<select ${attrs}><option value="">Sem avaliação</option>${[1,2,3,4,5].map(n=>`<option value="${n}">${'★'.repeat(n)}</option>`).join('')}</select>`;
         else if(kind==='longo')input=`<textarea ${attrs} rows="4" maxlength="${limit}">${escape(value)}</textarea>`;
         else input=`<input ${attrs} type="${kind==='numero'||kind==='ano'?'number':'text'}" ${kind==='numero'||kind==='ano'?`min="${kind==='numero'?0:-limit}" max="${limit}" step="1"`:`maxlength="${limit}"`} value="${escape(value)}">`;
+        if(customCategory)return `<div class="world-field world-category-field"><label class="world-field-label" for="${id}">${escape(label)}${required?' <span aria-hidden="true">*</span>':''}</label>${input}<div class="world-custom-category" data-custom-category hidden><label for="world-category-name">${type==='cenario'?'Qual tipo de local?':'Qual categoria?'}</label><input id="world-category-name" name="categoria_personalizada" type="text" maxlength="80" autocomplete="off" placeholder="${type==='cenario'?'Informe o tipo de local':'Informe a categoria'}" value="${escape(customValue)}" disabled></div></div>`;
         return `<label class="world-field ${kind==='longo'?'world-field-wide':''}" for="${id}"><span class="world-field-label">${escape(label)}${required?' <span aria-hidden="true">*</span>':''}</span>${input}${kind==='longo'?`<small data-counter-for="${id}">${String(value).length}/${limit}</small>`:''}</label>`;
+    }
+    function bindCategoryEditor(){
+        const container=q('[data-custom-category]');if(!container)return;
+        const input=q('#world-category-name'), select=form.elements.categoria;
+        const validate=()=>{
+            input.setCustomValidity('');
+            if(!input.disabled&&input.value){
+                try{categories.normalize(input.value);}catch(error){input.setCustomValidity(error.message);}
+            }
+        };
+        const sync=(focus=false)=>{
+            const active=categories.isOther(select.value);
+            container.hidden=!active;input.disabled=!active;input.required=active;
+            validate();if(active&&focus)input.focus();
+        };
+        select.addEventListener('change',()=>sync(true));
+        input.addEventListener('input',validate);sync();
     }
     function addTemplateField(field={nome:'',tipo:'texto'}){
         const row=document.createElement('div');row.className='world-template-field';row.innerHTML=`<input aria-label="Nome do campo" maxlength="80" required placeholder="Nome do campo" value="${escape(field.nome)}"><select aria-label="Tipo de campo">${Object.entries({texto:'Texto curto',longo:'Texto longo',numero:'Número',tags:'Tags',lista:'Lista',avaliacao:'Avaliação (estrelas)'}).map(([v,l])=>`<option value="${v}" ${v===field.tipo?'selected':''}>${l}</option>`).join('')}</select><button type="button" data-move-up aria-label="Mover campo para cima">↑</button><button type="button" data-remove-field aria-label="Remover campo">×</button>`;
@@ -84,11 +112,15 @@
         if(t==='template'){(data.campos||[{nome:'',tipo:'texto'}]).forEach(addTemplateField);q('[data-add-field]').onclick=()=>{if(q('[data-template-fields]').children.length>=30){q('[data-form-status]').textContent='Use até 30 campos.';return;}addTemplateField();preview();};}
         q('[data-remove-image]')?.addEventListener('click',()=>{removedImage=true;const file=q('#world-image');file.value='';if(localImage)URL.revokeObjectURL(localImage);localImage=null;preview();});
         q('#world-image')?.addEventListener('change',()=>{const file=q('#world-image').files[0];if(!file)return;if(file.size>5*1024*1024||!['image/jpeg','image/png','image/webp'].includes(file.type)){q('[data-form-status]').textContent='Escolha JPG, PNG ou WebP de até 5 MB.';q('#world-image').value='';return;}if(localImage)URL.revokeObjectURL(localImage);localImage=URL.createObjectURL(file);removedImage=false;q('[data-form-status]').textContent='';preview();});
-        if(template){form.elements.nome.value=template.nome;form.elements.categoria.value=['Personagens','Cenários'].includes(template.categoria)?template.categoria:'Outros';form.elements.descricao.required=false;}
-        preview();dialog.showModal();form.elements.nome.focus();
+        if(template){form.elements.nome.value=template.nome;form.elements.categoria.value=['Personagens','Cenários'].includes(template.categoria)?template.categoria:'Outros';if(categories.isOther(form.elements.categoria.value))q('#world-category-name').value=template.categoria||'Worldbuilding';form.elements.descricao.required=false;}
+        bindCategoryEditor();preview();dialog.showModal();form.elements.nome.focus();
     }
-    function formData(){
+    function formData(validateCategory=false){
         const raw=new FormData(form),data={};for(const [k,v] of raw)if(typeof v==='string')data[k]=v;
+        if(form.elements.categoria){
+            data.categoria=validateCategory?categories.resolve(data.categoria,data.categoria_personalizada):categories.isOther(data.categoria)?data.categoria_personalizada||'':data.categoria;
+            delete data.categoria_personalizada;
+        }
         data.relacionados=raw.getAll('relacionados');data.capitulos=raw.getAll('capitulos').map(Number);data.fixado=raw.has('fixado');data.importante=raw.has('importante');
         if(type==='template')data.campos=[...q('[data-template-fields]').children].map(row=>({nome:row.querySelector('input').value,tipo:row.querySelector('select').value}));
         if(draftTemplate){const content=(draftTemplate.campos||[]).map((f,i)=>`${f.nome}\n${raw.get('template_'+i)||''}`).join('\n\n');data.descricao=[data.descricao,content].filter(Boolean).join('\n\n');}
@@ -101,7 +133,7 @@
     }
     form.addEventListener('input',preview);form.addEventListener('change',preview);
     form.addEventListener('submit',async event=>{event.preventDefault();if(busy||!form.reportValidity())return;busy=true;const submit=q('[data-submit-ficha]');submit.disabled=true;form.setAttribute('aria-busy','true');q('[data-form-status]').textContent='Salvando…';q('[data-form-fields]').inert=true;
-        try{const result=await request('salvar',type,formData(),q('#world-image')?.files[0]);state.mundo=result.mundo;if(section!=='resumo')updateCategories();render();dialog.close();q('[data-world-status]').textContent=result.mensagem;if(section!=='resumo')showDetail(result.ficha);}catch(e){q('[data-form-status]').textContent=e.message;}finally{busy=false;submit.disabled=false;q('[data-form-fields]').inert=false;form.removeAttribute('aria-busy');}
+        try{const result=await request('salvar',type,formData(true),q('#world-image')?.files[0]);state.mundo=result.mundo;if(section!=='resumo')updateCategories();render();dialog.close();q('[data-world-status]').textContent=result.mensagem;if(section!=='resumo')showDetail(result.ficha);}catch(e){q('[data-form-status]').textContent=e.message;}finally{busy=false;submit.disabled=false;q('[data-form-fields]').inert=false;form.removeAttribute('aria-busy');}
     });
     dialog.querySelectorAll('[data-close-dialog]').forEach(b=>b.onclick=()=>{if(!busy)dialog.close();});dialog.addEventListener('cancel',e=>{if(busy)e.preventDefault();});dialog.addEventListener('close',()=>{if(localImage)URL.revokeObjectURL(localImage);localImage=null;trigger?.focus();});
     dialog.querySelectorAll('[data-preview-width]').forEach(b=>b.onclick=()=>{q('[data-live-preview]').classList.toggle('world-phone-preview',b.dataset.previewWidth==='mobile');dialog.querySelectorAll('[data-preview-width]').forEach(x=>x.setAttribute('aria-pressed',String(x===b)));});

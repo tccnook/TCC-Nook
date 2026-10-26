@@ -1,6 +1,6 @@
 <?php
 
- require_once('header.php');
+ require_once(__DIR__ . "/" . 'header.php');
     // Incluído pelo perfil.php ($conn, $id_user e $aba já existem)
 
     function contar($conn, $sql, $id_user){
@@ -148,7 +148,7 @@
 
                 <section class="previa-foto">
                     <section class="previa-avatar">
-                        <img id="previaFoto" class="avatar-previa" alt="Prévia da foto de perfil" <?= empty($conta['foto_perfil_url']) ? 'hidden src="/TCC-Nook/img/foto_perfil/foto_perfil_default.png"' : 'src="../' . htmlspecialchars($conta['foto_perfil_url']) . '"' ?>>
+                        <img id="previaFoto" class="avatar-previa" alt="Prévia da foto de perfil" <?= empty($conta['foto_perfil_url']) ? 'hidden src="../img/foto_perfil/foto_perfil_default.png"' : 'src="../' . htmlspecialchars($conta['foto_perfil_url']) . '"' ?>>
                         <section id="previaSemFoto" class="avatar-previa" <?= empty($conta['foto_perfil_url']) ? '' : 'hidden' ?>></section>
                     </section>
 
@@ -231,7 +231,7 @@
     <button type="button" data-close-share>Fechar</button>
     <p role="status" aria-live="polite"></p>
 </dialog>
-<script src="/TCC-Nook/front-end/js/pages/share-profile.js" defer></script>
+<script src="../front-end/js/pages/share-profile.js" defer></script>
 <script>
     const modal = document.getElementById("modalEditar");
 

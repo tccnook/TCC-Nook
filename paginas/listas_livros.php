@@ -1,8 +1,8 @@
 <?php
 
-require_once("criar_lista_livros.php");
+require_once(__DIR__ . "/" . "criar_lista_livros.php");
 try {
-    require_once("dados_listas_livros.php");
+    require_once(__DIR__ . "/" . "dados_listas_livros.php");
 } catch (PDOException $e) {
     error_log($e->getMessage());
 }
@@ -43,7 +43,7 @@ $qntd_listas = $qntd_listas ?? 0;
 
                     <div class="capas">
                         <?php foreach($capas as $capa): ?>
-                            <img src="<?= htmlspecialchars($capa ?: '/TCC-Nook/img/livro-sem-capa.svg') ?>" alt="Capa do livro" loading="lazy">
+                            <img src="<?= htmlspecialchars($capa ?: '../img/livro-sem-capa.svg') ?>" alt="Capa do livro" loading="lazy">
                         <?php endforeach; ?>
                     </div>
 
@@ -169,7 +169,7 @@ $qntd_listas = $qntd_listas ?? 0;
             linha.className = "lista-livro-selecionado";
             {
                 const capa = document.createElement("img");
-                capa.src = livro.capa_url || '/TCC-Nook/img/livro-sem-capa.svg';
+                capa.src = livro.capa_url || '../img/livro-sem-capa.svg';
                 capa.dataset.bookCover = '';
                 capa.alt = "";
                 linha.append(capa);
@@ -239,7 +239,7 @@ $qntd_listas = $qntd_listas ?? 0;
                 linha.className = "lista-livro-resultado";
                 {
                     const capa = document.createElement("img");
-                    capa.src = livro.capa_url || '/TCC-Nook/img/livro-sem-capa.svg';
+                    capa.src = livro.capa_url || '../img/livro-sem-capa.svg';
                 capa.dataset.bookCover = '';
                     capa.alt = "";
                     linha.append(capa);

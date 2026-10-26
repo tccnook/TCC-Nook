@@ -23,11 +23,11 @@ $imagemUrl = static function ($caminho) use ($esc) {
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
-<link rel="icon" href="/TCC-Nook/img/icons/ico-nook/ico-nook.ico" type="image/x-icon">
+<link rel="icon" href="../img/icons/ico-nook/ico-nook.ico" type="image/x-icon">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="/TCC-Nook/front-end/css/main.css">
-    <link rel="stylesheet" href="/TCC-Nook/front-end/css/pages/community-search.css">
+    <link rel="stylesheet" href="../front-end/css/main.css">
+    <link rel="stylesheet" href="../front-end/css/pages/community-search.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Lora:wght@400;500;600;700&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -49,5 +49,5 @@ $imagemUrl = static function ($caminho) use ($esc) {
     </div><button type="button" id="authors-more" class="community-load-more" hidden>Ver mais autores</button></section>
 </main>
 <?php require_once __DIR__ . '/footer.php'; ?>
-<script src="/TCC-Nook/front-end/js/pages/author-search.js" defer></script>
+<script src="../front-end/js/pages/author-search.js" defer></script>
 </body></html>

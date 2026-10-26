@@ -1,17 +1,22 @@
 <?php
+require_once __DIR__.'/runtime.php';
+require_once __DIR__.'/pdf_runtime.php';
 /** Arquivos privados: nunca servir o diretório diretamente pelo servidor HTTP. */
 function pastaPublicacoes(): string
 {
-    $configured=getenv('NOOK_PRIVATE_STORAGE')?:($_ENV['NOOK_PRIVATE_STORAGE']??'');
-    if(!$configured){$envFile=dirname(__DIR__).'/.env';$env=is_file($envFile)?(parse_ini_file($envFile,false,INI_SCANNER_RAW)?:[]):[];$configured=$env['NOOK_PRIVATE_STORAGE']??'';}
-    // O diretório de dados do PHP/LAMPP fica fora do DocumentRoot e sobrevive a reinícios.
-    // Em produção NOOK_PRIVATE_STORAGE pode apontar para um volume persistente dedicado.
+    $configured=trim(nookEnv('NOOK_PRIVATE_STORAGE'));
     $serverData=dirname((string)php_ini_loaded_file(),2).'/temp';
-    if(!$configured&&(!is_dir($serverData)||!is_writable($serverData)))throw new RuntimeException('Defina NOOK_PRIVATE_STORAGE com uma pasta privada persistente e gravável fora do projeto.');
-    $base=$serverData;
-    $dir=$configured?:$base.'/nook-publications-'.substr(hash('sha256',dirname(__DIR__)),0,12).'-'.(function_exists('posix_geteuid')?posix_geteuid():'web');
-    $root=realpath(dirname(__DIR__));$resolved=realpath($dir)?:$dir;
-    if(!str_starts_with($dir,'/')||$resolved===$root||str_starts_with($resolved,$root.'/'))throw new RuntimeException('Configure armazenamento privado fora do projeto.');
+    if(!$configured&&(!is_dir($serverData)||!is_writable($serverData)))throw new RuntimeException('Defina NOOK_PRIVATE_STORAGE com uma pasta privada persistente e gravável fora do projeto e do diretório público.');
+    $dir=$configured?:$serverData.'/nook-publications-'.substr(hash('sha256',dirname(__DIR__)),0,12).'-'.(function_exists('posix_geteuid')?posix_geteuid():'web');
+    if(!nookAbsolutePath($dir))throw new RuntimeException('NOOK_PRIVATE_STORAGE deve ser um caminho absoluto.');
+    $dir=str_replace('\\','/',$dir);
+    if(preg_match('~(?:^|/)\.\.(?:/|$)~',$dir))throw new RuntimeException('Use um caminho privado absoluto sem segmentos de navegação.');
+    // Resolve ancestrais existentes para impedir que um link simbólico exponha arquivos no diretório público.
+    $ancestor=$dir;$suffix=[];
+    while(!file_exists($ancestor)&&dirname($ancestor)!==$ancestor){array_unshift($suffix,basename($ancestor));$ancestor=dirname($ancestor);}
+    $resolved=(realpath($ancestor)?:$ancestor).($suffix?'/'.implode('/',$suffix):'');
+    $documentRoot=$_SERVER['DOCUMENT_ROOT']??'';
+    if(nookPathWithin($resolved,nookRoot())||($documentRoot!==''&&nookPathWithin($resolved,$documentRoot)))throw new RuntimeException('Configure armazenamento privado fora do projeto e do diretório público do servidor.');
     if(!is_dir($dir)&&!mkdir($dir,0700,true)&&!is_dir($dir))throw new RuntimeException('Armazenamento de livros indisponível.');
     if(!is_writable($dir))throw new RuntimeException('O armazenamento privado não permite gravar arquivos.');
     return $dir;
@@ -39,27 +44,21 @@ function sanitizarEscrita(string $html): string
     $walk=function(DOMNode $node)use(&$walk){foreach(iterator_to_array($node->childNodes) as $child){if($child instanceof DOMElement){$tag=strtolower($child->tagName);if(in_array($tag,['script','style','iframe','object','embed','svg','math','form','input','img','video','audio','link','meta'],true)){$node->removeChild($child);continue;}$align=$child->getAttribute('data-align');$style=$child->getAttribute('style');foreach(iterator_to_array($child->attributes) as $attr)$child->removeAttribute($attr->name);if(preg_match('/^text-align:\s*(left|right|center|justify);?$/D',trim($style),$m))$align=$m[1];if(in_array($align,['left','right','center','justify'],true))$child->setAttribute('style','text-align:'.$align);$walk($child);if(!in_array($tag,['div','p','br','strong','b','em','i','u','h1','h2','h3','blockquote','ul','ol','li'],true)){while($child->firstChild)$node->insertBefore($child->firstChild,$child);$node->removeChild($child);}}elseif($child instanceof DOMComment)$node->removeChild($child);}};
     $root=$doc->documentElement;$walk($root);$result='';foreach($root->childNodes as $node)$result.=$doc->saveHTML($node);return $result;
 }
-function executarPdf(array $args,int $seconds=25): string
-{
-    $environment=['PATH'=>'/usr/bin:/bin','LANG'=>'C.UTF-8'];
-    $pipes=[];$proc=proc_open(array_merge(['/usr/bin/timeout','--signal=KILL',(string)$seconds],$args),[0=>['pipe','r'],1=>['pipe','w'],2=>['file','/dev/null','a']],$pipes,null,$environment);
-    if(!is_resource($proc))throw new RuntimeException('Processamento de PDF indisponível.');fclose($pipes[0]);$out=stream_get_contents($pipes[1],100000);fclose($pipes[1]);$code=proc_close($proc);if($code!==0)throw new InvalidArgumentException('Não foi possível processar este PDF. Envie um documento válido, sem senha.');return $out;
-}
 function paginasPdf(string $path): int
 {
     if(!is_file($path)||filesize($path)>30*1024*1024||mime_content_type($path)!=='application/pdf')throw new InvalidArgumentException('Envie um PDF válido de até 30 MB.');
-    $out=executarPdf(['/usr/bin/pdfinfo',$path]);if(preg_match('/Encrypted:\s+yes/i',$out)||!preg_match('/Pages:\s+(\d+)/',$out,$m)||($n=(int)$m[1])<1||$n>2000)throw new InvalidArgumentException('PDF deve ter até 2.000 páginas e não possuir senha.');return $n;
+    $out=executarPdf(['pdfinfo',$path]);if(preg_match('/Encrypted:\s+yes/i',$out)||!preg_match('/Pages:\s+(\d+)/',$out,$m)||($n=(int)$m[1])<1||$n>2000)throw new InvalidArgumentException('PDF deve ter até 2.000 páginas e não possuir senha.');return $n;
 }
 function gerarPdfObra(string $titulo,array $capitulos): string
 {
-    require_once dirname(__DIR__).'/vendor/autoload.php';$options=new Dompdf\Options();$options->set('isRemoteEnabled',false);$options->set('isPhpEnabled',false);$options->set('isJavascriptEnabled',false);$options->set('chroot',pastaPublicacoes());$options->set('defaultFont','DejaVu Serif');
+    require_once dirname(__DIR__).'/vendor/autoload.php';$options=new Dompdf\Options();$options->set('isRemoteEnabled',false);$options->set('isPhpEnabled',false);$options->set('isJavascriptEnabled',false);$options->set('chroot',pastaPublicacoes());$options->set('defaultFont','DejaVu Serif');$cache=pastaPublicacoes().'/cache';if(!is_dir($cache)&&!mkdir($cache,0700,true)&&!is_dir($cache))throw new RuntimeException('Não foi possível criar o cache de fontes.');$options->set('fontCache',$cache);$options->set('tempDir',$cache);
     $pdf=new Dompdf\Dompdf($options);$html='<meta charset="UTF-8"><style>@page{margin:24mm}body{font-family:"DejaVu Serif";font-size:11pt;line-height:1.6}h1{font-size:22pt}h2{font-size:17pt}.chapter{page-break-before:always}p{orphans:3;widows:3}</style><h1>'.htmlspecialchars($titulo,ENT_QUOTES,'UTF-8').'</h1>';
     foreach($capitulos as $cap)$html.='<section class="chapter"><h2>'.htmlspecialchars($cap['titulo'],ENT_QUOTES,'UTF-8').'</h2>'.sanitizarEscrita($cap['html']).'</section>';
     $pdf->loadHtml($html,'UTF-8');$pdf->setPaper('A5');$pdf->render();$path=novoArquivoPublicacao();if(file_put_contents($path,$pdf->output(),LOCK_EX)===false)throw new RuntimeException('Falha ao gerar PDF.');chmod($path,0600);return $path;
 }
 function anexarPdf(string $base,string $anexo): string
 {
-    $expected=paginasPdf($base)+paginasPdf($anexo);if($expected>2000)throw new InvalidArgumentException('O livro consolidado excederia 2.000 páginas.');$out=novoArquivoPublicacao();try{executarPdf(['/usr/bin/pdfunite',$base,$anexo,$out]);chmod($out,0600);if(paginasPdf($out)!==$expected)throw new RuntimeException('A anexação não preservou as páginas.');return $out;}catch(Throwable $e){if(is_file($out))unlink($out);throw $e;}
+    $expected=paginasPdf($base)+paginasPdf($anexo);if($expected>2000)throw new InvalidArgumentException('O livro consolidado excederia 2.000 páginas.');$out=novoArquivoPublicacao();try{executarPdf(['pdfunite',$base,$anexo,$out]);chmod($out,0600);if(paginasPdf($out)!==$expected)throw new RuntimeException('A anexação não preservou as páginas.');return $out;}catch(Throwable $e){if(is_file($out))unlink($out);throw $e;}
 }
 function receberArquivoObra(array $file,string $tipo): string
 {

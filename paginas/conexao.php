@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__.'/session_registry.php';
+require_once __DIR__.'/runtime.php';
 
 class Database
 {
@@ -11,34 +12,19 @@ class Database
 
     public function __construct()
     {
-        $projectRoot = dirname(__DIR__);
-        $environmentFile = $projectRoot . '/.env';
-        $fileEnvironment = is_file($environmentFile)
-            ? (parse_ini_file($environmentFile, false, INI_SCANNER_RAW) ?: [])
-            : [];
-        $environmentValue = static function (string $name, string $fallback) use ($fileEnvironment): string {
-            $value = getenv($name);
-            if (!is_string($value) || trim($value) === '') {
-                $value = $_ENV[$name] ?? null;
-            }
-            if (!is_string($value) || trim($value) === '') {
-                $value = $fileEnvironment[$name] ?? $fallback;
-            }
-            return trim((string) $value);
-        };
-
-        $this->host = $environmentValue('DB_HOST', 'localhost');
-        $this->dbname = $environmentValue('DB_NAME', 'testetccdemo');
-        $this->user = $environmentValue('DB_USER', 'postgres');
-        $this->password = $environmentValue('DB_PASSWORD', '1234');
-        $this->port = $environmentValue('DB_PORT', '5432');
-        if (!ctype_digit($this->port)) {
+        $this->host = trim(nookEnv('DB_HOST', 'localhost'));
+        $this->dbname = trim(nookEnv('DB_NAME', 'testetccdemo'));
+        $this->user = trim(nookEnv('DB_USER', 'postgres'));
+        $this->password = nookEnv('DB_PASSWORD', '1234');
+        $this->port = trim(nookEnv('DB_PORT', '5432'));
+        if (!ctype_digit($this->port) || (int)$this->port < 1 || (int)$this->port > 65535) {
             throw new RuntimeException('DB_PORT precisa ser numérico.');
         }
     }
 
     public function conectar(): PDO
     {
+        if (!extension_loaded('pdo_pgsql')) throw new RuntimeException('Habilite a extensão pdo_pgsql no PHP usado pelo servidor.');
         try {
             $connection = new PDO(
                 "pgsql:host={$this->host};port={$this->port};dbname={$this->dbname}",

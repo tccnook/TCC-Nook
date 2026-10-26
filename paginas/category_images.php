@@ -3,7 +3,7 @@ function imagemCategoria(string $identificador): ?string
 {
     if (!preg_match('/^[a-z0-9]+(?:-[a-z0-9]+)*$/D', $identificador)) { return null; }
     $arquivo = '/img/categorias/optimized/' . $identificador . '.webp';
-    return is_file(dirname(__DIR__) . $arquivo) ? '/TCC-Nook' . $arquivo : null;
+    return is_file(dirname(__DIR__) . $arquivo) ? '..' . $arquivo : null;
 }
 
 function validarGeneros($selecao, array $permitidos): ?array

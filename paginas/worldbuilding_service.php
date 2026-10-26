@@ -16,6 +16,29 @@ function camposMundo(): array
         'template'=>['categoria'=>['Categoria','selecao',['Livros','Personagens','Cenários','Worldbuilding','Investigação','Objetos e itens']]],
     ];
 }
+/** Categorias livres são nomes curtos; outros seletores continuam usando a allowlist. */
+function normalizarCategoriaMundo(string $valor): string
+{
+    if (preg_match('/[<>\p{Cc}]/u', $valor)) throw new InvalidArgumentException('Use um nome de categoria sem marcação ou caracteres de controle.');
+    $valor = trim(preg_replace('/\s+/u', ' ', $valor));
+    if (mb_strlen($valor)>80) throw new InvalidArgumentException('Use até 80 caracteres no nome da categoria.');
+    return $valor;
+}
+
+/** Opções padrão e categorias efetivamente salvas nas fichas desta seção e obra. */
+function opcoesCategoriaMundo(string $tipo, array $registros = []): array
+{
+    $opcoes = camposMundo()[$tipo]['categoria'][2] ?? [];
+    $nomes = [];
+    foreach (array_merge($opcoes, array_column($registros, 'categoria')) as $valor) {
+        if (!is_string($valor) || trim($valor)==='') continue;
+        $nome = trim(preg_replace('/\s+/u', ' ', $valor));
+        $chave = mb_strtolower($nome, 'UTF-8');
+        if (!isset($nomes[$chave])) $nomes[$chave] = $nome;
+    }
+    return array_values($nomes);
+}
+
 function tabelaMundo(string $tipo): array
 {
     if(!isset(camposMundo()[$tipo]))throw new InvalidArgumentException('Tipo de elemento inválido.');
@@ -35,7 +58,8 @@ function validarFichaMundo(string $tipo,array $data): array
     if(in_array($tipo,['item','marco','nota'],true)&&$out['descricao']==='')throw new InvalidArgumentException('Preencha a descrição ou o conteúdo.');
     foreach(camposMundo()[$tipo] as $key=>$field){
         $v=$text($data[$key]??'',is_int($field[2])&&in_array($field[1],['texto','longo'],true)?$field[2]:200);
-        if($v!==''&&$field[1]==='selecao'&&!in_array($v,$field[2],true))throw new InvalidArgumentException('Opção inválida: '.$field[0]);
+        if($key==='categoria')$v=normalizarCategoriaMundo($v);
+        if($key!=='categoria'&&$v!==''&&$field[1]==='selecao'&&!in_array($v,$field[2],true))throw new InvalidArgumentException('Opção inválida: '.$field[0]);
         if($v!==''&&in_array($field[1],['numero','ano'],true)&&(!preg_match('/^-?\d+$/D',$v)||abs((float)$v)>$field[2]||($field[1]==='numero'&&(int)$v<0)))throw new InvalidArgumentException('Número inválido: '.$field[0]);
         $out[$key]=$v;
     }
@@ -75,6 +99,14 @@ function salvarFichaMundo(PDO $c,int $book,int $user,string $tipo,array $data,?s
     // Mesmo lock do editor: serializa relações e exclusões sem alterar sua revisão.
     obraDoAutor($c,$book,$user,true);$out=validarFichaMundo($tipo,$data);[$table,$pk,$name,$desc]=tabelaMundo($tipo);
     $all=carregarMundo($c,$book,$user);$id=filter_var($data['id']??0,FILTER_VALIDATE_INT);if($id===false||$id<0)throw new InvalidArgumentException('Identificador inválido.');
+    if (isset($out['categoria'])) {
+        foreach (opcoesCategoriaMundo($tipo, $all[$tipo]) as $categoria) {
+            if (mb_strtolower($categoria,'UTF-8')===mb_strtolower($out['categoria'],'UTF-8')) {
+                $out['categoria']=$categoria;
+                break;
+            }
+        }
+    }
     $old=null;foreach($all[$tipo] as $r)if($r['id']===$id)$old=$r;
     if($id&&!$old)throw new InvalidArgumentException('Elemento não encontrado nesta obra.');
     if($old&&(int)($data['revisao']??0)!==$old['revisao'])throw new ConflitoObra('Esta ficha mudou em outra aba. Seu texto foi preservado; feche e abra a ficha para atualizar.');

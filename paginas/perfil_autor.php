@@ -323,12 +323,7 @@ $stmt->execute([':id_autor' => $destinoFollow]);
 $seguidores = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 $esc = static fn($valor) => htmlspecialchars((string) ($valor ?? ''), ENT_QUOTES, 'UTF-8');
-$imagemUrl = static function ($caminho) use ($esc) {
-    $caminho = trim((string) ($caminho ?? ''));
-    if ($caminho === '') return '';
-    if (preg_match('~^(https?:)?//|^/~i', $caminho)) return $esc($caminho);
-    return $esc('../' . ltrim($caminho, './'));
-};
+$imagemUrl = static fn($caminho) => $esc(nookPublicUrl($caminho));
 $urlObra = static function (array $livro) {
     if (!empty($livro['id_livro'])) return 'visao_livro.php?id_livro=' . (int) $livro['id_livro'];
     return 'visao_livro.php?google_books_id=' . rawurlencode((string) $livro['google_books_id']);
@@ -337,11 +332,11 @@ $urlObra = static function (array $livro) {
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
-<link rel="icon" href="/TCC-Nook/img/icons/ico-nook/ico-nook.ico" type="image/x-icon">
+<link rel="icon" href="../img/icons/ico-nook/ico-nook.ico" type="image/x-icon">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="/TCC-Nook/front-end/css/main.css">
-    <link rel="stylesheet" href="/TCC-Nook/front-end/css/pages/perfil-autor.css">
+    <link rel="stylesheet" href="../front-end/css/main.css">
+    <link rel="stylesheet" href="../front-end/css/pages/perfil-autor.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Lora:wght@400;500;600;700&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -433,7 +428,7 @@ $urlObra = static function (array $livro) {
                     <a class="author-book" href="<?= $esc($urlObra($livro)) ?>">
                         <span class="author-book-cover">
                             <?php if ($livro['capa']): ?><img src="<?= $imagemUrl($livro['capa']) ?>" alt="Capa de <?= $esc($livro['titulo']) ?>" loading="lazy">
-                            <?php else: ?><img src="/TCC-Nook/img/livro-sem-capa.svg" alt="Capa de <?= $esc($livro['titulo']) ?>" loading="lazy"><?php endif; ?>
+                            <?php else: ?><img src="../img/livro-sem-capa.svg" alt="Capa de <?= $esc($livro['titulo']) ?>" loading="lazy"><?php endif; ?>
                         </span>
                         <span class="author-book-title"><?= $esc($livro['titulo']) ?></span>
                         <span class="author-book-meta"><?= $esc($anoPublicacao($livro['data']) ?: 'Data não informada') ?><?= $livro['idioma'] ? ' · ' . $esc(strtoupper($livro['idioma'])) : '' ?></span>

@@ -22,7 +22,7 @@ function capitulosObra(PDO $c,int $id): array{$s=$c->prepare('SELECT id_capitulo
 function criarObra(PDO $c,int $autor,string $modo): int
 {
     if(!ehAutor($c,$autor)||!in_array($modo,['editor','pdf'],true))throw new InvalidArgumentException('Ative seu perfil de autor antes de criar uma obra.');
-    $s=$c->prepare("INSERT INTO livro(titulo_livro,class_ind,id_user,nome_autor,visibilidade,idioma,origem,capa_url,data_publi) SELECT 'Sem título',0,id_user,nome_completo,'privado','pt-BR','nook','/TCC-Nook/img/livro-sem-capa.svg',NULL FROM usuario WHERE id_user=? RETURNING id_livro");$s->execute([$autor]);$id=(int)$s->fetchColumn();$s=$c->prepare('INSERT INTO publicacao_obra(id_livro,id_autor,modalidade) VALUES(?,?,?)');$s->execute([$id,$autor,$modo]);return $id;
+    $s=$c->prepare("INSERT INTO livro(titulo_livro,class_ind,id_user,nome_autor,visibilidade,idioma,origem,capa_url,data_publi) SELECT 'Sem título',0,id_user,nome_completo,'privado','pt-BR','nook','../img/livro-sem-capa.svg',NULL FROM usuario WHERE id_user=? RETURNING id_livro");$s->execute([$autor]);$id=(int)$s->fetchColumn();$s=$c->prepare('INSERT INTO publicacao_obra(id_livro,id_autor,modalidade) VALUES(?,?,?)');$s->execute([$id,$autor,$modo]);return $id;
 }
 function salvarObra(PDO $c,int $id,int $autor,array $data): array
 {
@@ -58,7 +58,7 @@ function publicarObra(PDO $c,int $id,int $autor,string $declaracao,bool $novaEdi
         if(!$edicao||$novaEdicao){$s=$c->prepare('INSERT INTO edicao_livro(id_livro,numero) SELECT ?,COALESCE(MAX(numero),0)+1 FROM edicao_livro WHERE id_livro=? RETURNING id');$s->execute([$id,$id]);$edicao=$s->fetchColumn();}
         $snapshot=['titulo'=>$p['titulo'],'resumo'=>$p['resumo'],'id_genero'=>$p['id_genero'],'classificacao'=>$p['classificacao'],'capa'=>$p['capa_url'],'capitulos'=>$p['modalidade']==='editor'?$caps:[]];
         $s=$c->prepare('INSERT INTO versao_publicacao(id_edicao,numero,arquivo,paginas,snapshot,declaracao,publicada_por) SELECT ?,COALESCE(MAX(numero),0)+1,?,?,?::jsonb,?,? FROM versao_publicacao WHERE id_edicao=? RETURNING id');$s->execute([$edicao,basename($arquivo),$paginas,json_encode($snapshot,JSON_UNESCAPED_UNICODE),$declaracao,$autor,$edicao]);$versao=(int)$s->fetchColumn();
-        $capa=$p['capa_url']?'/TCC-Nook/paginas/arquivo_obra.php?id_livro='.$id.'&tipo=capa&versao='.$versao:'/TCC-Nook/img/livro-sem-capa.svg';
+        $capa=$p['capa_url']?'../paginas/arquivo_obra.php?id_livro='.$id.'&tipo=capa&versao='.$versao:'../img/livro-sem-capa.svg';
         $s=$c->prepare("UPDATE livro SET titulo_livro=?,resumo_livro=?,sinopse_livro=?,class_ind=?,capa_url=?,paginas=?,visibilidade='publico',data_publi=COALESCE(data_publi,now()) WHERE id_livro=?");$s->execute([$p['titulo'],$p['resumo'],$p['resumo'],$p['classificacao'],$capa,$paginas,$id]);
         $s=$c->prepare('DELETE FROM preferencia_livro WHERE id_livro=?');$s->execute([$id]);$s=$c->prepare('INSERT INTO preferencia_livro(id_livro,id_preferencia) VALUES(?,?)');$s->execute([$id,$p['id_genero']]);
         $s=$c->prepare("UPDATE publicacao_obra SET estado='publicado',id_versao_atual=?,revisao=revisao+1,atualizado_em=now() WHERE id_livro=?");$s->execute([$versao,$id]);return ['id_versao'=>$versao,'arquivo'=>$arquivo,'revisao'=>(int)$p['revisao']+1];

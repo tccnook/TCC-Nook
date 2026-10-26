@@ -32,9 +32,6 @@
 .world-heading>button{flex:none}
 .world-status{min-height:1em;font-size:.85rem;margin:12px 0}
 .world-notice{background:#e9e1ef;border-left:3px solid #7b6aa8;padding:16px}
-.world-tabs{display:flex;gap:12px;overflow:auto;border-bottom:1px solid #ded5df;margin-bottom:26px}
-.world-tabs a{padding:14px 12px;white-space:nowrap;font-size:.85rem;border-bottom:3px solid transparent}
-.world-tabs a[aria-current]{border-color:#7b6aa8;font-weight:700}
 .world-overview>h2:not(:first-child){margin-top:28px}
 .world-panel{background:var(--world-panel,#302448);color:white;border-radius:10px;overflow:hidden}
 .world-panel :is(h2,h3,h4){color:white}
@@ -199,8 +196,6 @@
 .world-heading{gap:14px}
 .world-heading p{font-size:.85rem}
 .world-heading>button{width:100%}
-.world-tabs{gap:4px;margin-bottom:20px}
-.world-tabs a{font-size:.75rem;padding:12px 8px}
 .world-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
 .world-card-body{padding:14px}
 .world-card-body h3{font-size:1.05rem}
@@ -244,7 +239,7 @@
 }
 
 
-.world-layout .world-tabs a,.world-breadcrumb a{color:#49355f}
+.world-breadcrumb a{color:#49355f}
 .world-summary:not(:has(>.world-element-image)){grid-template-columns:1fr}
 .world-summary>.world-initials{display:none}
 .world-summary .world-card-body h3{font-size:1.8rem}
@@ -269,5 +264,10 @@
 @media(max-width:1200px){.world-writing-help{position:static;max-height:400px}}
 @media(max-width:720px){.world-sidebar [data-chapter-list] button{min-width:38px}}
 .world-sidebar .writing-back{color:#5c467b}
-.world-sidebar nav a,.world-tabs a{flex-shrink:0}
-@media(max-width:720px){.world-tabs{display:none}.world-sidebar nav{scroll-snap-type:x proximity}.world-sidebar nav a{scroll-snap-align:start}}
+.world-sidebar nav a{flex-shrink:0}
+@media(max-width:720px){.world-sidebar nav{scroll-snap-type:x proximity}.world-sidebar nav a{scroll-snap-align:start}}
+
+.world-category-field { align-content: start; }
+.world-custom-category { display: grid; gap: 8px; margin-top: 4px; }
+.world-custom-category[hidden] { display: none; }
+.world-custom-category > label { font-size: .8rem; }

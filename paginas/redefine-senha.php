@@ -58,17 +58,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
-<link rel="icon" href="/TCC-Nook/img/icons/ico-nook/ico-nook.ico" type="image/x-icon">
+<link rel="icon" href="../img/icons/ico-nook/ico-nook.ico" type="image/x-icon">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="/TCC-Nook/front-end/css/core.css">
-    <link rel="stylesheet" href="/TCC-Nook/front-end/css/pages/redefinir.css">
+    <link rel="stylesheet" href="../front-end/css/core.css">
+    <link rel="stylesheet" href="../front-end/css/pages/redefinir.css">
     <link href="https://fonts.googleapis.com/css2?family=Lora:wght@400;500&family=Manrope:wght@400;500;600&display=swap" rel="stylesheet">
     <title>Defina sua senha | Nook</title>
 </head>
 <body class="recovery-page">
 <main class="recovery-card">
-    <a class="recovery-brand" href="login.php"><img src="/TCC-Nook/img/logos/logo-deitada.png" alt="Nook" width="76" height="30"></a>
+    <a class="recovery-brand" href="login.php"><img src="../img/logos/logo-deitada.png" alt="Nook" width="76" height="30"></a>
     <h1>Defina sua senha</h1>
     <p>A senha deve ter no mínimo 8 caracteres e conter uma combinação de letras, números e símbolos.</p>
     <?php if ($erro !== ''): ?><p role="alert"><?= htmlspecialchars($erro, ENT_QUOTES, 'UTF-8') ?></p><?php endif; ?>

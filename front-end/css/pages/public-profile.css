@@ -1,19 +1,78 @@
-.public-profile { width: min(100% - 2rem, 1100px); margin: 2rem auto 6rem; line-height: 1.6; }
-.profile-back { display: inline-flex; align-items: center; min-height: 44px; margin-bottom: 1rem; color: var(--color-primary); }
-.public-profile-identity { overflow: hidden; margin-bottom: 2.5rem; border-radius: var(--radius-md); background: var(--color-surface); }
-.public-profile-banner { width: 100%; height: clamp(130px, 22vw, 260px); object-fit: cover; }
-.public-profile-heading { display: flex; flex-wrap: wrap; gap: 1.5rem; align-items: center; padding: 2rem; }
-.public-profile-heading h1 { font: 500 clamp(1.5rem, 4vw, 2rem) var(--font-secundary); color: var(--color-primary); }
-.public-profile-heading > a { margin-left: auto; padding: .75rem; color: var(--color-primary); }
-.public-profile-avatar { width: 96px; height: 96px; border-radius: 50%; object-fit: cover; }
-.public-profile-bio { padding: 0 2rem 2rem; max-width: 70ch; overflow-wrap: anywhere; }
-.public-profile h2 { margin-bottom: 1.25rem; font: 500 1.5rem var(--font-secundary); color: var(--color-primary); }
-.public-profile-books { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 1.5rem; }
-.public-profile-books a { display: grid; gap: .5rem; align-content: start; color: var(--color-text); overflow-wrap: anywhere; }
-.public-profile-books img, .profile-cover-empty { width: 100%; aspect-ratio: 2/3; height: auto; object-fit: contain; border-radius: 6px; background: var(--color-surface-muted); }
-.profile-cover-empty { display: grid; place-items: center; text-align: center; }
-.public-profile-books small { color: var(--text-muted); }
-@media(max-width: 600px) { .public-profile-books { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; } .public-profile-heading { padding: 1rem; } .public-profile-bio { padding: 0 1rem 1rem; } }
-.public-profile-stats { display: flex; flex-wrap: wrap; gap: 1.5rem 2.5rem; margin: 0 0 2.5rem; }
-.public-profile-stats dt { color: var(--text-muted); font-size: .8rem; }
-.public-profile-stats dd { margin-top: .25rem; font-size: 1.4rem; color: var(--color-primary); }
+.public-profile-page { background: var(--color-background, #f6f2eb); color: var(--color-text, #252525); }
+.public-profile { width: min(100% - 4rem, 1280px); margin: 1rem auto 4rem; min-height: 75vh; line-height: 1.6; }
+.public-profile-guest { display: flex; align-items: center; justify-content: space-between; padding: .5rem 2rem; background: #2b1f47; color: white; }
+.public-profile-guest > a { color: #fff; min-height: 44px; display: inline-flex; align-items: center; }
+.public-profile-guest img { object-fit: contain; }
+.public-profile-banner { display: block; width: 100%; height: clamp(160px, 18vw, 240px); object-fit: cover; border-radius: 12px; background: #2b1f47; }
+.public-profile-heading { position: relative; display: grid; grid-template-columns: 168px minmax(0, 1fr) auto; gap: 1.5rem; align-items: center; margin: -48px 36px 0; }
+.public-profile-avatar { position: relative; width: 168px; height: 168px; object-fit: cover; border-radius: 50%; border: 3px solid #2b1f47; background: #e8dfd1; align-self: start; }
+.public-profile-details { padding-top: 48px; min-width: 0; }
+.public-profile h1 { font: 600 clamp(1.4rem, 2.4vw, 1.85rem)/1.25 Lora, Georgia, serif; color: #2b1f47; overflow-wrap: anywhere; }
+.public-profile-username { margin-top: .35rem; color: #51495b; font-size: .9rem; overflow-wrap: anywhere; }
+.public-profile-bio { margin-top: .85rem; max-width: 48ch; font-size: .9rem; overflow-wrap: anywhere; }
+.public-profile-social { display: flex; flex-wrap: wrap; gap: 1.5rem; margin-top: .85rem; font-size: .85rem; }
+.public-profile-social span { display: inline-flex; align-items: center; gap: .5rem; }
+.public-profile-social svg { width: 17px; height: 17px; color: #7b6aa8; }
+.public-profile-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: .75rem; padding-top: 60px; }
+.profile-button { display: inline-flex; align-items: center; justify-content: center; gap: .65rem; min-height: 46px; padding: .7rem 1.1rem; border: 1px solid #e5dfeb; border-radius: 8px; background: white; color: #2b1f47; font: 600 .85rem/1.4 Manrope, sans-serif; cursor: pointer; text-decoration: none; }
+.profile-button-primary { background: #2b1f47; color: white; border-color: #2b1f47; }
+.profile-button svg { width: 19px; height: 19px; }
+.profile-button:hover { background: #eee8f4; }
+.profile-button-primary:hover { background: #44335f; }
+.public-profile-tabs { display: flex; justify-content: space-around; gap: 1rem; overflow-x: auto; margin: 1.5rem 0; border-bottom: 1px solid #d8cfe2; }
+.public-profile-tabs a { display: flex; align-items: center; justify-content: center; min-height: 55px; padding: .75rem 1rem; color: #51495b; white-space: nowrap; font-size: .9rem; border-bottom: 2px solid transparent; text-decoration: none; }
+.public-profile-tabs a[aria-current] { color: #2b1f47; font-weight: 700; border-bottom-color: #7b6aa8; }
+.public-profile-grid { display: grid; grid-template-columns: minmax(0, 2.65fr) minmax(280px, 1fr); align-items: start; gap: 1.25rem; }
+.public-profile-main, .public-profile-sidebar { display: grid; gap: 1.25rem; min-width: 0; }
+.profile-panel { padding: 1.5rem; background: #2d2243; color: #fff; border-radius: 12px; min-width: 0; }
+.public-profile h2 { font: 500 clamp(1.25rem, 1.9vw, 1.6rem)/1.35 Lora, Georgia, serif; margin: 0 0 1.5rem; }
+.public-profile h3 { font: 600 1rem/1.5 Manrope, sans-serif; overflow-wrap: anywhere; }
+.profile-panel-heading { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-bottom: 1.5rem; }
+.profile-panel-heading h2 { margin: 0; }
+.profile-see-all { display: inline-flex; align-items: center; min-height: 44px; padding: .5rem 1rem; border: 1px solid #a796be; border-radius: 7px; color: #fff; font-size: .8rem; white-space: nowrap; }
+.public-profile-books { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 1.15rem; }
+.public-profile-books a { display: flex; flex-direction: column; align-items: stretch; color: white; text-decoration: none; min-width: 0; }
+.public-profile-books img { width: 100%; aspect-ratio: 2/3; height: auto; object-fit: cover; background: #44365b; border-radius: 6px; margin-bottom: .65rem; }
+.public-profile-books strong { font-size: .85rem; line-height: 1.4; font-weight: 600; overflow-wrap: anywhere; }
+.public-profile-books small { font-size: .8rem; color: #d9cde7; margin: .25rem 0; overflow-wrap: anywhere; }
+.public-profile-rating { color: #d5aeef; letter-spacing: .12em; font-size: 1rem; margin-top: auto; padding-top: .5rem; }
+.public-profile-stats { display: grid; gap: .5rem; margin: 0; }
+.public-profile-stats > div { position: relative; display: grid; grid-template-columns: 52px minmax(0, 1fr); column-gap: 1rem; align-items: center; padding: 1rem; background: #43345f; border-radius: 8px; }
+.public-profile-stats svg { position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); width: 36px; height: 36px; color: #d5aeef; justify-self: center; }
+.public-profile-stats dt { grid-column: 2; grid-row: 2; color: #f2eaf9; font-size: .8rem; }
+.public-profile-stats dd { grid-column: 2; grid-row: 1; margin: 0; color: #d5aeef; font-size: 1.3rem; font-weight: 600; overflow-wrap: anywhere; }
+.profile-literary dd { font-size: .95rem; }
+.profile-literary dt { grid-row: 1; }
+.profile-literary dd { grid-row: 2; }
+.public-profile-stats small { display: block; font-weight: 400; font-size: .8rem; color: #f2eaf9; }
+.profile-empty { padding: 1.5rem 0; font-size: .95rem; }
+.profile-tab-content { margin: 1.5rem 0 3rem; }
+.profile-tab-description { margin: -1rem 0 1.5rem; }
+.profile-tab-content > .public-profile-books { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); }
+.public-profile-lists, .public-profile-reviews { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1.25rem; }
+.profile-list { display: flex; flex-direction: column; gap: .75rem; text-decoration: none; }
+.profile-list p { font-size: .9rem; overflow-wrap: anywhere; }
+.profile-list-covers { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .5rem; margin-top: auto; }
+.profile-list-covers img { width: 100%; height: auto; aspect-ratio: 2/3; object-fit: cover; border-radius: 4px; }
+.public-profile-reviews { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.profile-review { display: grid; grid-template-columns: 100px minmax(0, 1fr); gap: 1.25rem; }
+.profile-review img { object-fit: cover; border-radius: 5px; }
+.profile-review h3 { margin: .5rem 0; }
+.profile-review p { font-size: .9rem; white-space: normal; overflow-wrap: anywhere; }
+.profile-share-dialog { margin: auto; width: min(480px, calc(100% - 2rem)); padding: 1.5rem; border: 0; border-radius: 12px; background: #f6f2eb; color: #2b1f47; }
+.profile-share-dialog::backdrop { background: #20152f99; }
+.profile-share-dialog h2 { font: 500 1.4rem Lora, Georgia, serif; margin-bottom: 1rem; }
+.profile-share-dialog label { display: block; margin-bottom: .5rem; }
+.profile-share-dialog input { width: 100%; min-height: 44px; padding: .5rem; border: 1px solid #7b6aa8; border-radius: 5px; }
+.profile-share-dialog [role=status] { min-height: 1.75rem; margin: .5rem 0; }
+.profile-share-dialog > div { display: flex; flex-wrap: wrap; gap: .75rem; }
+.profile-private { text-align: center; padding: 5rem 1rem; }
+.profile-private > svg { width: 48px; height: 48px; margin: 1rem auto; color: #7b6aa8; }
+.profile-private p { margin: 1rem 0 2rem; }
+.profile-action-error { padding: 1rem; color: #912a28; }
+.public-profile :is(a, button, input):focus-visible { outline: 3px solid #9d72c8; outline-offset: 4px; }
+.public-profile a:hover { text-decoration: underline; text-underline-offset: 4px; }
+.public-profile .published-book-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1.5rem; }
+@media (max-width: 1150px) { .public-profile-heading { grid-template-columns: 140px minmax(0, 1fr); margin-inline: 24px; } .public-profile-avatar { width: 140px; height: 140px; } .public-profile-actions { grid-column: 2; justify-content: flex-start; padding-top: 0; } .public-profile-grid { grid-template-columns: minmax(0, 2.4fr) minmax(260px, 1fr); } .profile-panel { padding: 1.25rem; } .public-profile-books { gap: .75rem; } }
+@media (max-width: 850px) { .public-profile-grid { grid-template-columns: minmax(0, 1fr); } .public-profile-sidebar { grid-template-columns: repeat(2, minmax(0, 1fr)); } .public-profile-lists { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 600px) { .public-profile { width: calc(100% - 2rem); margin-top: .75rem; } .public-profile-heading { grid-template-columns: 88px minmax(0, 1fr); gap: 1rem; margin: -32px 8px 0; } .public-profile-avatar { width: 88px; height: 88px; } .public-profile-details { padding-top: 40px; } .public-profile-bio { margin-left: -104px; margin-top: 1.25rem; } .public-profile-social { margin-left: -104px; gap: 1rem; } .public-profile-actions { grid-column: 1/-1; gap: .5rem; } .profile-button { padding: .65rem .8rem; font-size: .8rem; } .public-profile-tabs { justify-content: flex-start; gap: .25rem; margin-top: 1rem; } .public-profile-tabs a { padding-inline: .75rem; font-size: .8rem; } .public-profile-books { display: flex; overflow-x: auto; gap: 1rem; padding-bottom: .75rem; scroll-snap-type: x proximity; } .public-profile-books a { flex: 0 0 122px; scroll-snap-align: start; } .public-profile-sidebar, .public-profile-lists, .public-profile-reviews, .public-profile .published-book-grid { grid-template-columns: minmax(0, 1fr); } .profile-tab-content > .public-profile-books { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); overflow: visible; } .profile-panel { padding: 1.15rem; } .profile-see-all { padding-inline: .65rem; } .public-profile h2 { font-size: 1.25rem; } }

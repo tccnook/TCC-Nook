@@ -1,7 +1,7 @@
 <?php
 
 session_start();
-require_once('conexao.php');
+require_once(__DIR__ . "/" . 'conexao.php');
 $db = new Database;
 $conn = $db->conectar();
 

@@ -1,6 +1,6 @@
 <?php
 
-require_once('conexao.php');
+require_once(__DIR__ . "/" . 'conexao.php');
 
 session_start();
 if (empty($_SESSION['login_csrf'])) {
@@ -76,21 +76,21 @@ $erroLogin = '';
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <link rel="stylesheet" href="/TCC-Nook/front-end/css/core.css">
-        <link rel="stylesheet" href="/TCC-Nook/front-end/css/pages/login.css">
+        <link rel="stylesheet" href="../front-end/css/core.css">
+        <link rel="stylesheet" href="../front-end/css/pages/login.css">
 
         <link rel="preconnect" href="https://fonts.googleapis.com">
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
         <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600;1,700&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
 
     
-        <link rel="shortcut icon" href="/TCC-Nook/img/icons/ico-nook/ico-nook.ico" type="image/x-icon">
+        <link rel="shortcut icon" href="../img/icons/ico-nook/ico-nook.ico" type="image/x-icon">
         <title> Nook - login </title>
     </head>
     <body class="auth-page">
         <main>
             <div class="logo-nook">
-                <img src="/TCC-Nook/img/logos/logo-deitada.png" alt="">
+                <img src="../img/logos/logo-deitada.png" alt="">
             </div>
             <h1> Bem vindo de volta ao Nook </h1>
             
@@ -118,7 +118,7 @@ $erroLogin = '';
             </div>
                         
             <button onclick="window.location.href='google-login.php'" class="google-btn">
-                <img class="ico-google" src="/TCC-Nook/img/icons/plataforms/google-ico.svg" alt="Google">
+                <img class="ico-google" src="../img/icons/plataforms/google-ico.svg" alt="Google">
                 <span>Continuar com o Google</span>
             </button>
 

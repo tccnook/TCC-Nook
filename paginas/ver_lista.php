@@ -58,12 +58,7 @@ if (isset($schema['whishlist_seguida'])) {
 }
 
 $esc = static fn($valor) => htmlspecialchars((string) ($valor ?? ''), ENT_QUOTES, 'UTF-8');
-$imagemUrl = static function ($caminho) use ($esc) {
-    $caminho = trim((string) ($caminho ?? ''));
-    if ($caminho === '') return '';
-    if (preg_match('~^(https?:)?//|^/~i', $caminho) || str_starts_with($caminho, '../')) return $esc($caminho);
-    return $esc('../' . ltrim($caminho, './'));
-};
+$imagemUrl = static fn($caminho) => $esc(nookPublicUrl($caminho));
 $listasRelacionadas=[];
 if(!$ehDono){
     $stmt=$conn->prepare("SELECT w.id,w.nome_lista,w.descricao,(SELECT COUNT(*) FROM whishbook wb WHERE wb.id_whishlist=w.id) AS quantidade,(SELECT json_agg(capa_url) FROM (SELECT l.capa_url FROM whishbook wb JOIN livro l ON l.id_livro=wb.id_livro WHERE wb.id_whishlist=w.id ORDER BY wb.id LIMIT 3) capas) AS capas FROM whishlist w WHERE w.visibilidade='publica' AND w.id<>:atual AND EXISTS(SELECT 1 FROM whishbook candidato JOIN whishbook base ON base.id_livro=candidato.id_livro WHERE candidato.id_whishlist=w.id AND base.id_whishlist=:base) ORDER BY w.id DESC LIMIT 3");$stmt->execute([':atual'=>$id_lista,':base'=>$id_lista]);$listasRelacionadas=$stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -76,10 +71,10 @@ if (!$capasHero && !empty($lista['capa_url'])) $capasHero = [$lista['capa_url']]
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="/TCC-Nook/front-end/css/main.css">
-    <link rel="stylesheet" href="/TCC-Nook/front-end/css/pages/perfil.css">
-    <link rel="stylesheet" href="/TCC-Nook/front-end/css/pages/listas.css">
-    <link rel="shortcut icon" href="/TCC-Nook/img/icons/ico-nook/ico-nook.ico" type="image/x-icon">
+    <link rel="stylesheet" href="../front-end/css/main.css">
+    <link rel="stylesheet" href="../front-end/css/pages/perfil.css">
+    <link rel="stylesheet" href="../front-end/css/pages/listas.css">
+    <link rel="shortcut icon" href="../img/icons/ico-nook/ico-nook.ico" type="image/x-icon">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Lora:wght@400;500;600;700&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -134,7 +129,7 @@ if (!$capasHero && !empty($lista['capa_url'])) $capasHero = [$lista['capa_url']]
                 <li class="lista-livro-row" data-livro-id="<?= (int) $livro['id_livro'] ?>" data-titulo="<?= $esc(mb_strtolower($livro['titulo_livro'])) ?>">
                     <span class="lista-row-numero"><?= $indice + 1 ?></span>
                     <a class="lista-row-livro" href="visao_livro.php?id_livro=<?= urlencode($livro['id_livro']) ?>">
-                        <?php if ($livro['capa_url']): ?><img src="<?= $imagemUrl($livro['capa_url']) ?>" alt="" loading="lazy"><?php else: ?><img src="/TCC-Nook/img/livro-sem-capa.svg" alt="" loading="lazy"><?php endif; ?>
+                        <?php if ($livro['capa_url']): ?><img src="<?= $imagemUrl($livro['capa_url']) ?>" alt="" loading="lazy"><?php else: ?><img src="../img/livro-sem-capa.svg" alt="" loading="lazy"><?php endif; ?>
                         <strong><?= $esc($livro['titulo_livro']) ?></strong>
                     </a>
                     <span><?= $esc($livro['nome_autor'] ?: 'Não informado') ?></span>

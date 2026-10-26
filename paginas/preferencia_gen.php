@@ -23,7 +23,7 @@ if(isset($_SESSION['generos_concluido'])){
     exit();
 }
 
-require_once("conexao.php");
+require_once(__DIR__ . "/" . "conexao.php");
 
 $db = new Database;
 $conn = $db->conectar();
@@ -67,16 +67,16 @@ if (isset($_POST['continuar'])) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <link rel="stylesheet" href="/TCC-Nook/front-end/css/core.css">
-    <link rel="stylesheet" href="/TCC-Nook/front-end/css/pages/prefe_gen.css">
-    <link rel="stylesheet" href="/TCC-Nook/front-end/css/components/onboarding.css">
+    <link rel="stylesheet" href="../front-end/css/core.css">
+    <link rel="stylesheet" href="../front-end/css/pages/prefe_gen.css">
+    <link rel="stylesheet" href="../front-end/css/components/onboarding.css">
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 
     <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600;1,700&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
 
-    <link rel="shortcut icon" href="/TCC-Nook/img/icons/ico-nook/ico-nook.ico" type="image/x-icon">
+    <link rel="shortcut icon" href="../img/icons/ico-nook/ico-nook.ico" type="image/x-icon">
 
     <title>Preferências - Nook</title>
 </head>
@@ -85,7 +85,7 @@ if (isset($_POST['continuar'])) {
 
     <header class="preferences-header onboarding-header">
 
-        <img src="/TCC-Nook/img/logos/logo-empe.png" alt="Logo Nook" class="logo">
+        <img src="../img/logos/logo-empe.png" alt="Logo Nook" class="logo">
 
         <section class="progresso">
             <section class="bola-um"></section>

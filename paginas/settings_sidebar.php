@@ -1,5 +1,5 @@
 <aside class="settings-sidebar">
-    <a href="paginaprincipal.php" class="settings-brand"><img src="/TCC-Nook/img/logos/logo-deitada.png" alt="Nook" width="180" height="60"></a>
+    <a href="paginaprincipal.php" class="settings-brand"><img src="../img/logos/logo-deitada.png" alt="Nook" width="180" height="60"></a>
     <nav aria-label="Configurações">
         <a href="config_user.php" <?= ($settingsPage ?? '') === 'account' ? 'aria-current="page"' : '' ?>><i data-lucide="circle-user-round"></i> Principal</a>
         <a href="bloqueados.php" <?= ($settingsPage ?? '') === 'blocked' ? 'aria-current="page"' : '' ?>><i data-lucide="ban"></i> Bloqueados</a>

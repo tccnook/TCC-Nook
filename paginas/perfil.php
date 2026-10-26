@@ -5,7 +5,7 @@
     // incluídos abaixo (salvar perfil, excluir do top 5, criar lista)
     ob_start();
 
-    require_once('conexao.php');
+    require_once(__DIR__ . "/" . 'conexao.php');
 
     $db = new Database();
     $conn = $db->conectar();
@@ -52,20 +52,20 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <link rel="stylesheet" href="/TCC-Nook/front-end/css/main.css">
-    <link rel="stylesheet" href="/TCC-Nook/front-end/css/pages/perfil.css">
-    <link rel="stylesheet" href="/TCC-Nook/front-end/css/pages/header-perfil.css">
-    <link rel="stylesheet" href="/TCC-Nook/front-end/css/pages/perfil-livros.css">
-    <link rel="stylesheet" href="/TCC-Nook/front-end/css/pages/perfil-listas.css">
-    <link rel="stylesheet" href="/TCC-Nook/front-end/css/pages/visão-geral.css">
-    <link rel="stylesheet" href="/TCC-Nook/front-end/css/pages/profile-reference.css">
+    <link rel="stylesheet" href="../front-end/css/main.css">
+    <link rel="stylesheet" href="../front-end/css/pages/perfil.css">
+    <link rel="stylesheet" href="../front-end/css/pages/header-perfil.css">
+    <link rel="stylesheet" href="../front-end/css/pages/perfil-livros.css">
+    <link rel="stylesheet" href="../front-end/css/pages/perfil-listas.css">
+    <link rel="stylesheet" href="../front-end/css/pages/visao-geral.css">
+    <link rel="stylesheet" href="../front-end/css/pages/profile-reference.css">
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 
     <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600;1,700&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
 
-    <link rel="shortcut icon" href="/TCC-Nook/img/icons/ico-nook/ico-nook.ico" type="image/x-icon">
+    <link rel="shortcut icon" href="../img/icons/ico-nook/ico-nook.ico" type="image/x-icon">
 
     <script src="https://unpkg.com/lucide@latest"></script>
     <title>Perfil</title>
@@ -73,7 +73,7 @@
 </head>
 <body class="profile-page" data-profile-tab="<?= htmlspecialchars($aba, ENT_QUOTES, 'UTF-8') ?>">
     <header class="header">
-        <?php require 'header_perfil.php'; ?>
+        <?php require __DIR__ . "/" . 'header_perfil.php'; ?>
     </header>
 
     <main>
@@ -91,25 +91,25 @@
             <?php
             switch ($aba) {
                 case 'visao-geral':
-                    require 'visao-geral.php';
+                    require __DIR__ . "/" . 'visao-geral.php';
                     break;
 
                 case 'livros-lidos':
-                    require 'livros_lidos.php';
+                    require __DIR__ . "/" . 'livros_lidos.php';
                     break;
 
                 case 'listas-leitura':
-                    require 'listas_livros.php';
+                    require __DIR__ . "/" . 'listas_livros.php';
                     break;
 
                 case 'livros-publicados':
-                    require 'livros_publicados_perfil.php';
+                    require __DIR__ . "/" . 'livros_publicados_perfil.php';
                     break;
                 case 'marcadores':
-                    require 'marcadores_perfil.php';
+                    require __DIR__ . "/" . 'marcadores_perfil.php';
                     break;
                 case 'resenhas':
-                    require 'resenhas_perfil.php';
+                    require __DIR__ . "/" . 'resenhas_perfil.php';
                     break;
             }
             
@@ -118,7 +118,7 @@
     </main>
 
     <?php
-        require_once('footer.php');
+        require_once(__DIR__ . "/" . 'footer.php');
     ?>
 
     <script>
