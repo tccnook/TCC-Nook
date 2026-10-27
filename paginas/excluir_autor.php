@@ -10,7 +10,7 @@
         exit('Método não permitido.');
     }
 
-    $id_autor = filter_var($_POST['id_autor'] ?? null, FILTER_VALIDATE_INT);
+    $id_autor = filter_var($_POST['id_autor'] ?? null, FILTER_VALIDATE_INT, ['options'=>['min_range'=>1]]);
 
     if (!$id_autor) {
         header('Location: crud_autores.php');

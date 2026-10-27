@@ -3,7 +3,7 @@ session_start();
 header('Content-Type: application/json; charset=UTF-8');
 header('Cache-Control: no-store');
 
-function responderAcaoPost(int $status, array $dados): void
+function responderAcaoPost(int $status, array $dados): never
 {
     http_response_code($status);
     echo json_encode($dados, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
@@ -32,8 +32,8 @@ require_once __DIR__ . '/privacy_settings.php';
 require_once __DIR__ . '/post_support.php';
 $conn = (new Database())->conectar();
 $config = configuracoesUsuario($conn, $idUser);
-$stmt = $conn->prepare("SELECT post.id_user,post.visibilidade,post.conteudo_sensivel,post.conteudo_adulto,COALESCE(configuracao_usuario.comentarios,'todos') AS politica_comentarios,EXISTS(SELECT 1 FROM follow WHERE id_follower=:viewer AND id_following=post.id_user) AS visitante_segue FROM post LEFT JOIN configuracao_usuario ON configuracao_usuario.id_user=post.id_user WHERE post.id_post=:post AND (post.visibilidade='publico' OR post.id_user=:owner)");
-$stmt->execute([':viewer' => $idUser, ':post' => $idPost, ':owner' => $idUser]);
+$stmt = $conn->prepare("SELECT post.id_user,post.visibilidade,post.conteudo_sensivel,post.conteudo_adulto FROM post WHERE post.id_post=:post AND (post.visibilidade='publico' OR post.id_user=:owner) AND NOT EXISTS(SELECT 1 FROM bloqueio b WHERE b.status_bloqueio='bloqueado' AND ((b.id_bloqueador=:bloqueador AND b.id_bloqueado=post.id_user) OR (b.id_bloqueador=post.id_user AND b.id_bloqueado=:bloqueado)))");
+$stmt->execute([':post' => $idPost, ':owner' => $idUser, ':bloqueador'=>$idUser, ':bloqueado'=>$idUser]);
 $post = $stmt->fetch(PDO::FETCH_ASSOC);
 if (!$post) responderAcaoPost(404, ['mensagem' => 'Post não encontrado.']);
 
@@ -48,8 +48,7 @@ $podeComentar = interacaoPermitida(
     $conn,
     'comentarios',
     (int) $post['id_user'],
-    $idUser,
-    filter_var($post['visitante_segue'], FILTER_VALIDATE_BOOLEAN)
+    $idUser
 );
 
 if ($acao === 'listar_comentarios') {
@@ -86,18 +85,25 @@ try {
     } catch (DomainException $erro) {
         responderAcaoPost(422, ['mensagem' => $erro->getMessage()]);
     }
-    $stmt = $conn->prepare("INSERT INTO comentario (id_user,categoria_curtida,id_coisocurtido,comentario) VALUES (:user,'post',:post,:comentario)");
+    $conn->beginTransaction();
+    $stmt = $conn->prepare("INSERT INTO comentario (id_user,categoria_curtida,id_coisocurtido,comentario) VALUES (:user,'post',:post,:comentario) RETURNING id_comentario");
     $stmt->execute([':user' => $idUser, ':post' => $idPost, ':comentario' => $comentario]);
+    $idComentario = (int)$stmt->fetchColumn();
     registrarMencoes($conn, $destinos, $idUser, 'post', (int) $idPost);
     $comentarios = comentariosPostParaModal($conn, (int) $idPost);
     $stmt = $conn->prepare("SELECT COUNT(*) FROM comentario WHERE categoria_curtida='post' AND id_coisocurtido=:post");
     $stmt->execute([':post' => $idPost]);
+    $totalComentarios = (int)$stmt->fetchColumn();
+    $conn->commit();
+    $comentarioCriado = null;
+    foreach ($comentarios as $item) if ((int)$item['id_comentario'] === $idComentario) { $comentarioCriado = $item; break; }
     responderAcaoPost(201, [
         'mensagem' => 'Comentário publicado.',
-        'comentario' => $comentarios[0] ?? null,
-        'total_comentarios' => (int) $stmt->fetchColumn()
+        'comentario' => $comentarioCriado,
+        'total_comentarios' => $totalComentarios
     ]);
 } catch (Throwable $erro) {
+    if ($conn->inTransaction()) $conn->rollBack();
     error_log('Falha em ação de post: ' . $erro->getMessage());
     responderAcaoPost(500, ['mensagem' => 'Não foi possível concluir a ação.']);
 }

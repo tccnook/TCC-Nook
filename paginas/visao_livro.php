@@ -1,5 +1,6 @@
 <?php
 session_start();
+$_SESSION['book_csrf'] ??= bin2hex(random_bytes(32));
 
 if (!isset($_SESSION['id_user'])) {
     header('Location: login.php');
@@ -600,6 +601,7 @@ $estrelasMedia = estrelasLivro($notaMedia);
 
 <dialog class="book-dialog" id="reviewDialog">
     <form id="reviewForm" class="dialog-form">
+        <input type="hidden" name="csrf" value="<?= htmlspecialchars($_SESSION['book_csrf'],ENT_QUOTES,'UTF-8') ?>">
         <header class="dialog-heading">
             <div><p class="book-eyebrow">Sua opinião</p><h2>Escrever resenha</h2></div>
             <button type="button" class="dialog-close" data-fechar-dialog aria-label="Fechar"><i data-lucide="x"></i></button>
@@ -701,6 +703,7 @@ $estrelasMedia = estrelasLivro($notaMedia);
 
     async function enviarAcao(acao, dados = {}) {
         const corpo = new FormData();
+        corpo.append('csrf', <?= json_encode($_SESSION['book_csrf']) ?>);
         corpo.append('acao', acao);
         corpo.append('id_livro', idLivro);
         Object.entries(dados).forEach(([chave, valor]) => corpo.append(chave, valor));
@@ -778,7 +781,7 @@ $estrelasMedia = estrelasLivro($notaMedia);
         const text = form.elements.comentario.value.trim();
         const status = document.getElementById('commentStatus');
         if (!text) return;
-        const dados = new URLSearchParams({ id_livro: String(idLivro), comentario: text, categoria_curtida: 'livro' });
+        const dados = new URLSearchParams({ csrf: <?= json_encode($_SESSION['book_csrf']) ?>, id_livro: String(idLivro), comentario: text, categoria_curtida: 'livro' });
         try {
             const resposta = await fetch('adicionar_comentario.php', {
                 method: 'POST',

@@ -27,7 +27,7 @@
                     throw new RuntimeException('Denúncia não encontrada.');
                 }
 
-                $stmt = $conn->prepare("DELETE FROM curtida WHERE categoria_curtida = 'comentario' AND id_coisocurtido = :id_comentario");
+                $stmt = $conn->prepare("DELETE FROM curtida WHERE categoria_curtido = 'comentario' AND id_coisocurtido = :id_comentario");
                 $stmt->execute([':id_comentario' => $idComentario]);
                 $stmt = $conn->prepare("UPDATE denuncia SET status = 'resolvida', resolvido = CURRENT_TIMESTAMP WHERE tipo_denunciado = 'comentario' AND id_denunciado = :id_comentario");
                 $stmt->execute([':id_comentario' => $idComentario]);

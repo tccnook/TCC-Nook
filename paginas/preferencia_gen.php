@@ -1,11 +1,8 @@
 <?php
 session_start();
+require_once __DIR__.'/auth_support.php';
+$_SESSION['genre_csrf'] ??= bin2hex(random_bytes(32));
 require_once __DIR__ . "/category_images.php";
-if(isset($_POST['pular'])){
-    header('location:login.php');
-    exit();
-}
-
 if(!isset($_SESSION['id_user'])){
     header('location:cadastro.php');
     exit();
@@ -36,7 +33,14 @@ $generos = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 $erroGeneros = '';
 $selecionados = [];
-if (isset($_POST['continuar'])) {
+if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST' && !authTokenValido($_SESSION['genre_csrf'], $_POST['csrf'] ?? null)) {
+    $erroGeneros = 'Sua sessão expirou. Atualize a página e tente novamente.';
+} elseif (isset($_POST['pular'])) {
+    $origemConfig = !empty($_SESSION['origem_config']);
+    unset($_SESSION['cadastro_concluido'], $_SESSION['generos_concluido'], $_SESSION['origem_config']);
+    header('Location: '.($origemConfig ? 'config_user.php' : 'reset.php'));
+    exit;
+} elseif (isset($_POST['continuar'])) {
     $selecionados = validarGeneros($_POST['generos'] ?? null, array_map('intval', array_column($generos, 'id_preferencia')));
     if ($selecionados === null) {
         $erroGeneros = 'Escolha exatamente 5 gêneros diferentes.';
@@ -44,10 +48,7 @@ if (isset($_POST['continuar'])) {
     } else {
         try {
             $conn->beginTransaction();
-            $stmt = $conn->prepare('INSERT INTO preferencia_user (id_user, id_preferencia) SELECT :usuario, :genero WHERE NOT EXISTS (SELECT 1 FROM preferencia_user WHERE id_user = :usuario_existente AND id_preferencia = :genero_existente)');
-            foreach ($selecionados as $idGenero) {
-                $stmt->execute([':usuario'=>$id_user, ':genero'=>$idGenero, ':usuario_existente'=>$id_user, ':genero_existente'=>$idGenero]);
-            }
+            substituirGenerosUsuario($conn, (int)$id_user, $selecionados);
             $conn->commit();
             $_SESSION['generos_concluido'] = true;
             header('Location: preferencia_autor.php');
@@ -116,6 +117,7 @@ if (isset($_POST['continuar'])) {
 
         <label class="onboarding-search"><span aria-hidden="true">⌕</span><input id="genre-search" type="search" aria-label="Pesquisar gênero" placeholder="Pesquisar gênero"></label>
         <form action="" method="POST" class="genre-form">
+            <input type="hidden" name="csrf" value="<?= htmlspecialchars($_SESSION['genre_csrf'], ENT_QUOTES, 'UTF-8') ?>">
             <?php if ($erroGeneros): ?><p role="alert"><?= htmlspecialchars($erroGeneros, ENT_QUOTES, 'UTF-8') ?></p><?php endif; ?>
 
             <section class="genre-grid">

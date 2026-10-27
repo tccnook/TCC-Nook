@@ -1,30 +1,15 @@
 <?php
 session_start();
-header('Content-Type: application/json; charset=UTF-8');
-
-if (!isset($_SESSION['id_user'])) {
-    http_response_code(401);
-    echo json_encode(['sucesso' => false, 'mensagem' => 'Faça login para ver mensagens.']);
-    exit();
-}
-
-$id_conversa = filter_var($_POST['id_conversa'] ?? null, FILTER_VALIDATE_INT);
-if (!$id_conversa) {
-    http_response_code(422);
-    echo json_encode(['sucesso' => false, 'mensagem' => 'Conversa inválida.']);
-    exit();
-}
-
-require_once __DIR__ . '/conexao.php';
-$conn = (new Database())->conectar();
-$stmt = $conn->prepare('SELECT 1 FROM conversa_participante WHERE id_conversa = :id_conversa AND id_user = :id_user');
-$stmt->execute([':id_conversa' => $id_conversa, ':id_user' => $_SESSION['id_user']]);
-if (!$stmt->fetchColumn()) {
-    http_response_code(403);
-    echo json_encode(['sucesso' => false, 'mensagem' => 'Você não participa desta conversa.']);
-    exit();
-}
-
-$stmt = $conn->prepare('SELECT m.id_mensagem, m.id_envio, m.tipo, m.conteudo, m.criacao, m.editado_em, u.username FROM mensagem m INNER JOIN usuario u ON u.id_user = m.id_envio WHERE m.id_conversa = :id_conversa AND m.delatado_em IS NULL ORDER BY m.criacao ASC');
-$stmt->execute([':id_conversa' => $id_conversa]);
-echo json_encode(['sucesso' => true, 'mensagens' => $stmt->fetchAll(PDO::FETCH_ASSOC)], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+require_once __DIR__.'/chat_support.php';
+if (!isset($_SESSION['id_user'])) chatResposta(401,['sucesso'=>false,'mensagem'=>'Faça login para ver mensagens.']);
+if (($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'POST') chatResposta(405,['sucesso'=>false,'mensagem'=>'Método não permitido.']);
+try { $conversation = chatId($_POST['id_conversa'] ?? null); }
+catch (InvalidArgumentException $error) { chatResposta(422,['sucesso'=>false,'mensagem'=>'Conversa inválida.']); }
+require_once __DIR__.'/conexao.php';
+try {
+    $conn = (new Database())->conectar();
+    if (!chatConversa($conn,$conversation,(int)$_SESSION['id_user'])) chatResposta(403,['sucesso'=>false,'mensagem'=>'Você não participa desta conversa.']);
+    $stmt = $conn->prepare('SELECT m.id_mensagem,m.id_envio,m.tipo,m.conteudo,m.criacao,m.editado_em,u.username FROM mensagem m INNER JOIN usuario u ON u.id_user=m.id_envio WHERE m.id_conversa=:conversa AND m.delatado_em IS NULL ORDER BY m.criacao ASC,m.id_mensagem ASC');
+    $stmt->execute([':conversa'=>$conversation]);
+    chatResposta(200,['sucesso'=>true,'mensagens'=>$stmt->fetchAll(PDO::FETCH_ASSOC)]);
+} catch (Throwable $error) { error_log('Falha ao buscar mensagens: '.$error->getMessage()); chatResposta(500,['sucesso'=>false,'mensagem'=>'Não foi possível carregar as mensagens.']); }

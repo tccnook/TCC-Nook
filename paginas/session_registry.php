@@ -4,7 +4,10 @@ function registrarSessao(PDO $conn,int $usuario,string $identificador,string $ag
     $assinatura=hash('sha256',$identificador);$stmt=$conn->prepare('SELECT id_user,revogado_em FROM sessao_usuario WHERE assinatura=:assinatura');$stmt->execute([':assinatura'=>$assinatura]);$sessao=$stmt->fetch(PDO::FETCH_ASSOC);
     if($sessao)return (int)$sessao['id_user']===$usuario && $sessao['revogado_em']===null;
     $agente=mb_substr(trim($agente)?:'Navegador',0,200);
-    $stmt=$conn->prepare('INSERT INTO sessao_usuario (assinatura,id_user,dispositivo) VALUES (:assinatura,:usuario,:agente) ON CONFLICT DO NOTHING');$stmt->execute([':assinatura'=>$assinatura,':usuario'=>$usuario,':agente'=>$agente]);return true;
+    $stmt=$conn->prepare('INSERT INTO sessao_usuario (assinatura,id_user,dispositivo) VALUES (:assinatura,:usuario,:agente) ON CONFLICT DO NOTHING');$stmt->execute([':assinatura'=>$assinatura,':usuario'=>$usuario,':agente'=>$agente]);
+    // Outro pedido pode ter registrado ou revogado o mesmo identificador.
+    $stmt=$conn->prepare('SELECT id_user,revogado_em FROM sessao_usuario WHERE assinatura=:assinatura');$stmt->execute([':assinatura'=>$assinatura]);$sessao=$stmt->fetch(PDO::FETCH_ASSOC);
+    return $sessao && (int)$sessao['id_user']===$usuario && $sessao['revogado_em']===null;
 }
 function validarSessaoAtual(PDO $conn): void
 {

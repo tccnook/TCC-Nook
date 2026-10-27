@@ -1,5 +1,6 @@
 <?php
 session_start();
+$_SESSION['list_csrf'] ??= bin2hex(random_bytes(32));
 if (!isset($_SESSION['id_user'])) {
     header('Location: login.php');
     exit();
@@ -206,7 +207,7 @@ if (!$capasHero && !empty($lista['capa_url'])) $capasHero = [$lista['capa_url']]
         <label for="editarNomeLista">Nome</label>
         <input id="editarNomeLista" name="nome_lista" type="text" maxlength="120" value="<?= $esc($lista['nome_lista']) ?>" required>
         <label for="editarDescricaoLista">Descrição</label>
-        <textarea id="editarDescricaoLista" <?= isset($schema['whishlist']['descricao']) ? '' : 'disabled' ?> name="descricao" maxlength="90"><?= $esc($lista['descricao']) ?></textarea>
+        <textarea id="editarDescricaoLista" <?= isset($schema['whishlist']['descricao']) ? '' : 'disabled' ?> name="descricao" maxlength="255"><?= $esc($lista['descricao']) ?></textarea>
         <label for="editarVisibilidadeLista">Visibilidade</label>
         <select id="editarVisibilidadeLista" <?= isset($schema['whishlist']['visibilidade']) ? '' : 'disabled' ?> name="visibilidade">
             <option value="publica" <?= $lista['visibilidade'] === 'publica' ? 'selected' : '' ?>>Pública</option>
@@ -237,6 +238,7 @@ if (!$capasHero && !empty($lista['capa_url'])) $capasHero = [$lista['capa_url']]
 
     async function acaoLista(acao, campos = {}) {
         const dados = new FormData();
+        dados.append('csrf', <?= json_encode($_SESSION['list_csrf']) ?>);
         dados.append('acao', acao);
         dados.append('id_lista', idLista);
         Object.entries(campos).forEach(([chave, valor]) => {

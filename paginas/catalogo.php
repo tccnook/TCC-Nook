@@ -1,6 +1,7 @@
 <?php
 
 session_start();
+$_SESSION['list_csrf'] ??= bin2hex(random_bytes(32));
 
 if(!isset($_SESSION['id_user'])){
     header('Location: login.php');
@@ -327,6 +328,7 @@ $imagemCatalogo = static fn($caminho) => $esc(nookPublicUrl($caminho));
         if (!botao || !idListaCatalogo) return;
         botao.disabled = true;
         const dados = new FormData();
+        dados.append('csrf', <?= json_encode($_SESSION['list_csrf']) ?>);
         dados.append('acao', 'adicionar_catalogo');
         dados.append('id_lista', idListaCatalogo);
         dados.append('id_livro', botao.dataset.adicionarCatalogo);

@@ -1,6 +1,7 @@
 <?php
     require_once __DIR__ . '/admin-auth.php';
     require_once __DIR__ . '/conexao.php';
+    require_once __DIR__ . '/auth_support.php';
 
     $db = new Database();
     $conn = $db->conectar();
@@ -11,9 +12,9 @@
     $generos = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
     if(isset($_POST['cadastrar'])){
-        $nome_genero = trim($_POST['nome_genero']) ?? '';
+        $nome_genero = trim(authTexto($_POST['nome_genero'] ?? null));
 
-        if ($nome_genero === '') {
+        if ($nome_genero === '' || mb_strlen($nome_genero) > 90) {
             echo '<script>alert("Preencha o campo!");</script>';
             exit;
         }
@@ -29,20 +30,21 @@
                 ':preferencia' => $gen
             ]);
             header('Location: crud_genero.php');
+            exit;
         } catch(PDOException $e){
-            echo 'Erro ao inserir: '.$e->getMessage();
+            echo 'Não foi possível cadastrar o gênero.';
         }
     }
 
     if(isset($_POST['editar'])){
-        $id_preferencia = $_POST['id_preferencia'] ?? null;
-        $nome_genero = trim($_POST['nome_genero']) ?? '';
+        $id_preferencia = filter_var($_POST['id_preferencia'] ?? null, FILTER_VALIDATE_INT, ['options'=>['min_range'=>1]]);
+        $nome_genero = trim(authTexto($_POST['nome_genero'] ?? null));
 
         if (!$id_preferencia) {
             exit('ID da preferência não informado.');
         }
 
-        if($nome_genero == ''){
+        if($nome_genero === '' || mb_strlen($nome_genero) > 90){
             echo '<script>alert("Preencha o campo!");</script>';
             exit;
         }
@@ -59,8 +61,9 @@
                 ':id_preferencia' => $id_preferencia
             ]);
             header('Location: crud_genero.php');
+            exit;
         } catch(PDOException $e){
-            echo 'Erro ao atualizar: '.$e->getMessage();
+            echo 'Não foi possível atualizar o gênero.';
         }
     }
 ?>
@@ -99,9 +102,9 @@
                     ?>
                         <tr>
                             <td><?= $genero['id_preferencia']?></td>
-                            <td><?= $genero['nome_preferencia']?></td>
-                            <td><?= $genero['preferencia'] ?></td>
-                            <td><button class="btnEditar" data-id="<?= $genero['id_preferencia']?>" data-nome="<?= $genero['nome_preferencia'] ?>">Editar</button></td>
+                            <td><?= htmlspecialchars(authTexto($genero['nome_preferencia'] ?? null), ENT_QUOTES, 'UTF-8') ?></td>
+                            <td><?= htmlspecialchars(authTexto($genero['preferencia'] ?? null), ENT_QUOTES, 'UTF-8') ?></td>
+                            <td><button class="btnEditar" data-id="<?= $genero['id_preferencia']?>" data-nome="<?= htmlspecialchars(authTexto($genero['nome_preferencia'] ?? null), ENT_QUOTES, 'UTF-8') ?>">Editar</button></td>
                             <td><form action="excluir_genero.php" method="POST"><input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['admin_csrf_token'], ENT_QUOTES, 'UTF-8') ?>"><input type="hidden" name="id_genero" value="<?= (int) $genero['id_preferencia'] ?>"><button type="submit">Excluir</button></form></td>
                         </tr>
                     <?php endforeach ?>

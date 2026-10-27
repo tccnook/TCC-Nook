@@ -28,7 +28,7 @@
     require_once __DIR__.'/publishing_service.php';
     if(ehAutor($conn,(int)$id_user)) $possiveisAbas['livros-publicados']='Livros publicados';
 
-    $aba = $_GET['aba'] ?? 'visao-geral';
+    $aba = is_string($_GET['aba'] ?? null) ? $_GET['aba'] : 'visao-geral';
 
     if (!array_key_exists($aba, $possiveisAbas)) {
         $aba = 'visao-geral';

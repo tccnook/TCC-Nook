@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__.'/auth_support.php';
     session_start();
 
     if (empty($_SESSION['cadastro_csrf'])) {
@@ -22,12 +23,14 @@
     }
 
     if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['proximo'])) {
-        $email = trim((string) ($_POST['email'] ?? ''));
-        $nomeComp = trim((string) ($_POST['nome_comp'] ?? ''));
-        $dataNascimento = trim((string) ($_POST['data_nasc'] ?? ''));
-        $nomeUsuario = trim((string) ($_POST['nome_user'] ?? ''));
-        $senha = (string) ($_POST['senha'] ?? '');
-        $confirmarSenha = (string) ($_POST['confirmar_senha'] ?? '');
+        $email = trim(authTexto($_POST['email'] ?? ''));
+        // A identidade vinculada ao Google deve manter o e-mail verificado.
+        if (isset($email_google)) $email = $email_google;
+        $nomeComp = trim(authTexto($_POST['nome_comp'] ?? ''));
+        $dataNascimento = trim(authTexto($_POST['data_nasc'] ?? ''));
+        $nomeUsuario = trim(authTexto($_POST['nome_user'] ?? ''));
+        $senha = authTexto($_POST['senha'] ?? '');
+        $confirmarSenha = authTexto($_POST['confirmar_senha'] ?? '');
         $_SESSION['dadosCadastrados'] = [
             'email' => $email,
             'nome_completo' => $nomeComp,
@@ -41,21 +44,20 @@
             exit();
         };
 
-        if (!hash_equals($_SESSION['cadastro_csrf'], (string) ($_POST['csrf_token'] ?? ''))) {
+        if (!hash_equals($_SESSION['cadastro_csrf'], authTexto($_POST['csrf_token'] ?? ''))) {
             $redirecionarComErro('A sessão expirou. Atualize a página e tente novamente.');
         }
-        if (!filter_var($email, FILTER_VALIDATE_EMAIL) || $nomeComp === '' || $nomeUsuario === '' || $senha === '' || $confirmarSenha === '') {
+        if (!filter_var($email, FILTER_VALIDATE_EMAIL) || $nomeComp === '' || $nomeUsuario === '' || mb_strlen($nomeComp) > 90 || mb_strlen($email) > 90 || $senha === '' || $confirmarSenha === '') {
             $redirecionarComErro('Preencha os campos corretamente para continuar.');
         }
         if (!preg_match('/^[a-zA-Z0-9_.-]{3,30}$/', $nomeUsuario)) {
             $redirecionarComErro('O nome de usuário deve ter de 3 a 30 caracteres e usar apenas letras, números, ponto, hífen ou sublinhado.');
         }
-        $dataValida = DateTimeImmutable::createFromFormat('!Y-m-d', $dataNascimento);
-        if (!$dataValida || $dataValida->format('Y-m-d') !== $dataNascimento || $dataValida > new DateTimeImmutable('today')) {
+        if (!authDataNascimentoValida($dataNascimento)) {
             $redirecionarComErro('Informe uma data de nascimento válida.');
         }
-        if (strlen($senha) < 8) {
-            $redirecionarComErro('A senha deve ter pelo menos 8 caracteres.');
+        if (strlen($senha) < 8 || strlen($senha) > 72 || str_contains($senha, "\0")) {
+            $redirecionarComErro('A senha deve ter entre 8 e 72 bytes.');
         }
         if ($senha !== $confirmarSenha) {
             $redirecionarComErro('As senhas não coincidem.');
@@ -148,10 +150,10 @@
 
     <section class="step active  step-one" data-step="1">
         <label for="email">Email</label>
-        <input type="email" name="email" id="email" value="<?= htmlspecialchars($email_google ?? ($dadosCadastrados['email'] ?? ''), ENT_QUOTES, 'UTF-8') ?>" required>
+        <input type="email" name="email" id="email" value="<?= htmlspecialchars($email_google ?? ($dadosCadastrados['email'] ?? ''), ENT_QUOTES, 'UTF-8') ?>" <?= isset($email_google) ? 'readonly' : '' ?> required>
 
         <label for="nome_comp">Nome Completo</label>
-        <input type="text" name="nome_comp" id="nome_comp" value="<?= htmlspecialchars($nome_completo_google ?? ($dadosCadastrados['nome_completo'] ?? ''), ENT_QUOTES, 'UTF-8') ?>" maxlength="100" required>
+        <input type="text" name="nome_comp" id="nome_comp" value="<?= htmlspecialchars($nome_completo_google ?? ($dadosCadastrados['nome_completo'] ?? ''), ENT_QUOTES, 'UTF-8') ?>" maxlength="90" required>
 
         <label for="nome_user">Nome de Usuário</label>
         <input type="text" name="nome_user" id="nome_user" value="<?= htmlspecialchars($dadosCadastrados['username'] ?? '', ENT_QUOTES, 'UTF-8') ?>" minlength="3" maxlength="30" required>

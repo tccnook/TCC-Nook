@@ -21,7 +21,7 @@ $inicio = filter_var($_GET['inicio'] ?? 0, FILTER_VALIDATE_INT);
 $inicio = $inicio !== false ? max(0, min(980, $inicio)) : 0;
 $ordem = is_string($_GET['ordem'] ?? null) ? $_GET['ordem'] : 'titulo';
 $generoNome = '';
-if ($genero !== false && $genero !== '' && $genero > 0) {
+if ($genero !== false && $genero > 0) {
     $stmtGenero = $conn->prepare('SELECT nome_preferencia, preferencia FROM preferencia WHERE id_preferencia = :id');
     $stmtGenero->execute([':id' => $genero]);
     $registroGenero=$stmtGenero->fetch(PDO::FETCH_ASSOC);
@@ -71,7 +71,7 @@ $params = [
     ':nome_autor' => '%' . $nome . '%'
 ];
 
-if ($genero !== false && $genero !== '') {
+if ($genero !== false && $genero > 0) {
     $sql .= ' AND EXISTS (SELECT 1 FROM preferencia_livro pl WHERE pl.id_livro = l.id_livro AND pl.id_preferencia = :genero)';
     $params[':genero'] = $genero;
 }
@@ -162,7 +162,6 @@ if (function_exists('curl_init')) {
                 'modos_leitura' => $infoGoogle['readingModes'] ?? [],
                 'tipo_publicacao' => $infoGoogle['printType'] ?? null,
                 'classificacao_google' => $infoGoogle['maturityRating'] ?? null,
-                'descricao' => $descricaoGoogle,
                 'class_ind' => null,
                 'data_publi' => $infoGoogle['publishedDate'] ?? null,
                 'media' => $infoGoogle['averageRating'] ?? null,

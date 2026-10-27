@@ -9,16 +9,8 @@ if (!is_file($autoload)) {
 }
 require_once $autoload;
 
-$dotenv = Dotenv\Dotenv::createImmutable($projectRoot);
-$dotenv->safeLoad();
-$environmentValue = static function (string $name): string {
-    foreach ([getenv($name), $_ENV[$name] ?? null] as $value) {
-        if (is_string($value) && trim($value) !== '') {
-            return trim($value);
-        }
-    }
-    return '';
-};
+require_once __DIR__.'/runtime.php';
+$environmentValue = static fn(string $name): string => nookEnv($name);
 $clientId = $environmentValue('GOOGLE_CLIENT_ID');
 $clientSecret = $environmentValue('GOOGLE_CLIENT_SECRET');
 if ($clientId === '' || $clientSecret === '') {
@@ -26,9 +18,7 @@ if ($clientId === '' || $clientSecret === '') {
     exit('Login Google ainda não configurado. Defina GOOGLE_CLIENT_ID e GOOGLE_CLIENT_SECRET no .env.');
 }
 
-$scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
-$scriptDirectory = dirname(dirname($_SERVER['SCRIPT_NAME'] ?? '/paginas/google-login.php'));
-$baseUrl = rtrim($environmentValue('APP_BASE_URL') ?: $scheme . '://' . ($_SERVER['HTTP_HOST'] ?? 'localhost') . $scriptDirectory, '/');
+$baseUrl = nookBaseUrl();
 $redirectUri = $environmentValue('GOOGLE_REDIRECT_URI') ?: $baseUrl . '/paginas/google-callback.php';
 
 $client = new Google\Client();

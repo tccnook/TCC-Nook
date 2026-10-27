@@ -32,7 +32,8 @@ if (!is_file($autoload)) {
 require_once $autoload;
 
 try {
-    Dotenv\Dotenv::createImmutable(dirname(__DIR__))->safeLoad();
+    require_once __DIR__.'/runtime.php';
+    $config=[];
 
     $configuracaoObrigatoria = [
         'MAIL_HOST',
@@ -44,22 +45,26 @@ try {
     ];
 
     foreach ($configuracaoObrigatoria as $chave) {
-        if (empty($_ENV[$chave])) {
+        $config[$chave]=nookEnv($chave, $chave === 'MAIL_FROM_NAME' ? 'Nook' : '');
+        if ($config[$chave] === '') {
             error_log('Configuração de email ausente: ' . $chave);
             responderContato(500, 'O serviço de email está indisponível no momento.');
         }
     }
 
+    $port=filter_var($config['MAIL_PORT'],FILTER_VALIDATE_INT,['options'=>['min_range'=>1,'max_range'=>65535]]);
+    if(!$port || !filter_var($config['MAIL_FROM'],FILTER_VALIDATE_EMAIL)) responderContato(500, 'O serviço de email está indisponível no momento.');
     $mail = new PHPMailer(true);
     $mail->isSMTP();
-    $mail->Host = $_ENV['MAIL_HOST'];
+    $mail->Host = $config['MAIL_HOST'];
     $mail->SMTPAuth = true;
-    $mail->Username = $_ENV['MAIL_USERNAME'];
-    $mail->Password = $_ENV['MAIL_PASSWORD'];
-    $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
-    $mail->Port = (int) $_ENV['MAIL_PORT'];
+    $mail->Username = $config['MAIL_USERNAME'];
+    $mail->Password = $config['MAIL_PASSWORD'];
+    $mail->SMTPSecure = $port===465 ? PHPMailer::ENCRYPTION_SMTPS : PHPMailer::ENCRYPTION_STARTTLS;
+    $mail->Port = $port;
+    $mail->Timeout = 8;
     $mail->CharSet = PHPMailer::CHARSET_UTF8;
-    $mail->setFrom($_ENV['MAIL_FROM'], $_ENV['MAIL_FROM_NAME']);
+    $mail->setFrom($config['MAIL_FROM'], $config['MAIL_FROM_NAME']);
     $mail->addAddress('tccnook@gmail.com');
     $mail->addReplyTo(trim($email));
     $mail->Subject = 'Contato pelo site Nook';
@@ -69,6 +74,6 @@ try {
 
     responderContato(200, 'Email enviado com sucesso!');
 } catch (Throwable $erro) {
-    error_log('Falha ao enviar contato do Nook: ' . $erro->getMessage());
+    error_log('Falha ao enviar contato do Nook.');
     responderContato(500, 'Não foi possível enviar o email. Tente novamente mais tarde.');
 }

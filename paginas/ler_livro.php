@@ -24,18 +24,21 @@ if(isset($_GET['id_progresso'])){
 
 
 
-$id_livro = $_GET['id_livro'];
+$id_livro = filter_var($_GET['id_livro'], FILTER_VALIDATE_INT, ['options'=>['min_range'=>1]]);
+if (!$id_livro) { http_response_code(400); exit('Livro inválido.'); }
+$_SESSION['reading_csrf'] ??= bin2hex(random_bytes(32));
 require_once __DIR__.'/publishing_service.php';
 $probe=$conn->prepare('SELECT 1 FROM publicacao_obra WHERE id_livro=?');$probe->execute([(int)$id_livro]);
 if($probe->fetchColumn()){if(!publicacaoAcessivel($conn,(int)$id_livro,(int)$id_user)){http_response_code(404);exit('Publicação indisponível.');}header('Location: leitor_obra.php?id_livro='.(int)$id_livro);exit;}
 
 
-$select_livro = "select titulo_livro, capa_url from livro where id_livro = :id_livro";
+$select_livro = "select titulo_livro, capa_url from livro where id_livro = :id_livro AND (visibilidade='publico' OR id_user=:autor)";
 $stmt_livro = $conn->prepare($select_livro);
 $stmt_livro->execute([
-    ":id_livro" => $id_livro
+    ":id_livro" => $id_livro, ":autor" => $id_user
 ]);
 $livro = $stmt_livro->fetch(PDO::FETCH_ASSOC);
+if (!$livro) { http_response_code(404); exit('Livro indisponível.'); }
 
 $select_capitulo = "select * from capitulo where id_livro = :id_livro order by ordem_capitulo";
 $stmt_capitulo = $conn->prepare($select_capitulo);
@@ -65,7 +68,7 @@ $capitulo_atual = $progresso['capitulo_atual'];
 
 echo '<a href="visao_livro.php?id_livro='.$id_livro.'"> Voltar </a>';
 
-echo '<h1> '.$livro['titulo_livro'].' </h1>';
+echo '<h1> '.htmlspecialchars($livro['titulo_livro'], ENT_QUOTES, 'UTF-8').' </h1>';
 echo '<img src="'.htmlspecialchars($livro['capa_url'] ?: '../img/livro-sem-capa.svg', ENT_QUOTES, 'UTF-8').'" data-book-cover alt="Capa do livro" width="500px" height="auto">';
 echo '<script src="../front-end/js/book-cover.js" defer></script>';
 echo '<br>';
@@ -133,11 +136,12 @@ echo '</section>';
 ?>
 <script>
 
-const capitulos = <?=json_encode($dados_capitulos, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)?>;
+const capitulos = <?=json_encode($dados_capitulos, JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT)?>;
 
 const idprogressoSalvo = <?= json_encode($id_progresso)?>;
 const capituloSalvo = <?= json_encode($capitulo_atual)?>;
 
+const leituraCsrf = <?= json_encode($_SESSION['reading_csrf']) ?>;
 let capituloAtual = 0;
 
 if (idprogressoSalvo && capituloSalvo != 0){
@@ -145,7 +149,7 @@ if (idprogressoSalvo && capituloSalvo != 0){
 const usar_progresso = confirm('Deseja continuar o livro de onde parou?');
 
 if(usar_progresso == true){
-    capituloAtual = capituloSalvo - 1;
+    capituloAtual = Math.max(0, Math.min(capitulos.length - 1, Number(capituloSalvo) - 1));
 } else{
     capituloAtual = 0;
 }
@@ -164,7 +168,7 @@ function mostrarCapitulo(indice){
 
     let html = '';
     html+=`<h2> Capítulo ${capitulo.ordem_capitulo} </h2>`;
-    html+=`<h2> ${escaparHTML(capitulo.titulo_capitulo)}`;
+    html+=`<h2> ${escaparHTML(capitulo.titulo_capitulo)}</h2>`;
     if(capitulo.imagem_url_capitulo){
         html+=`<br><img src="${escaparHTML(capitulo.imagem_url_capitulo)}" width="200px" height="auto"><br>`;
     }
@@ -203,6 +207,7 @@ document.getElementById('btn-proximo').addEventListener('click', async function(
     
     if(capituloAtual === capitulos.length - 1){
         const progresso = new URLSearchParams();
+        progresso.append('csrf', leituraCsrf);
         progresso.append('id_livro', capitulo.id_livro);
         progresso.append('capitulo_atual', capituloAtual+1);
         progresso.append('total_capitulo', capitulos.length);
@@ -211,6 +216,7 @@ document.getElementById('btn-proximo').addEventListener('click', async function(
                 method: 'POST',
                 body: progresso
             });
+        if (!resposta.ok) { alert('Não foi possível salvar a conclusão. Tente novamente.'); return; }
         alert('Livro Concluído');
         return;
     }
@@ -220,6 +226,7 @@ document.getElementById('btn-proximo').addEventListener('click', async function(
         mostrarCapitulo(capituloAtual);
         // cadastrar o progresso do usuario
         const progresso = new URLSearchParams();
+        progresso.append('csrf', leituraCsrf);
         progresso.append('id_livro', capitulo.id_livro);
         progresso.append('capitulo_atual', capituloAtual+1);
         progresso.append('total_capitulo', capitulos.length);
@@ -265,15 +272,16 @@ if(capitulos.length > 0){
     document.getElementById('btn-iniciar').addEventListener('click', async function(){
         mostrarCapitulo(capituloAtual);
         const progresso = new URLSearchParams();
+        progresso.append('csrf', leituraCsrf);
         progresso.append('id_livro', capitulos[0].id_livro);
         progresso.append('capitulo_atual', capituloAtual+1);
         progresso.append('total_capitulo', capitulos.length);
-            await fetch('atualizar_progresso.php',{
+            const resposta = await fetch('atualizar_progresso.php',{
                 method: 'POST',
                 body: progresso
             });
-        document.getElementById('btn-proximo').style.display='inline-block';
-        document.getElementById('btn-iniciar').style.display='none';    
+        if (!resposta.ok) alert('Não foi possível salvar o progresso.');
+        document.getElementById('btn-proximo').style.display='inline-block';    
     });
 
 } else{

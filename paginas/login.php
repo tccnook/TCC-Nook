@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__.'/auth_support.php';
 
 require_once(__DIR__ . "/" . 'conexao.php');
 
@@ -30,14 +31,13 @@ $erroLogin = '';
 
             class Busca {
                 public function buscarUsuario(parametroBusca $p){
-                    $sql = 'select * from usuario where email=?;';
+                    $sql = 'select * from usuario where LOWER(email)=LOWER(?) LIMIT 1;';
                     $db = new Database;
                     $stmt = $db->conectar()->prepare($sql);
                     $stmt->bindValue(1, $p->getEmail());
                     $stmt->execute();
 
-                    if($stmt->rowCount() > 0){
-                        $resultado = $stmt->fetch(\PDO::FETCH_ASSOC);
+                    if($resultado = $stmt->fetch(\PDO::FETCH_ASSOC)){
                         return $resultado;
                     } else {
                         return [];
@@ -45,11 +45,11 @@ $erroLogin = '';
                 }
             }
 
-            if (isset($_POST['logar']) && !hash_equals($_SESSION['login_csrf'], (string) ($_POST['csrf_token'] ?? ''))) {
+            if (isset($_POST['logar']) && !hash_equals($_SESSION['login_csrf'], authTexto($_POST['csrf_token'] ?? ''))) {
                 $erroLogin = 'A sessão expirou. Atualize a página e tente novamente.';
             } elseif(isset($_POST['logar'])){
-                $email = trim((string) ($_POST['email'] ?? ''));
-                $senha = (string) ($_POST['senha'] ?? '');
+                $email = trim(authTexto($_POST['email'] ?? ''));
+                $senha = authTexto($_POST['senha'] ?? '');
                 $parametroBusca = new parametroBusca();
                 $parametroBusca->setEmail($email);
                 $parametroBusca->setSenha($senha);

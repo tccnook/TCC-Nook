@@ -2,18 +2,19 @@
 session_start();
 header('Content-Type: application/json; charset=UTF-8');
 
-function responderFollow(int $status, string $mensagem): void
+function responderFollow(int $status, string $mensagem, array $dados = []): never
 {
     http_response_code($status);
-    echo json_encode(['mensagem' => $mensagem], JSON_UNESCAPED_UNICODE);
+    echo json_encode(['mensagem' => $mensagem] + $dados, JSON_UNESCAPED_UNICODE);
     exit();
 }
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') responderFollow(405, 'Método não permitido.');
 if (!isset($_SESSION['id_user'])) responderFollow(401, 'Faça login para seguir usuários.');
+if (!is_string($_POST['csrf'] ?? null) || empty($_SESSION['post_csrf']) || !hash_equals($_SESSION['post_csrf'], $_POST['csrf'])) responderFollow(403, 'Sua sessão expirou. Atualize a página.');
 
 $id_user = (int) $_SESSION['id_user'];
-$id_seguido = filter_var($_POST['id_user'] ?? null, FILTER_VALIDATE_INT);
+$id_seguido = filter_var($_POST['id_user'] ?? null, FILTER_VALIDATE_INT, ['options'=>['min_range'=>1]]);
 if (!$id_seguido || $id_seguido === $id_user) responderFollow(422, 'Usuário inválido.');
 
 require_once __DIR__ . '/conexao.php';
@@ -30,6 +31,13 @@ try {
     if (!$usuario) {
         $conn->rollBack();
         responderFollow(404, 'Usuário não encontrado.');
+    }
+
+    $stmt = $conn->prepare("SELECT 1 FROM bloqueio WHERE status_bloqueio='bloqueado' AND ((id_bloqueador=? AND id_bloqueado=?) OR (id_bloqueador=? AND id_bloqueado=?)) LIMIT 1");
+    $stmt->execute([$id_user,$id_seguido,$id_seguido,$id_user]);
+    if ($stmt->fetchColumn()) {
+        $conn->rollBack();
+        responderFollow(403, 'Não é possível seguir esta conta.');
     }
 
     $stmt = $conn->prepare('INSERT INTO follow (id_follower, id_following, status_follow) SELECT :follower, :following, :status WHERE NOT EXISTS (SELECT 1 FROM follow WHERE id_follower = :check_follower AND id_following = :check_following)');

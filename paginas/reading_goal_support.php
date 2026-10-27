@@ -11,7 +11,12 @@ function prazoMeta(string $periodo,?string $data=null,?DateTimeImmutable $hoje=n
 function idsListasMeta($entrada): ?array
 {
     if(!is_array($entrada)||!count($entrada)||count($entrada)>20)return null;$ids=[];
-    foreach($entrada as $v){if((!is_string($v)&&!is_int($v))||!preg_match('/^[1-9][0-9]*$/D',(string)$v)||in_array((int)$v,$ids,true))return null;$ids[]=(int)$v;}return $ids;
+    foreach($entrada as $v){
+        if((!is_string($v)&&!is_int($v))||!preg_match('/^[1-9][0-9]*$/D',(string)$v))return null;
+        $id=filter_var($v,FILTER_VALIDATE_INT,['options'=>['min_range'=>1]]);
+        if($id===false||in_array($id,$ids,true))return null;
+        $ids[]=$id;
+    }return $ids;
 }
 function progressoMeta(PDO $conn,int $usuario,array $meta): int
 {

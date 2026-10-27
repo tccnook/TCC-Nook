@@ -1,4 +1,6 @@
 <?php
+require_once __DIR__.'/auth_support.php';
+require_once __DIR__.'/recovery_support.php';
 session_start();
 $verificado=$_SESSION['recuperacao_verificada']??null;
 $token=is_array($verificado)&&($verificado['expira']??0)>time() ? (string)$verificado['token'] : (is_string($_GET['token']??null)?trim($_GET['token']):(string)($_SESSION['reset_token_legado']??''));
@@ -21,25 +23,19 @@ if (empty($_SESSION['redefinicao_csrf'])) {
 }
 $erro = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    if (!hash_equals($_SESSION['redefinicao_csrf'], (string) ($_POST['csrf_token'] ?? ''))) {
+    if (!hash_equals($_SESSION['redefinicao_csrf'], authTexto($_POST['csrf_token'] ?? ''))) {
         $erro = 'A sessão expirou. Atualize a página e tente novamente.';
     } else {
-        $senha = (string) ($_POST['senha'] ?? '');
-        $confirmacao = (string) ($_POST['confirm-senha'] ?? '');
-        if (mb_strlen($senha)<8 || !preg_match('/[\p{L}]/u',$senha) || !preg_match('/[0-9]/',$senha) || !preg_match('/[^\p{L}\p{N}]/u',$senha)) {
+        $senha = authTexto($_POST['senha'] ?? '');
+        $confirmacao = authTexto($_POST['confirm-senha'] ?? '');
+        if (strlen($senha)>72 || str_contains($senha, "\0") || mb_strlen($senha)<8 || !preg_match('/[\p{L}]/u',$senha) || !preg_match('/[0-9]/',$senha) || !preg_match('/[^\p{L}\p{N}]/u',$senha)) {
             $erro = 'Use pelo menos 8 caracteres, combinando letras, números e símbolos.';
         } elseif ($senha !== $confirmacao) {
             $erro = 'As senhas não coincidem.';
         } else {
             try {
                 $conn->beginTransaction();
-                $stmt = $conn->prepare('UPDATE usuario SET senha = :senha WHERE id_user = :id_user');
-                $stmt->execute([':senha' => password_hash($senha, PASSWORD_DEFAULT), ':id_user' => $idUsuario]);
-                $stmt = $conn->prepare('UPDATE recuperacao_senha SET usado = true WHERE token = :token AND usado = false AND expira_em > CURRENT_TIMESTAMP');
-                $stmt->execute([':token' => $token]);
-                if ($stmt->rowCount() !== 1) {
-                    throw new RuntimeException('Token de redefinição não está mais válido.');
-                }
+                consumirRedefinicaoSenha($conn, $token, password_hash($senha, PASSWORD_DEFAULT));
                 $conn->commit();
                 $_SESSION = [];
                 session_destroy();

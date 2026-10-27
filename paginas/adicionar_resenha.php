@@ -17,10 +17,12 @@ if (!isset($_SESSION['id_user'])) {
     responderResenha(401, 'Faça login para publicar uma resenha.');
 }
 
+if (!is_string($_POST['csrf']??null) || empty($_SESSION['book_csrf']) || !hash_equals($_SESSION['book_csrf'],$_POST['csrf'])) responderResenha(403,'Sessão expirada. Recarregue o livro.');
+
 $id_livro = filter_var($_POST['id_livro'] ?? null, FILTER_VALIDATE_INT);
 $nota = filter_var($_POST['nota'] ?? null, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1, 'max_range' => 5]]);
-$titulo = trim($_POST['titulo_resenha'] ?? '');
-$texto = trim($_POST['sinopse'] ?? '');
+$titulo = is_string($_POST['titulo_resenha']??'') ? trim($_POST['titulo_resenha']??'') : '';
+$texto = is_string($_POST['sinopse']??'') ? trim($_POST['sinopse']??'') : '';
 
 if (!$id_livro || $nota === false || $texto === '' || mb_strlen($titulo) > 100 || mb_strlen($texto) > 10000) {
     responderResenha(422, 'Informe uma nota e escreva uma resenha válida.');

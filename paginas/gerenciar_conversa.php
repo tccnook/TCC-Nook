@@ -1,95 +1,32 @@
 <?php
-
 session_start();
-
-if(!isset($_SESSION['id_user'])){
-    header("location:login.php");
-    exit();
+if (!isset($_SESSION['id_user'])) { header('Location: login.php'); exit; }
+require_once __DIR__.'/chat_support.php';
+try { $id_conversa = chatId($_GET['id_conversa'] ?? $_POST['id_conversa'] ?? null); }
+catch (InvalidArgumentException $error) { header('Location: conversas.php'); exit; }
+require_once __DIR__.'/conexao.php';
+$conn = (new Database())->conectar(); $id_user = (int)$_SESSION['id_user'];
+$conversa = chatConversa($conn,$id_conversa,$id_user);
+if (!$conversa) { http_response_code(403); exit('Você não participa desta conversa.'); }
+if ($conversa['tipo'] === 'grupo') { header('Location: gerenciar_grupo.php?id_conversa='.$id_conversa); exit; }
+$csrf = chatCsrf(); $erro = ''; $sucesso = '';
+if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
+    try {
+        if (!chatCsrfValido($_POST['csrf'] ?? null)) throw new DomainException('Sua sessão expirou. Atualize a página.');
+        if ((int)$conversa['id_dono'] !== $id_user) throw new DomainException('Somente o criador pode limpar ou excluir esta conversa para todos.');
+        $action = $_POST['acao'] ?? '';
+        if (!in_array($action,['limpar','excluir'],true)) throw new DomainException('Ação inválida.');
+        $stmt = $conn->prepare($action === 'limpar' ? 'UPDATE mensagem SET delatado_em=CURRENT_TIMESTAMP WHERE id_conversa=:conversa AND delatado_em IS NULL' : 'DELETE FROM conversa WHERE id_conversa=:conversa AND id_dono=:dono');
+        $params = [':conversa'=>$id_conversa]; if ($action === 'excluir') $params[':dono']=$id_user;
+        $stmt->execute($params);
+        if ($action === 'excluir') { header('Location: conversas.php'); exit; }
+        $sucesso = 'Mensagens removidas da conversa.';
+    } catch (DomainException $error) { http_response_code(403); $erro=$error->getMessage(); }
+    catch (Throwable $error) { error_log('Falha ao gerenciar conversa: '.$error->getMessage()); $erro='Não foi possível atualizar a conversa.'; }
 }
-
-$id_user = $_SESSION['id_user'];
-
-require_once(__DIR__ . "/" . 'conexao.php');
-
-$db = new Database;
-$conn = $db->conectar();
-
-if(!isset($_GET['id_conversa'])){
-    header("location:chat.php");
-    exit();
-}
-
-$id_conversa = $_GET['id_conversa'];
-
-if(isset($_GET['id_limpar'])){
-    $limpar = "
-    update mensagem set delatado_em = current_timestamp where id_conversa = :id_limpar
-    ";
-    try{
-    $stmt_limpar = $conn->prepare($limpar);
-    $stmt_limpar->execute([
-        ":id_limpar" => $_GET['id_limpar']
-    ]);
-    echo '<script> alert("Conversa limpa com sucesso"); </script>';
-    } catch(PDOException $e){
-    echo '<script> alert("Erro ao limpar conversa"); </script>';
-    }
-    empty($_GET['id_limpar']);
-}
-
-if(isset($_GET['id_excluir'])){
-    $excluir = "
-    delete from conversa where id_conversa = :id_excluir
-    ";
-    try{
-        $stmt_excluir = $conn->prepare($excluir);
-        $stmt_excluir->execute([
-            ":id_excluir" => $_GET['id_excluir']
-        ]);
-        header("location:conversas.php");
-    } catch(PDOException $e){
-        echo '<script> alert("Erro ao excluir conversa"); </script>';
-    }
-    empty($_GET['id_excluir']);
-}
-
-$select_info_pessoa = "
-select u.id_user, u.username, u.nome_completo, c.foto_perfil_url
-from usuario u
-left join conta c on c.id_user = u.id_user
-inner join conversa_participante cp on cp.id_user = u.id_user
-where cp.id_conversa = :id_conversa and c.id_user <> :id_user
-";
-
-try{
-    $stmt_info_pessoa = $conn->prepare($select_info_pessoa);
-    $stmt_info_pessoa->execute([
-        ":id_conversa" => $id_conversa,
-        ":id_user" => $id_user
-    ]);
-    $info_pessoa = $stmt_info_pessoa->fetch(PDO::FETCH_ASSOC);
-} catch(PDOException $e){
-    echo 'Erro '.$e->getMessage();
-}
-
-echo '<img src="'.htmlspecialchars($info_pessoa['foto_perfil_url']).'" width="100px" height="auto">';
-echo $info_pessoa['username'];
-echo '<small> '.htmlspecialchars($info_pessoa['nome_completo']).' </small>';
-echo '<br>';
-echo '<br>';
-echo '<a href="gerenciar_conversa.php?id_limpar='.htmlspecialchars($id_conversa).'"> Limpar Conversa </a>';
-echo '<a href="gerenciar_conversa.php?id_excluir='.htmlspecialchars($id_conversa).'"> Excluir Conversa </a>';
-
-
-// imagem da pessoa
-// nome da pessoa
-// limpar conversa
-// excluir conversa
-
-
-
-
-
-
-
+$stmt=$conn->prepare('SELECT u.username,u.nome_completo,c.foto_perfil_url FROM conversa_participante cp INNER JOIN usuario u ON u.id_user=cp.id_user LEFT JOIN conta c ON c.id_user=u.id_user WHERE cp.id_conversa=:conversa AND cp.id_user<>:usuario ORDER BY u.id_user LIMIT 1');
+$stmt->execute([':conversa'=>$id_conversa,':usuario'=>$id_user]); $info_pessoa=$stmt->fetch(PDO::FETCH_ASSOC) ?: [];
+$esc=static fn($value)=>htmlspecialchars((string)($value ?? ''),ENT_QUOTES,'UTF-8');
 ?>
+<!DOCTYPE html><html lang="pt-br"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="../front-end/css/main.css"><title>Conversa | Nook</title></head><body><main><h1><?=$esc($info_pessoa['username'] ?? 'Conversa direta')?></h1><p><?=$esc($info_pessoa['nome_completo'] ?? '')?></p><?php if($erro):?><p role="alert"><?=$esc($erro)?></p><?php endif;?><?php if($sucesso):?><p role="status"><?=$esc($sucesso)?></p><?php endif;?>
+<?php if((int)$conversa['id_dono']===$id_user):foreach(['limpar'=>'Limpar mensagens para todos','excluir'=>'Excluir conversa para todos'] as $action=>$label):?><form method="post" data-confirm="<?=$esc($label)?>?"><input type="hidden" name="csrf" value="<?=$esc($csrf)?>"><input type="hidden" name="id_conversa" value="<?=$id_conversa?>"><button name="acao" value="<?=$action?>"><?=$label?></button></form><?php endforeach;endif;?><a href="chat.php?id_conversa=<?=$id_conversa?>">Voltar à conversa</a></main><script>document.querySelectorAll('form[data-confirm]').forEach(form=>form.addEventListener('submit',event=>{if(!window.confirm(form.dataset.confirm))event.preventDefault();}));</script></body></html>

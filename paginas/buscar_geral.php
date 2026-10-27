@@ -19,7 +19,7 @@ header('Content-Type: application/json; charset=UTF-8');
 $db = new Database();
 $conn = $db->conectar();
 
-$q = trim($_GET['q'] ?? '');
+$q = is_string($_GET['q'] ?? null) ? mb_substr(trim($_GET['q']), 0, 100) : '';
 
 if (mb_strlen($q) < 2) {
     echo json_encode(['usuarios' => [], 'livros' => []]);

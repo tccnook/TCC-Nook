@@ -1,15 +1,16 @@
 <?php
+require_once __DIR__.'/auth_support.php';
 session_start();
 
 $expectedState = (string) ($_SESSION['google_oauth_state'] ?? '');
-$receivedState = (string) ($_GET['state'] ?? '');
+$receivedState = authTexto($_GET['state'] ?? '');
 unset($_SESSION['google_oauth_state']);
 if ($expectedState === '' || !hash_equals($expectedState, $receivedState)) {
     http_response_code(400);
     exit('Não foi possível validar a sessão do login Google. Inicie o login novamente.');
 }
 
-if (isset($_GET['error']) || empty($_GET['code'])) {
+if (isset($_GET['error']) || authTexto($_GET['code'] ?? null) === '') {
     header('Location: login.php');
     exit();
 }
@@ -23,16 +24,8 @@ if (!is_file($autoload)) {
 require_once $autoload;
 require_once __DIR__ . '/conexao.php';
 
-$dotenv = Dotenv\Dotenv::createImmutable($projectRoot);
-$dotenv->safeLoad();
-$environmentValue = static function (string $name): string {
-    foreach ([getenv($name), $_ENV[$name] ?? null] as $value) {
-        if (is_string($value) && trim($value) !== '') {
-            return trim($value);
-        }
-    }
-    return '';
-};
+require_once __DIR__.'/runtime.php';
+$environmentValue = static fn(string $name): string => nookEnv($name);
 $clientId = $environmentValue('GOOGLE_CLIENT_ID');
 $clientSecret = $environmentValue('GOOGLE_CLIENT_SECRET');
 if ($clientId === '' || $clientSecret === '') {
@@ -40,9 +33,7 @@ if ($clientId === '' || $clientSecret === '') {
     exit('Login Google ainda não configurado. Defina GOOGLE_CLIENT_ID e GOOGLE_CLIENT_SECRET no .env.');
 }
 
-$scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
-$scriptDirectory = dirname(dirname($_SERVER['SCRIPT_NAME'] ?? '/paginas/google-callback.php'));
-$baseUrl = rtrim($environmentValue('APP_BASE_URL') ?: $scheme . '://' . ($_SERVER['HTTP_HOST'] ?? 'localhost') . $scriptDirectory, '/');
+$baseUrl = nookBaseUrl();
 $redirectUri = $environmentValue('GOOGLE_REDIRECT_URI') ?: $baseUrl . '/paginas/google-callback.php';
 
 try {
@@ -50,7 +41,7 @@ try {
     $client->setClientId($clientId);
     $client->setClientSecret($clientSecret);
     $client->setRedirectUri($redirectUri);
-    $token = $client->fetchAccessTokenWithAuthCode((string) $_GET['code']);
+    $token = $client->fetchAccessTokenWithAuthCode(authTexto($_GET['code'] ?? null));
     if (isset($token['error'])) {
         throw new RuntimeException('Falha na troca do código OAuth.');
     }
@@ -64,7 +55,7 @@ try {
 
 $idGoogle = (string) $userInfo->getId();
 $emailGoogle = (string) $userInfo->getEmail();
-if ($idGoogle === '' || $emailGoogle === '') {
+if ($idGoogle === '' || !filter_var($emailGoogle, FILTER_VALIDATE_EMAIL) || !$userInfo->getVerifiedEmail()) {
     http_response_code(502);
     exit('A conta Google não retornou os dados necessários para o login.');
 }

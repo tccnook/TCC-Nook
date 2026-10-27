@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__.'/auth_support.php';
 session_start();
 if (!empty($_SESSION['id_admin'])) {
     header('Location: crud_autores.php');
@@ -13,13 +14,13 @@ if (empty($_SESSION['admin_login_csrf'])) {
 
 $erro = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $token = (string) ($_POST['csrf_token'] ?? '');
+    $token = authTexto($_POST['csrf_token'] ?? '');
     if (!hash_equals($_SESSION['admin_login_csrf'], $token)) {
         http_response_code(400);
         $erro = 'A sessão expirou. Atualize a página e tente novamente.';
     } else {
-        $email = trim((string) ($_POST['email'] ?? ''));
-        $senha = (string) ($_POST['senha'] ?? '');
+        $email = trim(authTexto($_POST['email'] ?? ''));
+        $senha = authTexto($_POST['senha'] ?? '');
         $stmt = $conn->prepare('SELECT id_admin, senha FROM admin WHERE LOWER(email) = LOWER(:email) LIMIT 1');
         $stmt->execute([':email' => $email]);
         $admin = $stmt->fetch(PDO::FETCH_ASSOC);

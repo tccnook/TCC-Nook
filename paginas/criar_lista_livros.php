@@ -3,15 +3,22 @@ require_once __DIR__.'/schema_support.php';
 $schemaLista = schemaProjeto($conn);
 require_once __DIR__.'/privacy_settings.php';
 require_once __DIR__.'/catalog_support.php';
+require_once __DIR__.'/list_view_support.php';
+$_SESSION['list_csrf'] ??= bin2hex(random_bytes(32));
 if (!isset($_POST['criar_lista'])) {
     return;
 }
 
-$nome_lista = trim($_POST['nome_lista'] ?? '');
-$descricao = trim($_POST['descricao'] ?? '');
+$nome_lista = '';
+$descricao = '';
 $visibilidade = $_POST['visibilidade'] ?? 'publica';
 $tipo_capa = $_POST['tipo_capa'] ?? 'automatica';
 $erro_lista = '';
+if (!is_string($_POST['csrf']??null) || !hash_equals($_SESSION['list_csrf'],$_POST['csrf'])) { $erro_lista='Sessão expirada. Recarregue a página.'; return; }
+try {
+    $textoLista=validarTextoLista($_POST['nome_lista']??'',$_POST['descricao']??'');
+    $nome_lista=$textoLista['nome_lista']; $descricao=$textoLista['descricao'];
+} catch (InvalidArgumentException $error) { $erro_lista=$error->getMessage(); return; }
 $selecoes_enviadas = $_POST['livros_lista'] ?? null;
 $selecoes_livros = [];
 if (is_array($selecoes_enviadas)) {
@@ -40,7 +47,7 @@ if (is_array($selecoes_enviadas)) {
 }
 if (count($selecoes_livros) > 100) $erro_lista = 'Adicione no máximo 100 livros por lista.';
 
-if ($nome_lista === '' || mb_strlen($nome_lista) > 50 || mb_strlen($descricao) > 255) {
+if ($nome_lista === '' || mb_strlen($nome_lista) > 120 || mb_strlen($descricao) > 255) {
     $erro_lista = 'Informe um nome e uma descrição dentro dos limites.';
 } elseif (!in_array($visibilidade, ['publica', 'privada'], true) || !in_array($tipo_capa, ['automatica', 'manual'], true)) {
     $erro_lista = 'As opções selecionadas são inválidas.';
@@ -60,6 +67,10 @@ $capa_manual = null;
 $capa_extensoes = ['image/jpeg' => 'jpg', 'image/png' => 'png', 'image/webp' => 'webp'];
 if ($tipo_capa === 'manual') {
     $imagem = $_FILES['capa_manual'];
+    if (!is_string($imagem['tmp_name']??null) || !is_uploaded_file($imagem['tmp_name']) || filesize($imagem['tmp_name'])>5*1024*1024) {
+        $erro_lista = 'Envie uma imagem de até 5 MB para a capa.';
+        return;
+    }
     $info_imagem = getimagesize($imagem['tmp_name']);
     if (!$info_imagem || !isset($capa_extensoes[$info_imagem['mime']])) {
         $erro_lista = 'A capa deve ser uma imagem JPG, PNG ou WebP.';
@@ -139,6 +150,7 @@ try {
     if ($conn->inTransaction()) {
         $conn->rollBack();
     }
+    if ($capa_manual && is_file(__DIR__.'/../'.$capa_manual)) unlink(__DIR__.'/../'.$capa_manual);
     error_log('Falha ao criar lista: ' . $erro->getMessage());
 $erro_lista=$erro instanceof DomainException?$erro->getMessage():'Não foi possível criar a lista. Revise os dados e tente novamente.';
 }

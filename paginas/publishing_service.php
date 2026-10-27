@@ -15,7 +15,7 @@ function publicacaoAcessivel(PDO $c,int $id,int $viewer=0,?int $versao=null,bool
     if(!$owner&&!$moderador&&($preview||$p['estado']!=='publicado'||$p['retirado_em']||$p['visibilidade']!=='publico'))return null;
     if(!$owner&&!$moderador&&$viewer){$s=$c->prepare("SELECT 1 FROM bloqueio WHERE status_bloqueio='bloqueado' AND ((id_bloqueador=? AND id_bloqueado=?) OR (id_bloqueador=? AND id_bloqueado=?))");$s->execute([$viewer,$p['id_autor'],$p['id_autor'],$viewer]);if($s->fetchColumn())return null;}
     if(!$preview){$s=$c->prepare('SELECT v.* FROM versao_publicacao v JOIN edicao_livro e ON e.id=v.id_edicao WHERE v.id=? AND e.id_livro=?');$s->execute([$versao??$p['id_versao_atual'],$id]);$v=$s->fetch();if(!$v)return null;$p['versao']=$v;$p['publicado']=json_decode($v['snapshot'],true);
-        if(!$owner&&!$moderador&&($p['publicado']['classificacao']??0)===18){$s=$c->prepare("SELECT 1 FROM usuario WHERE id_user=? AND data_nascimento<=CURRENT_DATE-INTERVAL '18 years'");$s->execute([$viewer]);if(!$s->fetchColumn())return null;}}
+        if(!$owner&&!$moderador&&(int)($p['publicado']['classificacao']??0)===18){$s=$c->prepare("SELECT 1 FROM usuario WHERE id_user=? AND data_nascimento<=CURRENT_DATE-INTERVAL '18 years'");$s->execute([$viewer]);if(!$s->fetchColumn())return null;}}
     return $p;
 }
 function capitulosObra(PDO $c,int $id): array{$s=$c->prepare('SELECT id_capitulo AS id,titulo_capitulo AS titulo,conteudo_html AS html FROM capitulo WHERE id_livro=? ORDER BY ordem_capitulo,id_capitulo');$s->execute([$id]);return $s->fetchAll();}
@@ -27,13 +27,14 @@ function criarObra(PDO $c,int $autor,string $modo): int
 function salvarObra(PDO $c,int $id,int $autor,array $data): array
 {
     $p=obraDoAutor($c,$id,$autor,true);if((int)($data['revisao']??0)!==(int)$p['revisao'])throw new ConflitoObra('Esta obra foi alterada em outra aba. Seu texto foi preservado aqui; copie as alterações ou recarregue antes de salvar.');
-    $titulo=trim((string)($data['titulo']??''));$resumo=trim((string)($data['resumo']??''));$class=$data['classificacao']??'';$gen=$data['id_genero']??'';
+    foreach(['titulo','resumo'] as $campo)if(isset($data[$campo])&&!is_string($data[$campo]))throw new InvalidArgumentException('Título e resumo devem ser textos.');
+    $titulo=trim($data['titulo']??'');$resumo=trim($data['resumo']??'');$class=$data['classificacao']??'';$gen=$data['id_genero']??'';
     if(mb_strlen($titulo)>100||mb_strlen($resumo)>5000)throw new InvalidArgumentException('Título: até 100 caracteres. Resumo: até 5.000 caracteres.');
-    if($class!==''&&!in_array((int)$class,[0,10,12,14,16,18],true))throw new InvalidArgumentException('Classificação indicativa inválida.');
-    $genero=null;if($gen!==''){$s=$c->prepare('SELECT id_preferencia FROM preferencia WHERE id_preferencia=?');$s->execute([(int)$gen]);$genero=$s->fetchColumn();if(!$genero)throw new InvalidArgumentException('Escolha um gênero existente.');}
+    if($class!==''&&((!is_int($class)&&!is_string($class))||filter_var($class,FILTER_VALIDATE_INT)===false||!in_array((int)$class,[0,10,12,14,16,18],true)))throw new InvalidArgumentException('Classificação indicativa inválida.');
+    $genero=null;if($gen!==''){if((!is_int($gen)&&!is_string($gen))||!filter_var($gen,FILTER_VALIDATE_INT,['options'=>['min_range'=>1]]))throw new InvalidArgumentException('Escolha um gênero existente.');$s=$c->prepare('SELECT id_preferencia FROM preferencia WHERE id_preferencia=?');$s->execute([(int)$gen]);$genero=$s->fetchColumn();if(!$genero)throw new InvalidArgumentException('Escolha um gênero existente.');}
     if($p['modalidade']==='editor'){
-        $caps=$data['capitulos']??[];if(!is_array($caps)||count($caps)>100)throw new InvalidArgumentException('Use no máximo 100 capítulos.');$ids=[];$total=0;
-        foreach($caps as $i=>$cap){$name=trim((string)($cap['titulo']??''));if(mb_strlen($name)>100)throw new InvalidArgumentException('Título de capítulo muito longo.');$html=sanitizarEscrita((string)($cap['html']??''));$total+=strlen($html);if($total>2000000)throw new InvalidArgumentException('O texto total excedeu 2 MB. Divida a obra em volumes.');
+        $caps=$data['capitulos']??[];if(!is_array($caps)||!array_is_list($caps)||count($caps)>100)throw new InvalidArgumentException('Use uma lista de no máximo 100 capítulos.');$ids=[];$total=0;
+        foreach($caps as $i=>$cap){if(!is_array($cap)||!is_string($cap['titulo']??'')||!is_string($cap['html']??'')||(!empty($cap['id'])&&!filter_var($cap['id'],FILTER_VALIDATE_INT,['options'=>['min_range'=>1]])))throw new InvalidArgumentException('Capítulo inválido.');$name=trim($cap['titulo']??'');if(mb_strlen($name)>100)throw new InvalidArgumentException('Título de capítulo muito longo.');$html=sanitizarEscrita($cap['html']??'');$total+=strlen($html);if($total>2000000)throw new InvalidArgumentException('O texto total excedeu 2 MB. Divida a obra em volumes.');
             if(!empty($cap['id'])){$s=$c->prepare('UPDATE capitulo SET titulo_capitulo=?,conteudo_html=?,ordem_capitulo=? WHERE id_capitulo=? AND id_livro=? RETURNING id_capitulo');$s->execute([$name,$html,$i+1,(int)$cap['id'],$id]);$cid=$s->fetchColumn();if(!$cid||in_array((int)$cid,$ids,true))throw new InvalidArgumentException('Capítulo inválido ou repetido.');}
             else{$s=$c->prepare('INSERT INTO capitulo(titulo_capitulo,conteudo_html,ordem_capitulo,id_livro) VALUES(?,?,?,?) RETURNING id_capitulo');$s->execute([$name,$html,$i+1,$id]);$cid=$s->fetchColumn();}$ids[]=(int)$cid;
         }

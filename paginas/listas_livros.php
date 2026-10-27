@@ -73,6 +73,7 @@ $qntd_listas = $qntd_listas ?? 0;
     <?php if (!empty($erro_lista)): ?><p class="lista-feedback" role="alert"><?= htmlspecialchars($erro_lista) ?></p><?php endif; ?>
 
     <form action="" method="POST" enctype="multipart/form-data" id="form-criar-lista" class="form-criar-lista">
+        <input type="hidden" name="csrf" value="<?= htmlspecialchars($_SESSION['list_csrf'],ENT_QUOTES,'UTF-8') ?>">
         <section class="lista-form-secao">
             <h3>Capa da lista</h3>
             <div class="lista-capa-opcoes">
@@ -89,7 +90,7 @@ $qntd_listas = $qntd_listas ?? 0;
         </section>
 
         <label class="lista-campo-label" for="nome_lista">Nome da Lista</label>
-        <div class="lista-contador-campo"><input type="text" id="nome_lista" name="nome_lista" maxlength="50" placeholder="Ex.: Lista irada!" required><span id="contadorNomeLista">0/50</span></div>
+        <div class="lista-contador-campo"><input type="text" id="nome_lista" name="nome_lista" maxlength="120" placeholder="Ex.: Lista irada!" required><span id="contadorNomeLista">0/120</span></div>
 
         <label class="lista-campo-label" for="descricao">Descrição (opcional)</label>
         <div class="lista-contador-campo lista-descricao-campo"><textarea id="descricao" name="descricao" <?= isset($schemaLista['whishlist']['descricao']) ? '' : 'disabled' ?> maxlength="255" placeholder="Ex.: Lista irada!"></textarea><span id="contadorDescricaoLista">0/255</span></div>
@@ -138,7 +139,7 @@ $qntd_listas = $qntd_listas ?? 0;
     const nomeLista = document.getElementById("nome_lista");
     const descricaoLista = document.getElementById("descricao");
     nomeLista.addEventListener("input", () => {
-        document.getElementById("contadorNomeLista").textContent = `${nomeLista.value.length}/50`;
+        document.getElementById("contadorNomeLista").textContent = `${nomeLista.value.length}/120`;
     });
     descricaoLista.addEventListener("input", () => {
         document.getElementById("contadorDescricaoLista").textContent = `${descricaoLista.value.length}/255`;

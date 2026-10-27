@@ -6,7 +6,7 @@ if (!isset($_SESSION['id_user'])) {
 }
 
 $id_user = (int) $_SESSION['id_user'];
-$busca = trim($_GET['pesquisa'] ?? '');
+$busca = is_string($_GET['pesquisa'] ?? null) ? mb_substr(trim($_GET['pesquisa']),0,100) : '';
 require_once __DIR__ . '/conexao.php';
 $conn = (new Database())->conectar();
 
@@ -80,6 +80,7 @@ $imagemUrl = static function ($caminho) use ($esc) {
         button.disabled = true;
         const dados = new FormData();
         dados.append('id_user', button.dataset.seguirUsuario);
+        dados.append('csrf', <?= json_encode($_SESSION['post_csrf']) ?>);
         try {
             const resposta = await fetch('seguir_usuario.php', { method: 'POST', body: dados, headers: { Accept: 'application/json' } });
             const resultado = await resposta.json();

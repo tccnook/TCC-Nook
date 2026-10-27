@@ -16,6 +16,8 @@ if (!isset($_SESSION['id_user'])) {
     responderLista(401, 'Faça login para continuar.');
 }
 
+if (!is_string($_POST['csrf']??null) || empty($_SESSION['list_csrf']) || !hash_equals($_SESSION['list_csrf'],$_POST['csrf'])) responderLista(403,'Sessão expirada. Recarregue a lista.');
+
 $id_user = (int) $_SESSION['id_user'];
 $id_lista = filter_var($_POST['id_lista'] ?? null, FILTER_VALIDATE_INT);
 $acao = $_POST['acao'] ?? '';
@@ -27,6 +29,7 @@ if (!$id_lista || !in_array($acao, $acoes, true)) {
 require_once __DIR__ . '/conexao.php';
 $conn = (new Database())->conectar();
 require_once __DIR__.'/schema_support.php';
+require_once __DIR__.'/list_view_support.php';
 $schema = schemaProjeto($conn);
 require_once __DIR__.'/privacy_settings.php';
 $colunaVisibilidade = isset($schema['whishlist']['visibilidade']) ? 'visibilidade' : "'privada' AS visibilidade";
@@ -62,7 +65,7 @@ try {
             $conn->rollBack();
             responderLista(403, 'Você não pode comentar nesta lista.');
         }
-        $comentario = trim($_POST['comentario'] ?? '');
+        $comentario = is_string($_POST['comentario']??'') ? trim($_POST['comentario']??'') : '';
         if ($comentario === '' || mb_strlen($comentario) > 1000) {
             $conn->rollBack();
             responderLista(422, 'Escreva um comentário de até 1000 caracteres.');
@@ -115,13 +118,13 @@ try {
     }
 
     if ($acao === 'editar') {
-        $nome_lista = trim($_POST['nome_lista'] ?? '');
-        $descricao = trim($_POST['descricao'] ?? '');
+        $textoLista=validarTextoLista($_POST['nome_lista']??'',$_POST['descricao']??'');
+        $nome_lista=$textoLista['nome_lista']; $descricao=$textoLista['descricao'];
         $visibilidade = $_POST['visibilidade'] ?? '';
         $destinosEdicao=destinosMencoes($conn,$nome_lista.' '.$descricao,$id_user);
-        if ($nome_lista === '' || mb_strlen($nome_lista) > 120 || mb_strlen($descricao) > 90) {
+        if ($nome_lista === '' || mb_strlen($nome_lista) > 120 || mb_strlen($descricao) > 255) {
             $conn->rollBack();
-            responderLista(422, 'Informe um nome de até 120 caracteres e uma descrição de até 90 caracteres.');
+            responderLista(422, 'Informe um nome de até 120 caracteres e uma descrição de até 255 caracteres.');
         }
         if (!in_array($visibilidade, ['publica', 'privada'], true)) {
             $conn->rollBack();
@@ -139,7 +142,7 @@ try {
             ':visibilidade' => $visibilidade,
             ':id_lista' => $id_lista
         ]);
-        if ($visibilidade === 'privada') {
+        if ($visibilidade === 'privada' && isset($schema['whishlist_seguida'])) {
             $stmt = $conn->prepare('DELETE FROM whishlist_seguida WHERE id_whishlist = :id_lista');
             $stmt->execute([':id_lista' => $id_lista]);
         }
@@ -157,7 +160,7 @@ try {
         }
         $stmt = $conn->prepare('UPDATE whishlist SET visibilidade = :visibilidade WHERE id = :id_lista');
         $stmt->execute([':visibilidade' => $visibilidade, ':id_lista' => $id_lista]);
-        if ($visibilidade === 'privada') {
+        if ($visibilidade === 'privada' && isset($schema['whishlist_seguida'])) {
             $stmt = $conn->prepare('DELETE FROM whishlist_seguida WHERE id_whishlist = :id_lista');
             $stmt->execute([':id_lista' => $id_lista]);
         }
@@ -223,6 +226,7 @@ try {
         $conn->rollBack();
         responderLista(422, 'Ordem de livros inválida.');
     }
+    foreach ($ordem as $idOrdenado) if ((!is_int($idOrdenado) && !is_string($idOrdenado)) || !filter_var($idOrdenado,FILTER_VALIDATE_INT,['options'=>['min_range'=>1]])) { $conn->rollBack(); responderLista(422,'Ordem de livros inválida.'); }
     $ordem = array_map('intval', $ordem);
     if (count($ordem) !== count(array_unique($ordem))) {
         $conn->rollBack();
@@ -249,7 +253,7 @@ try {
     if ($conn->inTransaction()) {
         $conn->rollBack();
     }
-    if($erro instanceof DomainException)responderLista(422,$erro->getMessage());
+    if($erro instanceof DomainException || $erro instanceof InvalidArgumentException)responderLista(422,$erro->getMessage());
     error_log('Falha na ação da lista: ' . $erro->getMessage());
     responderLista(500, 'Não foi possível atualizar a lista.');
 }

@@ -277,6 +277,7 @@
 		followButton.disabled = true;
 		const body = new FormData();
 		body.append('id_user', followButton.dataset.seguirUsuario);
+		body.append('csrf', csrf);
 		try {
 			const response = await fetch('seguir_usuario.php', { method: 'POST', body, headers: { Accept: 'application/json' } });
 			const result = await response.json();

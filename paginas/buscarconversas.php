@@ -1,56 +1,36 @@
 <?php
 session_start();
-header('Content-Type: application/json; charset=UTF-8');
-
-if (!isset($_SESSION['id_user'])) {
-    http_response_code(401);
-    echo json_encode(['sucesso' => false, 'mensagem' => 'Faça login para ver conversas.']);
-    exit();
-}
-
-require_once __DIR__ . '/conexao.php';
-$conn = (new Database())->conectar();
-$id_user = (int) $_SESSION['id_user'];
-$termo = trim($_GET['nome'] ?? '');
-
-$sql = "
-    WITH conversas_usuario AS (
-        SELECT DISTINCT ON (c.id_conversa)
-            c.id_conversa,
-            c.nome_conversa,
-            c.tipo,
-            c.foto_conversa_url,
-            c.criacao,
-            mensagem.id_mensagem,
-            mensagem.id_envio,
-            mensagem.conteudo,
-            mensagem.criacao AS ultima_mensagem,
-            emissor.username AS username_ultimo
+require_once __DIR__.'/chat_support.php';
+if (!isset($_SESSION['id_user'])) chatResposta(401,['sucesso'=>false,'mensagem'=>'Faça login para ver conversas.']);
+$termo = $_GET['nome'] ?? '';
+if (!is_string($termo)) chatResposta(422,['sucesso'=>false,'mensagem'=>'Busca inválida.']);
+$termo = mb_substr(trim($termo),0,100);
+require_once __DIR__.'/conexao.php';
+try {
+    $conn = (new Database())->conectar(); $user=(int)$_SESSION['id_user'];
+    $stmt = $conn->prepare("WITH conversas_usuario AS (
+        SELECT c.id_conversa,c.tipo,c.criacao,
+               CASE WHEN c.tipo='direct' THEN COALESCE(parceiro.username,'Conversa direta') ELSE c.nome_conversa END AS nome_conversa,
+               CASE WHEN c.tipo='direct' THEN parceiro.foto_perfil_url ELSE c.foto_conversa_url END AS foto_conversa_url,
+               ultima.id_mensagem,ultima.id_envio,ultima.conteudo,ultima.criacao AS ultima_mensagem,emissor.username AS username_ultimo
         FROM conversa c
-        INNER JOIN conversa_participante participante
-            ON participante.id_conversa = c.id_conversa
-            AND participante.id_user = :id_user
         LEFT JOIN LATERAL (
-            SELECT m.id_mensagem, m.id_envio, m.conteudo, m.criacao
-            FROM mensagem m
-            WHERE m.id_conversa = c.id_conversa
-              AND m.delatado_em IS NULL
-            ORDER BY m.criacao DESC
-            LIMIT 1
-        ) mensagem ON true
-        LEFT JOIN usuario emissor ON emissor.id_user = mensagem.id_envio
-        ORDER BY c.id_conversa, mensagem.criacao DESC NULLS LAST
-    )
-    SELECT * FROM conversas_usuario
-    WHERE (:busca_vazia = '' OR nome_conversa ILIKE :busca_nome OR username_ultimo ILIKE :busca_usuario)
-    ORDER BY ultima_mensagem DESC NULLS LAST, criacao DESC
-";
-$stmt = $conn->prepare($sql);
-$stmt->execute([
-    ':id_user' => $id_user,
-    ':busca_vazia' => $termo,
-    ':busca_nome' => '%' . $termo . '%',
-    ':busca_usuario' => '%' . $termo . '%'
-]);
-
-echo json_encode(['sucesso' => true, 'conversas' => $stmt->fetchAll(PDO::FETCH_ASSOC)], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+            SELECT u.username,conta.foto_perfil_url FROM conversa_participante cp
+            INNER JOIN usuario u ON u.id_user=cp.id_user LEFT JOIN conta ON conta.id_user=u.id_user
+            WHERE cp.id_conversa=c.id_conversa AND cp.id_user<>:outro ORDER BY u.id_user LIMIT 1
+        ) parceiro ON c.tipo='direct'
+        LEFT JOIN LATERAL (
+            SELECT m.id_mensagem,m.id_envio,m.conteudo,m.criacao FROM mensagem m
+            WHERE m.id_conversa=c.id_conversa AND m.delatado_em IS NULL ORDER BY m.criacao DESC,m.id_mensagem DESC LIMIT 1
+        ) ultima ON true
+        LEFT JOIN usuario emissor ON emissor.id_user=ultima.id_envio
+        WHERE EXISTS (SELECT 1 FROM conversa_participante p WHERE p.id_conversa=c.id_conversa AND p.id_user=:usuario)
+    ) SELECT * FROM conversas_usuario
+      WHERE (:vazio='' OR nome_conversa ILIKE :nome OR username_ultimo ILIKE :emissor)
+      ORDER BY ultima_mensagem DESC NULLS LAST,criacao DESC,id_conversa DESC");
+    $stmt->execute([':outro'=>$user,':usuario'=>$user,':vazio'=>$termo,':nome'=>'%'.$termo.'%',':emissor'=>'%'.$termo.'%']);
+    $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    foreach ($rows as &$row) $row['foto_conversa_url'] = nookPublicUrl($row['foto_conversa_url']);
+    unset($row);
+    chatResposta(200,['sucesso'=>true,'conversas'=>$rows]);
+} catch (Throwable $error) { error_log('Falha ao buscar conversas: '.$error->getMessage()); chatResposta(500,['sucesso'=>false,'mensagem'=>'Não foi possível carregar suas conversas.']); }

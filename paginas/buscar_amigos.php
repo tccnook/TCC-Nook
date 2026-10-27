@@ -1,49 +1,13 @@
 <?php
-
 session_start();
-
-if(!isset($_SESSION['id_user'])){
-    header("location:login.php");
-    exit();
-}
-
-$id_user = $_SESSION['id_user'];
-
-require_once(__DIR__ . "/" . 'conexao.php');
-$db = new Database;
-$conn - $db->conectar();
-
+require_once __DIR__.'/chat_support.php';
+if (!isset($_SESSION['id_user'])) chatResposta(401,['sucesso'=>false,'mensagem'=>'Faça login para pesquisar leitores.']);
 $busca = $_GET['nome'] ?? '';
-
-$select_amigos = "
-select f.id_following, u.username, c.foto_perfil_url
-from follow f
-inner join usuario u on u.id_user = f.id_following
-inner join conta c on c.id_user = u.id_user
-where f.id_follower = :id_user
-and lower(u.username) like lower(:busca)
-order by u.username desc
-";
-
-try{
-$stmt_amigos = $conn->prepare($select_amigos);
-$stmt_amigos->execute([
-    ":id_user" => $id_user,
-    ":busca" => "%".($busca ?? "")."%"
-]);
-$amigos = $stmt_amigos->fetchAll(PDO::FETCH_ASSOC);
-
-echo json_encode([
-    'sucesso' => true,
-    'amigo' => $amigos
-]);
-} catch(PDOException $e){
-    echo json_encode([
-        "sucesso" => false,
-        "mensagem" => $e->getMessage()
-    ]);
-}
-
-
-
-?>
+if (!is_string($busca)) chatResposta(422,['sucesso'=>false,'mensagem'=>'Busca inválida.']);
+require_once __DIR__.'/conexao.php';
+try {
+    $conn = (new Database())->conectar();
+    $stmt = $conn->prepare('SELECT DISTINCT f.id_following,u.username,c.foto_perfil_url FROM follow f INNER JOIN usuario u ON u.id_user=f.id_following LEFT JOIN conta c ON c.id_user=u.id_user WHERE f.id_follower=:usuario AND u.id_user<>:proprio AND u.username ILIKE :busca ORDER BY u.username');
+    $stmt->execute([':usuario'=>(int)$_SESSION['id_user'],':proprio'=>(int)$_SESSION['id_user'],':busca'=>'%'.mb_substr(trim($busca),0,100).'%']);
+    chatResposta(200,['sucesso'=>true,'amigos'=>$stmt->fetchAll(PDO::FETCH_ASSOC)]);
+} catch (Throwable $error) { error_log('Falha ao buscar amigos: '.$error->getMessage()); chatResposta(500,['sucesso'=>false,'mensagem'=>'Não foi possível pesquisar leitores.']); }

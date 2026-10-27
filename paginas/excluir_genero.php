@@ -10,7 +10,7 @@
         exit('Método não permitido.');
     }
 
-    $id_genero = filter_var($_POST['id_genero'] ?? null, FILTER_VALIDATE_INT);
+    $id_genero = filter_var($_POST['id_genero'] ?? null, FILTER_VALIDATE_INT, ['options'=>['min_range'=>1]]);
 
     if (!$id_genero) {
         header('Location: crud_genero.php');

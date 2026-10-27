@@ -131,8 +131,8 @@ function consultarVolumeExternoPorId(string $externalId, array $contexto = []): 
     if (preg_match('/^OL[0-9]+W$/D', $externalId)) return complementarLivroWikipedia(consultarObraOpenLibrary($externalId), $contexto);
     if (!preg_match('/^[A-Za-z0-9_-]{1,100}$/D', $externalId) || !function_exists('curl_init')) return null;
 
+    global $chave_api, $google_books_ca_bundle;
     require_once __DIR__ . '/config_api_ex.php';
-    global $chave_api;
     $volume = cacheGoogleBooks(['provider' => 'google-volume', 'id' => $externalId, 'locale' => 'pt-edicao-1'], static function () use ($externalId, $chave_api): ?array {
         $url = 'https://www.googleapis.com/books/v1/volumes/' . rawurlencode($externalId);
         if ($chave_api !== '') $url .= '?' . http_build_query(['key' => $chave_api]);
@@ -184,7 +184,10 @@ function buscarVolumesExternos(array $params,string $key='',?callable $transport
     $google=$params;$google['langRestrict']='pt';if($key!=='')$google['key']=$key;
     $data=$transport('https://www.googleapis.com/books/v1/volumes?'.http_build_query($google));
     $respostaGoogle = $data;
-    if($data!==null && !empty($data['items']))return filtrarVolumesPortugues($data);
+    if($data!==null && !empty($data['items'])){
+        $portugues=filtrarVolumesPortugues($data);
+        if(!empty($portugues['items']))return $portugues;
+    }
     // Busca por título: a Wikipédia complementa a descoberta sem substituir as edições da Open Library.
     $consulta = trim((string)($params['q']??''));
     if ((int)($params['startIndex']??0) === 0 && $consulta !== '' && !preg_match('/\b(?:inauthor|subject|isbn):/i', $consulta)) {

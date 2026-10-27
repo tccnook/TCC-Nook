@@ -1,4 +1,5 @@
 <?php
+if (!isset($conn, $id_user) || !function_exists('buscar_dados')) { http_response_code(404); return; }
 // Conteúdo do modal "Gerenciar metas" - incluído pela visao-geral.php
 // ($conn, $id_user, buscar_dados(), executar_sql() e contar_lidos_meta() já existem lá)
 
@@ -12,8 +13,8 @@ $params = [
     ':id_user' => $id_user
 ];
 
-$filtro_nome = trim($_GET['nome_meta'] ?? '');
-$filtro_periodo = $_GET['periodo'] ?? '';
+$filtro_nome = is_string($_GET['nome_meta'] ?? null) ? mb_substr(trim($_GET['nome_meta']),0,100) : '';
+$filtro_periodo = is_string($_GET['periodo'] ?? null) ? $_GET['periodo'] : '';
 
 $metas_modal = buscar_dados($conn, $select, $params, true);
 $meta_feedback = $_SESSION['meta_feedback'] ?? '';
@@ -108,7 +109,7 @@ $nomes_status = [
                 <p class="meta-periodo">Sua meta <?= htmlspecialchars($m['periodo']) ?> · válida até <?= $prazo ?></p>
 
                 <section class="meta-barra">
-                    <progress value="<?= htmlspecialchars($lidos_meta) ?>"
+                    <progress value="<?= (int)$lidos_meta ?>"
                               max="<?= htmlspecialchars($m['num_livros']) ?>"
                               aria-label="Progresso da meta <?= htmlspecialchars($m['nome_meta']) ?>">
                         <?= round($percentual) ?>%
@@ -116,7 +117,7 @@ $nomes_status = [
                     <span class="pilula"><?= round($percentual) ?>%</span>
                 </section>
 
-                <p class="meta-periodo"><?= htmlspecialchars($lidos_meta) ?> de <?= htmlspecialchars($m['num_livros']) ?> <?= ($m['tipo_meta']??'livros')==='listas'?'listas lidas':'livros lidos' ?></p>
+                <p class="meta-periodo"><?= (int)$lidos_meta ?> de <?= (int)$m['num_livros'] ?> <?= ($m['tipo_meta']??'livros')==='listas'?'listas lidas':'livros lidos' ?></p>
                 <p class="meta-mensagem <?= $falta_meta <= 0 ? 'concluida' : '' ?>"><?= $mensagem_meta ?></p>
 
                 <section class="meta-acoes">

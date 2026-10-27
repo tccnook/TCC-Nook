@@ -33,6 +33,7 @@ if (!isset($_SESSION['id_user'])) {
     const campoBuscaConversa = document.getElementById('busca-conversa');
     const listaConversas = document.getElementById('lista-conversas');
     let timeoutBuscaConversa;
+    let pedidoConversas = 0;
 
     function escaparTexto(texto) {
         return String(texto ?? '').replace(/[&<>"']/g, (caractere) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[caractere]);
@@ -45,10 +46,12 @@ if (!isset($_SESSION['id_user'])) {
     }
 
     async function carregarConversas() {
+        const pedido = ++pedidoConversas;
         listaConversas.setAttribute('aria-busy', 'true');
         try {
             const resposta = await fetch(`buscarconversas.php?nome=${encodeURIComponent(campoBuscaConversa.value.trim())}`);
             const dados = await resposta.json();
+            if (pedido !== pedidoConversas) return;
             if (!resposta.ok || !dados.sucesso) throw new Error(dados.mensagem || 'Não foi possível carregar as conversas.');
             listaConversas.replaceChildren();
             if (!dados.conversas.length) {
@@ -75,17 +78,18 @@ if (!isset($_SESSION['id_user'])) {
                 const nome = document.createElement('strong');
                 nome.textContent = conversa.nome_conversa || 'Conversa';
                 const resumo = document.createElement('small');
-                resumo.textContent = conversa.conteudo ? `${conversa.username || 'Mensagem'}: ${conversa.conteudo}` : 'Inicie a conversa';
+                resumo.textContent = conversa.conteudo ? `${conversa.username_ultimo || 'Mensagem'}: ${conversa.conteudo}` : 'Inicie a conversa';
                 detalhes.append(nome, resumo);
                 const data = document.createElement('time');
-                data.textContent = conversa.ultima_mensagem ? new Date(conversa.ultima_mensagem).toLocaleDateString('pt-BR') : '';
+                data.textContent = conversa.ultima_mensagem ? new Date(conversa.ultima_mensagem.replace(' ', 'T')).toLocaleDateString('pt-BR') : '';
                 link.append(avatar, detalhes, data);
                 listaConversas.append(link);
             });
         } catch (erro) {
+            if (pedido !== pedidoConversas) return;
             listaConversas.innerHTML = `<p class="inbox-loading">${escaparTexto(erro.message)}</p>`;
         } finally {
-            listaConversas.removeAttribute('aria-busy');
+            if (pedido === pedidoConversas) listaConversas.removeAttribute('aria-busy');
         }
     }
 

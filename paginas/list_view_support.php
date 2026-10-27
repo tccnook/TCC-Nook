@@ -1,6 +1,18 @@
 <?php
 require_once __DIR__.'/schema_support.php';
 
+/** Mesmos limites na criação e na edição, compatíveis com o schema atual. */
+function validarTextoLista($nome, $descricao): array
+{
+    if (!is_string($nome) || !is_string($descricao)) throw new InvalidArgumentException('Informe um nome e uma descrição válidos.');
+    $nome = trim($nome);
+    $descricao = trim($descricao);
+    if ($nome === '' || mb_strlen($nome) > 120 || mb_strlen($descricao) > 255) {
+        throw new InvalidArgumentException('Informe um nome de até 120 caracteres e uma descrição de até 255 caracteres.');
+    }
+    return ['nome_lista'=>$nome, 'descricao'=>$descricao];
+}
+
 /** Campos comuns à biblioteca pessoal, aos perfis e à descoberta de listas. */
 function sqlSelecaoListas(array $schema): string
 {
