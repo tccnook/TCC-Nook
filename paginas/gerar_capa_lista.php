@@ -20,11 +20,13 @@ function gerarCapaLista($capas, $id_whishlist)
             break;
         }
 
+
         $dados = file_get_contents($livro['capa_url']); //acessa url do livro e pega sua capa
 
         if ($dados === false) { //se n conseguir pegar img ignora e continua
             continue;
         }
+
 
         $imagem_capa = imagecreatefromstring($dados); //transforma em uma imagem q pode ser manipulada
 
@@ -32,8 +34,9 @@ function gerarCapaLista($capas, $id_whishlist)
             continue;
         }
 
+
         imagecopyresampled( //redimensiona e posiciona a capa dos livros na capa da lista
-            $imagem_final, //destino(capa da lista) 
+            $imagem_final, //destino(capa da lista)
             $imagem_capa, //capa do livro
             //posiciona a capa a partir do indice i
             $posicoes[$i][0],
@@ -49,6 +52,7 @@ function gerarCapaLista($capas, $id_whishlist)
         imagedestroy($imagem_capa);
     }
 
+
     $pasta = 'img/capas_listas/';
 
     $nome_arquivo = 'capa_auto_lista_' . $id_whishlist . '.jpg';
@@ -62,4 +66,3 @@ function gerarCapaLista($capas, $id_whishlist)
 
     return $caminho_banco;
 }
-?>

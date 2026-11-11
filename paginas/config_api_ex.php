@@ -1,5 +1,6 @@
 <?php
-require_once __DIR__.'/runtime.php';
+
+require_once __DIR__ . '/runtime.php';
 $chave_api = trim(nookEnv('GOOGLE_BOOKS_API_KEY'));
 $google_books_ca_bundle = trim(nookEnv('GOOGLE_BOOKS_CA_BUNDLE'));
 

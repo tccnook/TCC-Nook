@@ -1,8 +1,25 @@
 {
     "require": {
+        "php": "^8.1",
+        "ext-ctype": "*",
+        "ext-curl": "*",
+        "ext-dom": "*",
+        "ext-fileinfo": "*",
+        "ext-gd": "*",
+        "ext-mbstring": "*",
+        "ext-openssl": "*",
+        "ext-pdo": "*",
+        "ext-pdo_pgsql": "*",
+        "ext-session": "*",
+        "ext-zip": "*",
         "phpmailer/phpmailer": "^7.1",
         "vlucas/phpdotenv": "^5.6",
         "google/apiclient": "^2.19",
         "dompdf/dompdf": "^3.1"
+    },
+    "scripts": {
+        "check": "@php scripts/check-environment.php",
+        "lint": "@php scripts/lint.php",
+        "test": "@php tests/run.php"
     }
 }

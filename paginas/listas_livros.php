@@ -1,5 +1,9 @@
 <?php
-
+// Fragmento: depende das variáveis e da autorização da página que o inclui.
+if (realpath($_SERVER['SCRIPT_FILENAME'] ?? '') === __FILE__) {
+    http_response_code(404);
+    exit('Componente interno. Acesse o Nook pela página inicial.');
+}
 require_once(__DIR__ . "/" . "criar_lista_livros.php");
 try {
     require_once(__DIR__ . "/" . "dados_listas_livros.php");
@@ -23,40 +27,40 @@ $qntd_listas = $qntd_listas ?? 0;
 
     <!-- listagem da lista de livros -->
     <?php if (!$listas): ?>
-        <p class="aba-vazia">Você ainda não criou ou seguiu nenhuma lista.</p>
+    <p class="aba-vazia">Você ainda não criou ou seguiu nenhuma lista.</p>
     <?php else: ?>
     <div class="listas-grid">
-        <?php foreach($listas as $lista): ?>
-            <?php $capas = array_slice(json_decode($lista['capas'], true) ?? [], 0, 3); ?>
-            <?php $ehListaDoUsuario = (int) $lista['id_dono'] === (int) $id_user; ?>
+        <?php foreach ($listas as $lista): ?>
+        <?php $capas = array_slice(json_decode($lista['capas'], true) ?? [], 0, 3); ?>
+        <?php $ehListaDoUsuario = (int) $lista['id_dono'] === (int) $id_user; ?>
 
-            <article class="lista-card <?= $ehListaDoUsuario ? 'lista-card--usuario' : 'lista-card--outro' ?>">
-                <a href="ver_lista.php?id=<?= urlencode($lista['id']) ?>">
-                    <div class="lista-topo">
-                        <h3><?= htmlspecialchars($lista['nome_lista']) ?></h3>
-                        <p><?= htmlspecialchars($lista['descricao']) ?></p>
-                        <?php if ((int) $lista['id_dono'] !== (int) $id_user): ?>
-                            <small class="lista-dono">Por @<?= htmlspecialchars($lista['username_dono']) ?></small>
-                        <?php endif; ?>
-                        <i data-lucide="bookmark" class="lista-salvar"></i>
-                    </div>
+        <article class="lista-card <?= $ehListaDoUsuario ? 'lista-card--usuario' : 'lista-card--outro' ?>">
+            <a href="ver_lista.php?id=<?= urlencode($lista['id']) ?>">
+                <div class="lista-topo">
+                    <h3><?= htmlspecialchars($lista['nome_lista']) ?></h3>
+                    <p><?= htmlspecialchars($lista['descricao']) ?></p>
+                    <?php if ((int) $lista['id_dono'] !== (int) $id_user): ?>
+                    <small class="lista-dono">Por @<?= htmlspecialchars($lista['username_dono']) ?></small>
+                    <?php endif; ?>
+                    <i data-lucide="bookmark" class="lista-salvar"></i>
+                </div>
 
-                    <div class="capas">
-                        <?php foreach($capas as $capa): ?>
-                            <img src="<?= htmlspecialchars($capa ?: '../img/livro-sem-capa.svg') ?>" alt="Capa do livro" loading="lazy">
-                        <?php endforeach; ?>
-                    </div>
+                <div class="capas">
+                    <?php foreach ($capas as $capa): ?>
+                    <img src="<?= htmlspecialchars($capa ?: '../img/livro-sem-capa.svg') ?>" alt="Capa do livro" loading="lazy">
+                    <?php endforeach; ?>
+                </div>
 
-                    <ul class="lista-info">
-                        <li><i data-lucide="book"></i> <?= htmlspecialchars($lista['quantidade_livros']) ?> Livros</li>
-                        <li><i data-lucide="heart"></i> <?= htmlspecialchars($lista['curtidas']) ?></li>
-                        <li>
-                            <i data-lucide="<?= $lista['visibilidade'] === 'privada' ? 'lock' : 'globe' ?>"></i>
-                            <?= $lista['visibilidade'] === 'privada' ? 'Privada' : 'Pública' ?>
-                        </li>
-                    </ul>
-                </a>
-            </article>
+                <ul class="lista-info">
+                    <li><i data-lucide="book"></i> <?= htmlspecialchars($lista['quantidade_livros']) ?> Livros</li>
+                    <li><i data-lucide="heart"></i> <?= htmlspecialchars($lista['curtidas']) ?></li>
+                    <li>
+                        <i data-lucide="<?= $lista['visibilidade'] === 'privada' ? 'lock' : 'globe' ?>"></i>
+                        <?= $lista['visibilidade'] === 'privada' ? 'Privada' : 'Pública' ?>
+                    </li>
+                </ul>
+            </a>
+        </article>
         <?php endforeach; ?>
     </div>
     <?php endif; ?>
@@ -66,14 +70,19 @@ $qntd_listas = $qntd_listas ?? 0;
 <!-- modal para criar lista -->
 <dialog id="modal_lista" class="modal-criar-lista" <?= !empty($erro_lista) ? 'data-abrir' : '' ?>>
     <header class="modal-lista-cabecalho">
-        <div><i data-lucide="library-big"></i><div><h2>Criar nova lista de leitura</h2><p>Organize seus livros favoritos em uma coleção.</p></div></div>
+        <div><i data-lucide="library-big"></i>
+            <div>
+                <h2>Criar nova lista de leitura</h2>
+                <p>Organize seus livros favoritos em uma coleção.</p>
+            </div>
+        </div>
         <button type="button" id="fechar_lista" class="modal-lista-fechar" aria-label="Fechar"><i data-lucide="x"></i></button>
     </header>
 
     <?php if (!empty($erro_lista)): ?><p class="lista-feedback" role="alert"><?= htmlspecialchars($erro_lista) ?></p><?php endif; ?>
 
     <form action="" method="POST" enctype="multipart/form-data" id="form-criar-lista" class="form-criar-lista">
-        <input type="hidden" name="csrf" value="<?= htmlspecialchars($_SESSION['list_csrf'],ENT_QUOTES,'UTF-8') ?>">
+        <input type="hidden" name="csrf" value="<?= htmlspecialchars($_SESSION['list_csrf'], ENT_QUOTES, 'UTF-8') ?>">
         <section class="lista-form-secao">
             <h3>Capa da lista</h3>
             <div class="lista-capa-opcoes">

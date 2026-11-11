@@ -1,6 +1,6 @@
 /* Base compartilhada por telas públicas e internas; sem navegação global. */
-@import url('./base/reset.css');
-@import url('./base/variables.css');
-@import url('./base/global.css');
-@import url('./utilities/google-login.css');
-@import url('./utilities/progress.css');
+@import url("./base/reset.css");
+@import url("./base/variables.css");
+@import url("./base/global.css");
+@import url("./utilities/google-login.css");
+@import url("./utilities/progress.css");

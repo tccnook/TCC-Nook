@@ -1,10 +1,10 @@
 [hidden] {
-    display: none !important
+    display: none !important;
 }
 
 .main {
     width: 100%;
-    padding-bottom: 1rem
+    padding-bottom: 1rem;
 }
 
 /* ---------- banner ---------- */
@@ -38,10 +38,10 @@
 }
 
 .sem-banner::before {
-    content: '';
+    content: "";
     position: absolute;
     inset: 0;
-    opacity: .15;
+    opacity: 0.15;
     pointer-events: none;
 }
 
@@ -58,7 +58,7 @@
 
 .perfil-avatar {
     width: 150px;
-    height: 150px
+    height: 150px;
 }
 
 .com-foto-perfil,
@@ -81,19 +81,19 @@ div.avatar-previa {
 }
 
 .sem-foto-perfil {
-    color: var(--text-on-dark)
+    color: var(--text-on-dark);
 }
 
 .sem-foto-perfil svg {
     width: 45%;
-    height: 45%
+    height: 45%;
 }
 
 .perfil-content {
     padding-top: 80px;
     display: flex;
     flex-direction: column;
-    gap: .75rem;
+    gap: 0.75rem;
 }
 
 .user-names h1 {
@@ -101,12 +101,12 @@ div.avatar-previa {
     font-size: 1.5rem;
     font-weight: 500;
     color: var(--text-title);
-    margin-bottom: .15rem;
+    margin-bottom: 0.15rem;
 }
 
 .user-names p {
     color: var(--text-muted);
-    font-size: .8rem;
+    font-size: 0.8rem;
 }
 
 .bio {
@@ -118,19 +118,19 @@ div.avatar-previa {
 
 .bio p,
 .bio-previa {
-    font-size: .85rem;
+    font-size: 0.85rem;
     line-height: 1.5;
     overflow-wrap: anywhere;
 }
 
 .bio p {
-    color: var(--text-secondary)
+    color: var(--text-secondary);
 }
 
 .info-usuario {
     display: flex;
     flex-wrap: wrap;
-    gap: .75rem 2rem;
+    gap: 0.75rem 2rem;
     list-style: none;
     padding: 0;
 }
@@ -142,8 +142,8 @@ div.avatar-previa {
 }
 
 .info-usuario li {
-    gap: .4rem;
-    font-size: .8rem;
+    gap: 0.4rem;
+    font-size: 0.8rem;
     color: var(--text-secondary);
 }
 
@@ -159,7 +159,7 @@ div.avatar-previa {
     display: flex;
     align-items: center;
     flex-wrap: wrap;
-    gap: .75rem;
+    gap: 0.75rem;
 }
 
 .button-perfil,
@@ -173,11 +173,11 @@ div.avatar-previa {
 }
 
 .button-perfil {
-    gap: .5rem;
+    gap: 0.5rem;
     padding: 0 1.25rem;
     background: var(--bg-cards);
     color: var(--text-on-dark);
-    font-size: .8rem;
+    font-size: 0.8rem;
     white-space: nowrap;
 }
 
@@ -196,15 +196,15 @@ div.avatar-previa {
 .btn-opcoes {
     width: 2.5rem;
     background: var(--all-white);
-    transition: .2s;
+    transition: 0.2s;
 }
 
 .btn-opcoes:hover {
-    transform: translateY(-2px)
+    transform: translateY(-2px);
 }
 
 .menu-opcoes {
-    position: relative
+    position: relative;
 }
 
 .dropdown-opcoes {
@@ -221,18 +221,18 @@ div.avatar-previa {
 }
 
 .dropdown-opcoes.ativo {
-    display: block
+    display: block;
 }
 
 .dropdown-opcoes a {
     display: block;
-    padding: .9rem 1rem;
+    padding: 0.9rem 1rem;
     color: var(--text-secondary);
-    transition: .2s;
+    transition: 0.2s;
 }
 
 .dropdown-opcoes a:hover {
-    background: var(--all-white)
+    background: var(--all-white);
 }
 
 /* ---------- modal ---------- */
@@ -249,7 +249,7 @@ div.avatar-previa {
 }
 
 #modalEditar::backdrop {
-    background: var(--shadow-medium)
+    background: var(--shadow-medium);
 }
 
 #modalEditar h2 {
@@ -260,7 +260,7 @@ div.avatar-previa {
 }
 
 .subtitulo {
-    margin: .25rem 0 1.25rem;
+    margin: 0.25rem 0 1.25rem;
     color: var(--lista-propria-solid);
 }
 
@@ -300,22 +300,22 @@ div.avatar-previa {
 .btn-alterar {
     display: inline-flex;
     align-items: center;
-    gap: .4rem;
-    padding: .4rem .8rem;
+    gap: 0.4rem;
+    padding: 0.4rem 0.8rem;
     border-radius: 99px;
     background: var(--bg-soft-strong);
     color: var(--text-title);
-    font-size: .75rem;
+    font-size: 0.75rem;
     cursor: pointer;
 }
 
 .btn-alterar svg,
 .badge svg {
-    width: .9rem;
-    height: .9rem;
+    width: 0.9rem;
+    height: 0.9rem;
 }
 
-.sr-only:focus-visible+.btn-alterar {
+.sr-only:focus-visible + .btn-alterar {
     outline: 2px solid var(--color-accent);
 }
 
@@ -331,7 +331,7 @@ div.avatar-previa {
 .previa-foto {
     display: flex;
     align-items: flex-end;
-    gap: .75rem;
+    gap: 0.75rem;
     margin: -55px 1.25rem 0;
     position: relative;
 }
@@ -365,7 +365,7 @@ div.avatar-previa {
 }
 
 .previa-info {
-    padding: 1rem 1.25rem 1.25rem
+    padding: 1rem 1.25rem 1.25rem;
 }
 
 .previa-info h3 {
@@ -376,7 +376,7 @@ div.avatar-previa {
 }
 
 .previa-info .user {
-    color: var(--lista-propria-solid)
+    color: var(--lista-propria-solid);
 }
 
 .bio-previa {
@@ -394,11 +394,11 @@ div.avatar-previa {
     flex: 1;
     display: flex;
     flex-direction: column;
-    font-size: .7rem;
+    font-size: 0.7rem;
     color: var(--text-muted);
 }
 
-.previa-stats li+li {
+.previa-stats li + li {
     padding-left: 1rem;
 }
 
@@ -408,12 +408,12 @@ div.avatar-previa {
 }
 
 .previa-visib {
-    gap: .75rem;
+    gap: 0.75rem;
     margin-top: 1.25rem;
     padding: 1rem;
     border-radius: 10px;
     background: var(--bg-soft);
-    font-size: .7rem;
+    font-size: 0.7rem;
     color: var(--text-muted);
 }
 
@@ -422,7 +422,7 @@ div.avatar-previa {
     box-sizing: content-box;
     width: 1.1rem;
     height: 1.1rem;
-    padding: .6rem;
+    padding: 0.6rem;
     border-radius: 50%;
     background: var(--bg-soft-strong);
     color: var(--color-accent);
@@ -430,7 +430,7 @@ div.avatar-previa {
 
 .previa-visib strong {
     display: block;
-    font-size: .8rem;
+    font-size: 0.8rem;
     color: var(--text-title);
 }
 
@@ -444,12 +444,12 @@ div.avatar-previa {
 .campos {
     display: flex;
     flex-direction: column;
-    gap: .5rem;
+    gap: 0.5rem;
     padding-top: 1rem;
 }
 
 .campos h3 {
-    margin-bottom: .25rem;
+    margin-bottom: 0.25rem;
     font-size: 1.1rem;
     color: var(--text-title);
 }
@@ -457,9 +457,9 @@ div.avatar-previa {
 .campos label {
     display: flex;
     align-items: center;
-    gap: .5rem;
-    margin-top: .5rem;
-    font-size: .85rem;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+    font-size: 0.85rem;
     font-weight: 600;
 }
 
@@ -471,21 +471,21 @@ div.avatar-previa {
 
 .campos :is(input, textarea, select) {
     width: 100%;
-    padding: .7rem .9rem;
+    padding: 0.7rem 0.9rem;
     border: 1px solid var(--border-primary);
     border-radius: 8px;
     background: var(--surface-soft-strong);
     font: inherit;
-    font-size: .85rem;
+    font-size: 0.85rem;
     color: inherit;
 }
 
 .campos input:disabled {
-    color: var(--text-muted)
+    color: var(--text-muted);
 }
 
 .campos select {
-    max-width: 280px
+    max-width: 280px;
 }
 
 .campo-icone,
@@ -495,14 +495,14 @@ div.avatar-previa {
 
 .campo-icone svg {
     position: absolute;
-    left: .9rem;
+    left: 0.9rem;
     top: 50%;
     translate: 0 -50%;
     color: var(--text-muted);
 }
 
 .campo-icone input {
-    padding-left: 2.5rem
+    padding-left: 2.5rem;
 }
 
 .campo-bio textarea {
@@ -513,9 +513,9 @@ div.avatar-previa {
 
 .contador {
     position: absolute;
-    right: .9rem;
-    bottom: .6rem;
-    font-size: .7rem;
+    right: 0.9rem;
+    bottom: 0.6rem;
+    font-size: 0.7rem;
     color: var(--text-muted);
 }
 
@@ -528,13 +528,13 @@ div.avatar-previa {
 }
 
 .btn-cancelar {
-    padding: .75rem 1rem
+    padding: 0.75rem 1rem;
 }
 
 .form-editar {
     display: flex;
     flex-direction: column;
-    gap: .5rem;
+    gap: 0.5rem;
 }
 
 .form-editar textarea {
@@ -543,14 +543,13 @@ div.avatar-previa {
 }
 
 .erro-form {
-    margin-bottom: .5rem;
+    margin-bottom: 0.5rem;
     color: var(--danger);
 }
 
 /* ---------- responsivo ---------- */
 
-@media (max-width:900px) {
-
+@media (max-width: 900px) {
     .perfil-banner img,
     .sem-banner,
     .perfil-header {
@@ -563,7 +562,7 @@ div.avatar-previa {
     }
 
     .previa {
-        grid-row: auto
+        grid-row: auto;
     }
 
     .campos,
@@ -572,8 +571,7 @@ div.avatar-previa {
     }
 }
 
-@media (max-width:600px) {
-
+@media (max-width: 600px) {
     .perfil-banner img,
     .sem-banner {
         width: 100%;
@@ -612,16 +610,45 @@ div.avatar-previa {
     }
 
     #modalEditar {
-        padding: 1.25rem
+        padding: 1.25rem;
     }
 
     .linha {
         grid-template-columns: 1fr;
     }
 }
-#compartilharPerfil { width: min(90vw, 32rem); margin: auto; padding: 1.5rem; border: 1px solid var(--color-surface-muted); border-radius: var(--radius-md); color: var(--color-text); }
-#compartilharPerfil::backdrop { background: var(--overlay-dark); }
-#compartilharPerfil h2 { margin-bottom: 1rem; font-family: var(--font-secundary); }
-#compartilharPerfil label, #compartilharPerfil input { display: block; width: 100%; margin-bottom: .75rem; }
-#compartilharPerfil input { min-height: 44px; padding: .5rem; border: 1px solid var(--border-primary); border-radius: 6px; }
-#compartilharPerfil button { min-height: 44px; padding: .5rem 1rem; margin: .5rem .5rem .5rem 0; border-radius: 6px; background: var(--color-primary); color: var(--text-on-dark); }
+#compartilharPerfil {
+    width: min(90vw, 32rem);
+    margin: auto;
+    padding: 1.5rem;
+    border: 1px solid var(--color-surface-muted);
+    border-radius: var(--radius-md);
+    color: var(--color-text);
+}
+#compartilharPerfil::backdrop {
+    background: var(--overlay-dark);
+}
+#compartilharPerfil h2 {
+    margin-bottom: 1rem;
+    font-family: var(--font-secundary);
+}
+#compartilharPerfil label,
+#compartilharPerfil input {
+    display: block;
+    width: 100%;
+    margin-bottom: 0.75rem;
+}
+#compartilharPerfil input {
+    min-height: 44px;
+    padding: 0.5rem;
+    border: 1px solid var(--border-primary);
+    border-radius: 6px;
+}
+#compartilharPerfil button {
+    min-height: 44px;
+    padding: 0.5rem 1rem;
+    margin: 0.5rem 0.5rem 0.5rem 0;
+    border-radius: 6px;
+    background: var(--color-primary);
+    color: var(--text-on-dark);
+}

@@ -1,4 +1,5 @@
 <?php
+
 session_start();
 
 $projectRoot = dirname(__DIR__);
@@ -9,8 +10,8 @@ if (!is_file($autoload)) {
 }
 require_once $autoload;
 
-require_once __DIR__.'/runtime.php';
-$environmentValue = static fn(string $name): string => nookEnv($name);
+require_once __DIR__ . '/runtime.php';
+$environmentValue = static fn (string $name): string => nookEnv($name);
 $clientId = $environmentValue('GOOGLE_CLIENT_ID');
 $clientSecret = $environmentValue('GOOGLE_CLIENT_SECRET');
 if ($clientId === '' || $clientSecret === '') {

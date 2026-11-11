@@ -1,16 +1,21 @@
 <?php
-require_once __DIR__.'/schema_support.php';
+
+require_once __DIR__ . '/schema_support.php';
 
 /** Mesmos limites na criação e na edição, compatíveis com o schema atual. */
 function validarTextoLista($nome, $descricao): array
 {
-    if (!is_string($nome) || !is_string($descricao)) throw new InvalidArgumentException('Informe um nome e uma descrição válidos.');
+    if (!is_string($nome) || !is_string($descricao)) {
+        throw new InvalidArgumentException('Informe um nome e uma descrição válidos.');
+    }
+
     $nome = trim($nome);
     $descricao = trim($descricao);
     if ($nome === '' || mb_strlen($nome) > 120 || mb_strlen($descricao) > 255) {
         throw new InvalidArgumentException('Informe um nome de até 120 caracteres e uma descrição de até 255 caracteres.');
     }
-    return ['nome_lista'=>$nome, 'descricao'=>$descricao];
+
+    return ['nome_lista' => $nome, 'descricao' => $descricao];
 }
 
 /** Campos comuns à biblioteca pessoal, aos perfis e à descoberta de listas. */
@@ -45,11 +50,18 @@ function buscarListasPerfil(PDO $conn, int $usuario, bool $somentePublicasCriada
     if ($somentePublicasCriadas) {
         $condicao = isset($schema['whishlist']['visibilidade']) ? "w.id_user=:usuario AND w.visibilidade='publica'" : 'FALSE';
     }
-    $stmt = $conn->prepare(sqlSelecaoListas($schema)." WHERE $condicao ORDER BY w.id DESC");
-    $params = [':usuario'=>$usuario];
+
+    $stmt = $conn->prepare(sqlSelecaoListas($schema) . " WHERE $condicao ORDER BY w.id DESC");
+    $params = [':usuario' => $usuario];
     // Um schema sem visibilidade não permite publicar listas.
-    if ($somentePublicasCriadas && !isset($schema['whishlist']['visibilidade'])) $params = [];
-    if ($follow) $params[':seguidor'] = $usuario;
+    if ($somentePublicasCriadas && !isset($schema['whishlist']['visibilidade'])) {
+        $params = [];
+    }
+
+    if ($follow) {
+        $params[':seguidor'] = $usuario;
+    }
+
     $stmt->execute($params);
     return $stmt->fetchAll(PDO::FETCH_ASSOC);
 }
@@ -59,30 +71,38 @@ function buscarListasPublicas(PDO $conn, string $busca = '', int $pagina = 1, in
 {
     $schema = schemaProjeto($conn);
     $porPagina = max(1, min(100, $porPagina));
-    $vazio = ['listas'=>[], 'total'=>0, 'pagina'=>1, 'total_paginas'=>1];
-    if (!isset($schema['whishlist']['visibilidade'])) return $vazio;
+    $vazio = ['listas' => [], 'total' => 0, 'pagina' => 1, 'total_paginas' => 1];
+    if (!isset($schema['whishlist']['visibilidade'])) {
+        return $vazio;
+    }
+
 
     $where = "w.visibilidade='publica'";
     $params = [];
     $busca = trim($busca);
     if ($busca !== '') {
-        $campos = ['w.nome_lista'=>'nome', 'dono.username'=>'usuario'];
-        if (isset($schema['whishlist']['descricao'])) $campos['w.descricao'] = 'descricao';
-        $filtros = [];
-        foreach ($campos as $campo=>$parametro) {
-            $filtros[] = "$campo ILIKE :$parametro";
-            $params[":$parametro"] = '%'.$busca.'%';
+        $campos = ['w.nome_lista' => 'nome', 'dono.username' => 'usuario'];
+        if (isset($schema['whishlist']['descricao'])) {
+            $campos['w.descricao'] = 'descricao';
         }
-        $where .= ' AND ('.implode(' OR ', $filtros).')';
+
+        $filtros = [];
+        foreach ($campos as $campo => $parametro) {
+            $filtros[] = "$campo ILIKE :$parametro";
+            $params[":$parametro"] = '%' . $busca . '%';
+        }
+
+        $where .= ' AND (' . implode(' OR ', $filtros) . ')';
     }
+
     $stmt = $conn->prepare("SELECT COUNT(*) FROM whishlist w JOIN usuario dono ON dono.id_user=w.id_user WHERE $where");
     $stmt->execute($params);
-    $total = (int)$stmt->fetchColumn();
-    $totalPaginas = max(1, (int)ceil($total/$porPagina));
+    $total = (int) $stmt->fetchColumn();
+    $totalPaginas = max(1, (int) ceil($total / $porPagina));
     $pagina = max(1, min($pagina, $totalPaginas));
-    $offset = ($pagina-1)*$porPagina;
+    $offset = ($pagina - 1) * $porPagina;
     $data = isset($schema['whishlist']['data_criacao']) ? 'w.data_criacao DESC NULLS LAST,' : '';
-    $stmt = $conn->prepare(sqlSelecaoListas($schema)." WHERE $where ORDER BY seguidores DESC,$data w.id DESC LIMIT $porPagina OFFSET $offset");
+    $stmt = $conn->prepare(sqlSelecaoListas($schema) . " WHERE $where ORDER BY seguidores DESC,$data w.id DESC LIMIT $porPagina OFFSET $offset");
     $stmt->execute($params);
-    return ['listas'=>$stmt->fetchAll(PDO::FETCH_ASSOC), 'total'=>$total, 'pagina'=>$pagina, 'total_paginas'=>$totalPaginas];
+    return ['listas' => $stmt->fetchAll(PDO::FETCH_ASSOC), 'total' => $total, 'pagina' => $pagina, 'total_paginas' => $totalPaginas];
 }

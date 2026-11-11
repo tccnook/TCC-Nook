@@ -1,4 +1,5 @@
 <?php
+
 session_start();
 header('Content-Type: application/json; charset=UTF-8');
 
@@ -9,13 +10,26 @@ function responderFollow(int $status, string $mensagem, array $dados = []): neve
     exit();
 }
 
-if ($_SERVER['REQUEST_METHOD'] !== 'POST') responderFollow(405, 'Método não permitido.');
-if (!isset($_SESSION['id_user'])) responderFollow(401, 'Faça login para seguir usuários.');
-if (!is_string($_POST['csrf'] ?? null) || empty($_SESSION['post_csrf']) || !hash_equals($_SESSION['post_csrf'], $_POST['csrf'])) responderFollow(403, 'Sua sessão expirou. Atualize a página.');
+if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+    responderFollow(405, 'Método não permitido.');
+}
+if (!isset($_SESSION['id_user'])) {
+    responderFollow(401, 'Faça login para seguir usuários.');
+}
+if (!is_string($_POST['csrf'] ?? null) || empty($_SESSION['post_csrf']) || !hash_equals($_SESSION['post_csrf'], $_POST['csrf'])) {
+    responderFollow(403, 'Sua sessão expirou. Atualize a página.');
+}
+
+$acao = $_POST['acao'] ?? 'seguir';
+if (!in_array($acao, ['seguir', 'deixar-seguir'], true)) {
+    responderFollow(422, 'Ação inválida.');
+}
 
 $id_user = (int) $_SESSION['id_user'];
-$id_seguido = filter_var($_POST['id_user'] ?? null, FILTER_VALIDATE_INT, ['options'=>['min_range'=>1]]);
-if (!$id_seguido || $id_seguido === $id_user) responderFollow(422, 'Usuário inválido.');
+$id_seguido = filter_var($_POST['id_user'] ?? null, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
+if (!$id_seguido || $id_seguido === $id_user) {
+    responderFollow(422, 'Usuário inválido.');
+}
 
 require_once __DIR__ . '/conexao.php';
 $conn = (new Database())->conectar();
@@ -25,6 +39,13 @@ try {
     $lock = $conn->prepare('SELECT pg_advisory_xact_lock(CAST(:id_user AS BIGINT))');
     $lock->execute([':id_user' => min($id_user, $id_seguido)]);
 
+    if ($acao === 'deixar-seguir') {
+        $stmt = $conn->prepare('DELETE FROM follow WHERE id_follower = ? AND id_following = ?');
+        $stmt->execute([$id_user, $id_seguido]);
+        $conn->commit();
+        responderFollow(200, 'Você deixou de seguir esta pessoa.', ['seguindo' => false]);
+    }
+
     $stmt = $conn->prepare('SELECT u.username, conta.foto_perfil_url FROM usuario u LEFT JOIN conta ON conta.id_user = u.id_user WHERE u.id_user = :id_user');
     $stmt->execute([':id_user' => $id_seguido]);
     $usuario = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -33,12 +54,14 @@ try {
         responderFollow(404, 'Usuário não encontrado.');
     }
 
+
     $stmt = $conn->prepare("SELECT 1 FROM bloqueio WHERE status_bloqueio='bloqueado' AND ((id_bloqueador=? AND id_bloqueado=?) OR (id_bloqueador=? AND id_bloqueado=?)) LIMIT 1");
-    $stmt->execute([$id_user,$id_seguido,$id_seguido,$id_user]);
+    $stmt->execute([$id_user, $id_seguido, $id_seguido, $id_user]);
     if ($stmt->fetchColumn()) {
         $conn->rollBack();
         responderFollow(403, 'Não é possível seguir esta conta.');
     }
+
 
     $stmt = $conn->prepare('INSERT INTO follow (id_follower, id_following, status_follow) SELECT :follower, :following, :status WHERE NOT EXISTS (SELECT 1 FROM follow WHERE id_follower = :check_follower AND id_following = :check_following)');
     $stmt->execute([
@@ -48,6 +71,9 @@ try {
         ':check_follower' => $id_user,
         ':check_following' => $id_seguido
     ]);
+
+    $conn->prepare("UPDATE follow SET status_follow = 'seguindo' WHERE id_follower = ? AND id_following = ?")
+        ->execute([$id_user, $id_seguido]);
 
     $stmt = $conn->prepare("SELECT c.id_conversa FROM conversa c WHERE c.tipo = 'direct' AND EXISTS (SELECT 1 FROM conversa_participante cp WHERE cp.id_conversa = c.id_conversa AND cp.id_user = :me) AND EXISTS (SELECT 1 FROM conversa_participante cp WHERE cp.id_conversa = c.id_conversa AND cp.id_user = :other) AND (SELECT COUNT(DISTINCT cp.id_user) FROM conversa_participante cp WHERE cp.id_conversa = c.id_conversa) = 2 LIMIT 1");
     $stmt->execute([':me' => $id_user, ':other' => $id_seguido]);
@@ -66,10 +92,14 @@ try {
         $stmt->execute([':conversa' => $id_conversa, ':user' => $id_seguido]);
     }
 
+
     $conn->commit();
-    responderFollow(200, 'Usuário seguido e conversa direta disponível.', ['id_conversa' => (int) $id_conversa]);
+    responderFollow(200, 'Usuário seguido e conversa direta disponível.', ['id_conversa' => (int) $id_conversa, 'seguindo' => true]);
 } catch (Throwable $erro) {
-    if ($conn->inTransaction()) $conn->rollBack();
+    if ($conn->inTransaction()) {
+        $conn->rollBack();
+    }
+
     error_log('Falha ao seguir usuário: ' . $erro->getMessage());
     responderFollow(500, 'Não foi possível seguir o usuário.');
 }

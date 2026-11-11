@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 use PHPMailer\PHPMailer\PHPMailer;
@@ -32,8 +33,8 @@ if (!is_file($autoload)) {
 require_once $autoload;
 
 try {
-    require_once __DIR__.'/runtime.php';
-    $config=[];
+    require_once __DIR__ . '/runtime.php';
+    $config = [];
 
     $configuracaoObrigatoria = [
         'MAIL_HOST',
@@ -45,22 +46,26 @@ try {
     ];
 
     foreach ($configuracaoObrigatoria as $chave) {
-        $config[$chave]=nookEnv($chave, $chave === 'MAIL_FROM_NAME' ? 'Nook' : '');
+        $config[$chave] = nookEnv($chave, $chave === 'MAIL_FROM_NAME' ? 'Nook' : '');
         if ($config[$chave] === '') {
             error_log('Configuração de email ausente: ' . $chave);
             responderContato(500, 'O serviço de email está indisponível no momento.');
         }
     }
 
-    $port=filter_var($config['MAIL_PORT'],FILTER_VALIDATE_INT,['options'=>['min_range'=>1,'max_range'=>65535]]);
-    if(!$port || !filter_var($config['MAIL_FROM'],FILTER_VALIDATE_EMAIL)) responderContato(500, 'O serviço de email está indisponível no momento.');
+
+    $port = filter_var($config['MAIL_PORT'], FILTER_VALIDATE_INT, ['options' => ['min_range' => 1, 'max_range' => 65535]]);
+    if (!$port || !filter_var($config['MAIL_FROM'], FILTER_VALIDATE_EMAIL)) {
+        responderContato(500, 'O serviço de email está indisponível no momento.');
+    }
+
     $mail = new PHPMailer(true);
     $mail->isSMTP();
     $mail->Host = $config['MAIL_HOST'];
     $mail->SMTPAuth = true;
     $mail->Username = $config['MAIL_USERNAME'];
     $mail->Password = $config['MAIL_PASSWORD'];
-    $mail->SMTPSecure = $port===465 ? PHPMailer::ENCRYPTION_SMTPS : PHPMailer::ENCRYPTION_STARTTLS;
+    $mail->SMTPSecure = $port === 465 ? PHPMailer::ENCRYPTION_SMTPS : PHPMailer::ENCRYPTION_STARTTLS;
     $mail->Port = $port;
     $mail->Timeout = 8;
     $mail->CharSet = PHPMailer::CHARSET_UTF8;

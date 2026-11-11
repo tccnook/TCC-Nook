@@ -1,4 +1,5 @@
 <?php
+
 session_start();
 header('Content-Type: application/json; charset=UTF-8');
 
@@ -24,7 +25,10 @@ $inicio = $inicio !== false ? max(0, min(980, $inicio)) : 0;
 $consulta = $busca !== '' ? 'inauthor:' . $busca : 'fiction';
 $parametrosApi = parametrosBuscaLivros($consulta, $inicio, 'titulo');
 $dadosGoogle = cacheGoogleBooks($parametrosApi, static function () use ($parametrosApi, $chave_api): ?array {
-    if ($chave_api !== '') { $parametrosApi['key'] = $chave_api; }
+    if ($chave_api !== '') {
+        $parametrosApi['key'] = $chave_api;
+    }
+
     $curl = curl_init('https://www.googleapis.com/books/v1/volumes?' . http_build_query($parametrosApi));
     configurarCurlGoogleBooks($curl);
     curl_setopt_array($curl, [
@@ -37,7 +41,10 @@ $dadosGoogle = cacheGoogleBooks($parametrosApi, static function () use ($paramet
     $resposta = curl_exec($curl);
     $statusHttp = curl_getinfo($curl, CURLINFO_HTTP_CODE);
     curl_close($curl);
-    if ($resposta === false || $statusHttp !== 200) { return null; }
+    if ($resposta === false || $statusHttp !== 200) {
+        return null;
+    }
+
     $dados = json_decode($resposta, true);
     return is_array($dados) ? $dados : null;
 });
@@ -56,6 +63,7 @@ foreach ($dadosGoogle['items'] ?? [] as $item) {
         if ($nomeAutor === '' || isset($autoresUnicos[$chaveAutor])) {
             continue;
         }
+
         $autoresUnicos[$chaveAutor] = true;
         $autores[] = ['nome' => $nomeAutor];
     }

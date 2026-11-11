@@ -19,14 +19,14 @@
     align-items: center;
     justify-content: space-around;
     gap: 1rem;
-    padding: .5rem 10% .75rem;
+    padding: 0.5rem 10% 0.75rem;
     border-bottom: 1px solid var(--border-primary);
     overflow-x: auto;
 }
 
 .perfil-nav a {
-    padding: .25rem .5rem;
-    font-size: .8rem;
+    padding: 0.25rem 0.5rem;
+    font-size: 0.8rem;
     white-space: nowrap;
     color: var(--text-secondary);
     border-bottom: 2px solid transparent;
@@ -46,7 +46,7 @@
 
 .aba-vazia {
     color: var(--text-secondary);
-    font-size: .9rem;
+    font-size: 0.9rem;
 }
 
 .aba-topo {
@@ -76,14 +76,14 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: .75rem;
+    gap: 0.75rem;
     margin-bottom: 1rem;
 }
 
 .card-topo h2 {
     display: flex;
     align-items: center;
-    gap: .4rem;
+    gap: 0.4rem;
     font-family: var(--font-secundary);
     font-size: 1rem;
     font-weight: 500;
@@ -98,38 +98,38 @@
 .link-card {
     display: inline-flex;
     align-items: center;
-    gap: .3rem;
-    font-size: .75rem;
+    gap: 0.3rem;
+    font-size: 0.75rem;
     color: var(--text-secondary);
 }
 
 .link-card svg {
-    width: .85rem;
-    height: .85rem;
+    width: 0.85rem;
+    height: 0.85rem;
 }
 
 .link-card.sublinhado {
     text-decoration: underline;
-    font-size: .85rem;
+    font-size: 0.85rem;
 }
 
 .pilula {
-    padding: .25rem .6rem;
+    padding: 0.25rem 0.6rem;
     border-radius: 6px;
     background: var(--color-accent);
     color: var(--text-on-dark);
-    font-size: .7rem;
+    font-size: 0.7rem;
     white-space: nowrap;
 }
 
 .estrelas {
     color: var(--color-accent2);
     letter-spacing: 2px;
-    font-size: .85rem;
+    font-size: 0.85rem;
 }
 
 .autor {
-    font-size: .75rem;
+    font-size: 0.75rem;
     color: var(--text-secondary);
 }
 
@@ -138,11 +138,11 @@
     align-items: center;
     justify-content: center;
     aspect-ratio: 2 / 3;
-    padding: .5rem;
+    padding: 0.5rem;
     background: var(--bg-cards-light);
     color: var(--text-on-dark);
     border-radius: 8px;
-    font-size: .7rem;
+    font-size: 0.7rem;
     text-align: center;
 }
 
@@ -180,7 +180,7 @@
 .top5-item {
     display: flex;
     flex-direction: column;
-    gap: .25rem;
+    gap: 0.25rem;
     min-width: 0;
     --cor-posicao: var(--rating-empty);
 }
@@ -235,7 +235,7 @@
     border-radius: 50%;
     background: var(--cor-posicao);
     color: var(--text-on-dark);
-    font-size: .75rem;
+    font-size: 0.75rem;
     font-weight: 700;
 }
 
@@ -260,12 +260,12 @@
 }
 
 .top5-remover svg {
-    width: .85rem;
-    height: .85rem;
+    width: 0.85rem;
+    height: 0.85rem;
 }
 
 .top5-item h3 {
-    font-size: .8rem;
+    font-size: 0.8rem;
     line-height: 1.3;
 }
 
@@ -274,19 +274,19 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: .5rem;
+    gap: 0.5rem;
     width: 100%;
     aspect-ratio: 2 / 3;
     border: 2px dashed var(--color-accent2);
     border-radius: 12px;
     color: var(--color-accent2);
-    font-size: .75rem;
+    font-size: 0.75rem;
 }
 
 .top5-adicionar svg {
     width: 2rem;
     height: 2rem;
-    padding: .35rem;
+    padding: 0.35rem;
     border: 2px solid var(--color-accent2);
     border-radius: 8px;
 }
@@ -311,13 +311,13 @@
 
 .ultimos-lista a {
     display: grid;
-    gap: .35rem;
+    gap: 0.35rem;
     color: var(--text-primary);
-    font-size: .7rem;
+    font-size: 0.7rem;
     line-height: 1.3;
 }
 
-.ultimos-lista a>span {
+.ultimos-lista a > span {
     display: -webkit-box;
     overflow: hidden;
     -webkit-box-orient: vertical;
@@ -326,24 +326,24 @@
 
 /* metas */
 
-.meta+.meta {
+.meta + .meta {
     margin-top: 1.25rem;
     padding-top: 1.25rem;
     border-top: 1px solid var(--border-primary);
 }
 
 .meta h3 {
-    font-size: .9rem;
+    font-size: 0.9rem;
 }
 
 .meta-periodo {
-    font-size: .75rem;
+    font-size: 0.75rem;
     color: var(--text-muted);
 }
 
 .meta-numeros {
-    margin: .5rem 0;
-    font-size: .85rem;
+    margin: 0.5rem 0;
+    font-size: 0.85rem;
     color: var(--text-secondary);
 }
 
@@ -357,7 +357,7 @@
 .meta-barra {
     display: flex;
     align-items: center;
-    gap: .5rem;
+    gap: 0.5rem;
 }
 
 .meta-barra progress {
@@ -385,8 +385,8 @@
 }
 
 .meta-mensagem {
-    margin-top: .5rem;
-    font-size: .75rem;
+    margin-top: 0.5rem;
+    font-size: 0.75rem;
     color: var(--warning);
 }
 
@@ -395,15 +395,15 @@
 }
 
 .meta-status {
-    margin-top: .25rem;
-    font-size: .7rem;
+    margin-top: 0.25rem;
+    font-size: 0.7rem;
     color: var(--text-muted);
 }
 
 .mini-cards {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
-    gap: .75rem;
+    gap: 0.75rem;
     list-style: none;
     padding: 0;
 }
@@ -412,13 +412,13 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: .35rem;
-    padding: .75rem .5rem;
+    gap: 0.35rem;
+    padding: 0.75rem 0.5rem;
     border: 1px solid var(--soft-border);
     border-radius: 10px;
     background: var(--bg-soft);
     text-align: center;
-    font-size: .7rem;
+    font-size: 0.7rem;
     overflow-wrap: anywhere;
 }
 
@@ -441,7 +441,7 @@
 }
 
 .mini-card small {
-    font-size: .65rem;
+    font-size: 0.65rem;
     color: var(--text-muted);
 }
 
@@ -476,7 +476,7 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: .5rem;
+    gap: 0.5rem;
 }
 
 .livro-capa img {
@@ -489,7 +489,7 @@
 .livro-info {
     display: flex;
     flex-direction: column;
-    gap: .35rem;
+    gap: 0.35rem;
     min-width: 0;
 }
 
@@ -498,7 +498,7 @@
     line-height: 1.25;
 }
 
-.livro-info>svg {
+.livro-info > svg {
     width: 1rem;
     height: 1rem;
     color: var(--color-accent2);
@@ -510,23 +510,23 @@
     line-clamp: 4;
     -webkit-box-orient: vertical;
     overflow: hidden;
-    font-size: .75rem;
+    font-size: 0.75rem;
     line-height: 1.4;
     color: var(--text-secondary);
 }
 
 .sem-resenha {
     display: block;
-    padding: .75rem;
+    padding: 0.75rem;
     border-radius: 12px;
     background: var(--bg-soft-strong);
     color: var(--text-secondary);
-    font-size: .8rem;
+    font-size: 0.8rem;
 }
 
 .lido-em {
     margin-top: auto;
-    font-size: .75rem;
+    font-size: 0.75rem;
     color: var(--text-secondary);
 }
 
@@ -557,8 +557,8 @@
 
 .lista-dono {
     display: inline-block;
-    margin-top: .5rem;
-    font-size: .7rem;
+    margin-top: 0.5rem;
+    font-size: 0.7rem;
 }
 
 .lista-card a {
@@ -579,7 +579,7 @@
     line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
-    margin-bottom: .35rem;
+    margin-bottom: 0.35rem;
     font-family: var(--font-secundary);
     font-size: 1rem;
     font-weight: 500;
@@ -591,7 +591,7 @@
     line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
-    font-size: .75rem;
+    font-size: 0.75rem;
 }
 
 .lista-salvar {
@@ -604,7 +604,7 @@
 
 .capas {
     display: flex;
-    gap: .5rem;
+    gap: 0.5rem;
     margin: -3.75rem 1rem 0;
     position: relative;
 }
@@ -622,22 +622,22 @@
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: .5rem 1rem;
-    padding: .75rem 1rem 1rem;
+    gap: 0.5rem 1rem;
+    padding: 0.75rem 1rem 1rem;
     list-style: none;
-    font-size: .75rem;
+    font-size: 0.75rem;
     color: var(--text-secondary);
 }
 
 .lista-info li {
     display: flex;
     align-items: center;
-    gap: .3rem;
+    gap: 0.3rem;
 }
 
 .lista-info svg {
-    width: .9rem;
-    height: .9rem;
+    width: 0.9rem;
+    height: 0.9rem;
 }
 
 /* ---------- modal de criar lista ---------- */
@@ -656,11 +656,11 @@
 
 #modal_lista::backdrop {
     background: var(--bg-cards);
-    opacity: .72;
+    opacity: 0.72;
 }
 
 .modal-lista-cabecalho,
-.modal-lista-cabecalho>div,
+.modal-lista-cabecalho > div,
 .lista-form-acoes {
     display: flex;
     align-items: center;
@@ -669,14 +669,14 @@
 .modal-lista-cabecalho {
     justify-content: space-between;
     gap: 1rem;
-    margin-bottom: .85rem;
+    margin-bottom: 0.85rem;
 }
 
-.modal-lista-cabecalho>div {
-    gap: .65rem;
+.modal-lista-cabecalho > div {
+    gap: 0.65rem;
 }
 
-.modal-lista-cabecalho>div>svg {
+.modal-lista-cabecalho > div > svg {
     width: 1.3rem;
     color: var(--color-accent);
 }
@@ -687,9 +687,9 @@
 }
 
 .modal-lista-cabecalho p {
-    margin-top: .15rem;
+    margin-top: 0.15rem;
     color: var(--text-secondary);
-    font-size: .65rem;
+    font-size: 0.65rem;
 }
 
 .modal-lista-fechar {
@@ -706,13 +706,13 @@
 
 .form-criar-lista {
     display: grid;
-    gap: .65rem;
+    gap: 0.65rem;
 }
 
 .lista-form-secao h3 {
-    margin-bottom: .45rem;
+    margin-bottom: 0.45rem;
     color: var(--text-primary);
-    font-size: .72rem;
+    font-size: 0.72rem;
     font-weight: 700;
 }
 
@@ -728,11 +728,11 @@
     height: 5.7rem;
     flex: none;
     place-content: center;
-    gap: .45rem;
+    gap: 0.45rem;
     border: 1px solid var(--border-primary);
     border-radius: 7px;
     color: var(--text-title);
-    font: 500 .7rem var(--font-secundary);
+    font: 500 0.7rem var(--font-secundary);
     text-align: center;
     cursor: pointer;
 }
@@ -743,27 +743,27 @@
     color: var(--text-secondary);
 }
 
-#capaManual:checked+.lista-capa-opcao,
-#capaAutomatica:checked+.lista-capa-opcao {
+#capaManual:checked + .lista-capa-opcao,
+#capaAutomatica:checked + .lista-capa-opcao {
     border: 2px solid var(--color-accent);
 }
 
 .lista-ou {
     color: var(--color-accent);
-    font-size: .7rem;
+    font-size: 0.7rem;
 }
 
-.lista-capa-opcoes>p {
+.lista-capa-opcoes > p {
     max-width: 14rem;
     color: var(--text-secondary);
-    font-size: .62rem;
+    font-size: 0.62rem;
 }
 
 .campo-capa-manual {
     display: grid;
-    gap: .3rem;
-    margin-top: .45rem;
-    font-size: .68rem;
+    gap: 0.3rem;
+    margin-top: 0.45rem;
+    font-size: 0.68rem;
 }
 
 .campo-capa-manual[hidden] {
@@ -772,27 +772,27 @@
 
 .lista-campo-label {
     color: var(--text-primary);
-    font-size: .68rem;
+    font-size: 0.68rem;
     font-weight: 600;
 }
 
 .lista-contador-campo {
     display: flex;
     align-items: center;
-    gap: .5rem;
+    gap: 0.5rem;
 }
 
 .lista-contador-campo input,
 .lista-contador-campo textarea {
     width: 100%;
     min-width: 0;
-    padding: .55rem .65rem;
+    padding: 0.55rem 0.65rem;
     border: 1px solid var(--border-primary);
     border-radius: 6px;
     background: var(--all-white);
     color: var(--text-primary);
     font: inherit;
-    font-size: .7rem;
+    font-size: 0.7rem;
 }
 
 .lista-contador-campo textarea {
@@ -800,16 +800,16 @@
     resize: vertical;
 }
 
-.lista-contador-campo>span {
+.lista-contador-campo > span {
     flex: none;
     color: var(--text-secondary);
-    font-size: .62rem;
+    font-size: 0.62rem;
 }
 
 .lista-visibilidade-opcoes {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: .75rem;
+    gap: 0.75rem;
     border: 0;
     padding: 0;
 }
@@ -818,9 +818,9 @@
     display: grid;
     grid-template-columns: 1rem 1rem 1fr;
     align-items: center;
-    gap: .35rem;
+    gap: 0.35rem;
     min-height: 4.4rem;
-    padding: .65rem;
+    padding: 0.65rem;
     border: 1px solid var(--border-primary);
     border-radius: 8px;
     cursor: pointer;
@@ -836,31 +836,31 @@
 }
 
 .lista-visibilidade-card svg {
-    width: .8rem;
+    width: 0.8rem;
 }
 
 .lista-visibilidade-card strong {
-    font-size: .7rem;
+    font-size: 0.7rem;
 }
 
-.lista-visibilidade-card>span {
+.lista-visibilidade-card > span {
     grid-column: 2 / 4;
     color: var(--text-secondary);
-    font-size: .6rem;
+    font-size: 0.6rem;
 }
 
 .lista-busca {
     display: flex;
     align-items: center;
-    gap: .45rem;
+    gap: 0.45rem;
     height: 1.9rem;
-    padding: 0 .55rem;
+    padding: 0 0.55rem;
     border: 1px solid var(--border-primary);
     border-radius: 6px;
 }
 
 .lista-busca svg {
-    width: .85rem;
+    width: 0.85rem;
     color: var(--text-secondary);
 }
 
@@ -871,7 +871,7 @@
     background: transparent;
     color: var(--text-primary);
     font: inherit;
-    font-size: .7rem;
+    font-size: 0.7rem;
 }
 
 .lista-resultados:empty {
@@ -889,9 +889,9 @@
 .lista-livro-selecionado {
     display: flex;
     align-items: center;
-    gap: .55rem;
+    gap: 0.55rem;
     min-height: 2.4rem;
-    padding: .25rem .45rem;
+    padding: 0.25rem 0.45rem;
     border-bottom: 1px solid var(--border-primary);
 }
 
@@ -904,18 +904,18 @@
     object-fit: cover;
 }
 
-.lista-livro-resultado>div,
-.lista-livro-selecionado>div {
+.lista-livro-resultado > div,
+.lista-livro-selecionado > div {
     display: grid;
     min-width: 0;
-    gap: .1rem;
+    gap: 0.1rem;
 }
 
 .lista-livro-resultado strong,
 .lista-livro-selecionado strong {
     overflow: hidden;
     color: var(--text-primary);
-    font-size: .65rem;
+    font-size: 0.65rem;
     text-overflow: ellipsis;
     white-space: nowrap;
 }
@@ -923,16 +923,23 @@
 .lista-livro-resultado small,
 .lista-livro-selecionado small {
     color: var(--text-secondary);
-    font-size: .58rem;
+    font-size: 0.58rem;
 }
 
-.lista-livro-resultado .lista-livro-origem { color: var(--color-accent); }
-.lista-resultados-aviso { padding: .35rem .45rem; color: var(--text-secondary); font-size: .62rem; line-height: 1.4; }
+.lista-livro-resultado .lista-livro-origem {
+    color: var(--color-accent);
+}
+.lista-resultados-aviso {
+    padding: 0.35rem 0.45rem;
+    color: var(--text-secondary);
+    font-size: 0.62rem;
+    line-height: 1.4;
+}
 
 .lista-livro-resultado button {
     margin-left: auto;
     color: var(--color-accent);
-    font-size: .62rem;
+    font-size: 0.62rem;
 }
 
 .lista-livro-resultado button:disabled {
@@ -951,38 +958,38 @@
 }
 
 .lista-livro-remover svg {
-    width: .9rem;
+    width: 0.9rem;
 }
 
 .lista-form-acoes {
     justify-content: flex-end;
-    margin-top: .1rem;
+    margin-top: 0.1rem;
 }
 
 .lista-form-acoes .button-perfil {
     display: inline-flex;
     align-items: center;
-    gap: .4rem;
-    padding: .55rem .85rem;
+    gap: 0.4rem;
+    padding: 0.55rem 0.85rem;
 }
 
 .lista-form-acoes svg {
-    width: .85rem;
+    width: 0.85rem;
 }
 
 .lista-feedback {
-    margin: .5rem 0;
+    margin: 0.5rem 0;
     color: var(--danger);
-    font-size: .75rem;
+    font-size: 0.75rem;
 }
 
 @media (max-width: 520px) {
     #modal_lista {
-        padding: .85rem;
+        padding: 0.85rem;
     }
 
     .lista-capa-opcoes {
-        gap: .5rem;
+        gap: 0.5rem;
     }
 
     .lista-capa-opcao {
@@ -990,19 +997,18 @@
         height: 5rem;
     }
 
-    .lista-capa-opcoes>p {
-        font-size: .58rem;
+    .lista-capa-opcoes > p {
+        font-size: 0.58rem;
     }
 
     .lista-visibilidade-opcoes {
-        gap: .4rem;
+        gap: 0.4rem;
     }
 
     .lista-visibilidade-card {
-        padding: .45rem;
+        padding: 0.45rem;
     }
 }
-
 
 @media (max-width: 1000px) {
     .visao-grid {
@@ -1017,7 +1023,6 @@
 }
 
 @media (max-width: 700px) {
-
     .top5-lista,
     .ultimos-lista {
         grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));

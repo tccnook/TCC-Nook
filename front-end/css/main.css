@@ -1,47 +1,47 @@
 /* Entrada das páginas internas. Estilos específicos são carregados pela página. */
-@import url('./core.css');
-@import url('./components/modal.css');
-@import url('./layout/footer.css');
-@import url('./layout/navbar.css');
+@import url("./core.css");
+@import url("./components/modal.css");
+@import url("./layout/footer.css");
+@import url("./layout/navbar.css");
 
 /* Keep horizontal navigation scrollable without exposing browser scrollbars. */
 :where(
-	.reading-rail,
-	.catalog-quick-genres,
-	.catalog-rail,
-	.catalog-continue-row,
-	.catalog-author-row,
-	.home-social-rail .home-people-row,
-	.home-reading .reading-rail,
-	.author-profile-nav,
-	.author-favorite-books,
-	.perfil-nav,
-	.settings-sidebar nav,
-	.writing-toolbar,
-	.lista-livros-secao,
-	.profile-page .top5-lista,
-	.profile-page .ultimos-lista
+    .reading-rail,
+    .catalog-quick-genres,
+    .catalog-rail,
+    .catalog-continue-row,
+    .catalog-author-row,
+    .home-social-rail .home-people-row,
+    .home-reading .reading-rail,
+    .author-profile-nav,
+    .author-favorite-books,
+    .perfil-nav,
+    .settings-sidebar nav,
+    .writing-toolbar,
+    .lista-livros-secao,
+    .profile-page .top5-lista,
+    .profile-page .ultimos-lista
 ) {
-	scrollbar-width: none;
-	-ms-overflow-style: none;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
 }
 
 :where(
-	.reading-rail,
-	.catalog-quick-genres,
-	.catalog-rail,
-	.catalog-continue-row,
-	.catalog-author-row,
-	.home-social-rail .home-people-row,
-	.home-reading .reading-rail,
-	.author-profile-nav,
-	.author-favorite-books,
-	.perfil-nav,
-	.settings-sidebar nav,
-	.writing-toolbar,
-	.lista-livros-secao,
-	.profile-page .top5-lista,
-	.profile-page .ultimos-lista
+    .reading-rail,
+    .catalog-quick-genres,
+    .catalog-rail,
+    .catalog-continue-row,
+    .catalog-author-row,
+    .home-social-rail .home-people-row,
+    .home-reading .reading-rail,
+    .author-profile-nav,
+    .author-favorite-books,
+    .perfil-nav,
+    .settings-sidebar nav,
+    .writing-toolbar,
+    .lista-livros-secao,
+    .profile-page .top5-lista,
+    .profile-page .ultimos-lista
 )::-webkit-scrollbar {
-	display: none;
+    display: none;
 }

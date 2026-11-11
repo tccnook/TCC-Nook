@@ -19,17 +19,27 @@ if (!isset($_SESSION['id_user'])) {
     <title>Mensagens | Nook</title>
 </head>
 <body>
-<?php require_once __DIR__ . '/header.php'; ?>
-<main class="inbox-page">
-    <section class="inbox-panel">
-        <header class="inbox-heading"><div><p>NOOK DIRECT</p><h1>Mensagens</h1></div><a href="perfil.php" aria-label="Abrir perfil"><i data-lucide="square-pen"></i></a></header>
-        <label class="inbox-search"><i data-lucide="search"></i><input type="search" id="busca-conversa" placeholder="Pesquisar conversas" autocomplete="off"></label>
-        <div id="lista-conversas" class="inbox-list" aria-live="polite"><p class="inbox-loading">Carregando conversas...</p></div>
-    </section>
-    <section class="inbox-empty-state"><i data-lucide="messages-square"></i><h2>Suas conversas, no seu ritmo.</h2><p>Escolha uma conversa ou siga um leitor para começar a trocar ideias.</p></section>
-</main>
-<?php require_once __DIR__ . '/footer.php'; ?>
-<script>
+    <?php require_once __DIR__ . '/header.php'; ?>
+    <main class="inbox-page">
+        <section class="inbox-panel">
+            <header class="inbox-heading">
+                <div>
+                    <p>NOOK DIRECT</p>
+                    <h1>Mensagens</h1>
+                </div><a href="perfil.php" aria-label="Abrir perfil"><i data-lucide="square-pen"></i></a>
+            </header>
+            <label class="inbox-search"><i data-lucide="search"></i><input type="search" id="busca-conversa" placeholder="Pesquisar conversas" autocomplete="off"></label>
+            <div id="lista-conversas" class="inbox-list" aria-live="polite">
+                <p class="inbox-loading">Carregando conversas...</p>
+            </div>
+        </section>
+        <section class="inbox-empty-state"><i data-lucide="messages-square"></i>
+            <h2>Suas conversas, no seu ritmo.</h2>
+            <p>Escolha uma conversa ou siga um leitor para começar a trocar ideias.</p>
+        </section>
+    </main>
+    <?php require_once __DIR__ . '/footer.php'; ?>
+    <script>
     const campoBuscaConversa = document.getElementById('busca-conversa');
     const listaConversas = document.getElementById('lista-conversas');
     let timeoutBuscaConversa;

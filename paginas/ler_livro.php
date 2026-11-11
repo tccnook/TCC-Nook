@@ -2,34 +2,45 @@
 
 session_start();
 require_once(__DIR__ . "/" . 'conexao.php');
-$db = new Database;
+$db = new Database();
 $conn = $db->conectar();
 
 
-if(!isset($_SESSION['id_user'])){
+if (!isset($_SESSION['id_user'])) {
     header("location:login.php");
     exit();
 }
 
 $id_user = $_SESSION['id_user'];
 
-if(!isset($_GET['id_livro'])){
+if (!isset($_GET['id_livro'])) {
     header("location:visao_livro.php");
     exit();
 }
 
-if(isset($_GET['id_progresso'])){
+if (isset($_GET['id_progresso'])) {
     $id_progresso = $_GET['id_progresso'];
 }
 
 
 
-$id_livro = filter_var($_GET['id_livro'], FILTER_VALIDATE_INT, ['options'=>['min_range'=>1]]);
-if (!$id_livro) { http_response_code(400); exit('Livro inválido.'); }
+$id_livro = filter_var($_GET['id_livro'], FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
+if (!$id_livro) {
+    http_response_code(400);
+    exit('Livro inválido.');
+}
 $_SESSION['reading_csrf'] ??= bin2hex(random_bytes(32));
-require_once __DIR__.'/publishing_service.php';
-$probe=$conn->prepare('SELECT 1 FROM publicacao_obra WHERE id_livro=?');$probe->execute([(int)$id_livro]);
-if($probe->fetchColumn()){if(!publicacaoAcessivel($conn,(int)$id_livro,(int)$id_user)){http_response_code(404);exit('Publicação indisponível.');}header('Location: leitor_obra.php?id_livro='.(int)$id_livro);exit;}
+require_once __DIR__ . '/publishing_service.php';
+$probe = $conn->prepare('SELECT 1 FROM publicacao_obra WHERE id_livro=?');
+$probe->execute([(int) $id_livro]);
+if ($probe->fetchColumn()) {
+    if (!publicacaoAcessivel($conn, (int) $id_livro, (int) $id_user)) {
+        http_response_code(404);
+        exit('Publicação indisponível.');
+    }
+    header('Location: leitor_obra.php?id_livro=' . (int) $id_livro);
+    exit;
+}
 
 
 $select_livro = "select titulo_livro, capa_url from livro where id_livro = :id_livro AND (visibilidade='publico' OR id_user=:autor)";
@@ -38,7 +49,10 @@ $stmt_livro->execute([
     ":id_livro" => $id_livro, ":autor" => $id_user
 ]);
 $livro = $stmt_livro->fetch(PDO::FETCH_ASSOC);
-if (!$livro) { http_response_code(404); exit('Livro indisponível.'); }
+if (!$livro) {
+    http_response_code(404);
+    exit('Livro indisponível.');
+}
 
 $select_capitulo = "select * from capitulo where id_livro = :id_livro order by ordem_capitulo";
 $stmt_capitulo = $conn->prepare($select_capitulo);
@@ -58,18 +72,18 @@ $progresso = $stmt_progresso->fetch(PDO::FETCH_ASSOC);
 $id_progresso = null;
 $capitulo_atual = 0;
 
-if($progresso){
+if ($progresso) {
 
-$id_progresso = $progresso['id_progresso'];
-$capitulo_atual = $progresso['capitulo_atual'];
+    $id_progresso = $progresso['id_progresso'];
+    $capitulo_atual = $progresso['capitulo_atual'];
 }
 
 
 
-echo '<a href="visao_livro.php?id_livro='.$id_livro.'"> Voltar </a>';
+echo '<a href="visao_livro.php?id_livro=' . $id_livro . '"> Voltar </a>';
 
-echo '<h1> '.htmlspecialchars($livro['titulo_livro'], ENT_QUOTES, 'UTF-8').' </h1>';
-echo '<img src="'.htmlspecialchars($livro['capa_url'] ?: '../img/livro-sem-capa.svg', ENT_QUOTES, 'UTF-8').'" data-book-cover alt="Capa do livro" width="500px" height="auto">';
+echo '<h1> ' . htmlspecialchars($livro['titulo_livro'], ENT_QUOTES, 'UTF-8') . ' </h1>';
+echo '<img src="' . htmlspecialchars($livro['capa_url'] ?: '../img/livro-sem-capa.svg', ENT_QUOTES, 'UTF-8') . '" data-book-cover alt="Capa do livro" width="500px" height="auto">';
 echo '<script src="../front-end/js/book-cover.js" defer></script>';
 echo '<br>';
 
@@ -100,7 +114,7 @@ echo '<br>';
 
 $dados_capitulos = [];
 
-foreach($capitulos as $capitulo){
+foreach ($capitulos as $capitulo) {
     $select_paragrafos = "
     select * from paragrafo where id_capitulo = :id_capitulo
     order by ordem_paragrafo
@@ -112,14 +126,14 @@ foreach($capitulos as $capitulo){
     ]);
     $paragrafos = $stmt_paragrafos->fetchAll(PDO::FETCH_ASSOC);
 
-    $dados_capitulos[] = [ 
+    $dados_capitulos[] = [
         "id_capitulo" => $capitulo['id_capitulo'],
         "id_livro" => $capitulo['id_livro'],
         "ordem_capitulo" => $capitulo['ordem_capitulo'],
         "titulo_capitulo" => $capitulo['titulo_capitulo'],
         "imagem_url_capitulo" => $capitulo['imagem_url_capitulo'],
         "paragrafos" => $paragrafos,
-       ];
+    ];
 }
 
 
@@ -130,7 +144,7 @@ echo '<button id="btn-anterior" style="display:none;"> Capítulo Anterior </butt
 echo '<button id="btn-proximo"> Próximo Capítulo </button>';
 
 
-echo '<a href="visao_livro.php?id_livro='.$id_livro.'"> Voltar </a>';
+echo '<a href="visao_livro.php?id_livro=' . $id_livro . '"> Voltar </a>';
 echo '</section>';
 
 ?>

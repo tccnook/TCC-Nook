@@ -1,13 +1,19 @@
 <?php
+
 session_start();
-require_once __DIR__.'/chat_support.php';
-if (!isset($_SESSION['id_user'])) chatResposta(401,['sucesso'=>false,'mensagem'=>'Faça login para ver conversas.']);
+require_once __DIR__ . '/chat_support.php';
+if (!isset($_SESSION['id_user'])) {
+    chatResposta(401, ['sucesso' => false, 'mensagem' => 'Faça login para ver conversas.']);
+}
 $termo = $_GET['nome'] ?? '';
-if (!is_string($termo)) chatResposta(422,['sucesso'=>false,'mensagem'=>'Busca inválida.']);
-$termo = mb_substr(trim($termo),0,100);
-require_once __DIR__.'/conexao.php';
+if (!is_string($termo)) {
+    chatResposta(422, ['sucesso' => false, 'mensagem' => 'Busca inválida.']);
+}
+$termo = mb_substr(trim($termo), 0, 100);
+require_once __DIR__ . '/conexao.php';
 try {
-    $conn = (new Database())->conectar(); $user=(int)$_SESSION['id_user'];
+    $conn = (new Database())->conectar();
+    $user = (int) $_SESSION['id_user'];
     $stmt = $conn->prepare("WITH conversas_usuario AS (
         SELECT c.id_conversa,c.tipo,c.criacao,
                CASE WHEN c.tipo='direct' THEN COALESCE(parceiro.username,'Conversa direta') ELSE c.nome_conversa END AS nome_conversa,
@@ -28,9 +34,14 @@ try {
     ) SELECT * FROM conversas_usuario
       WHERE (:vazio='' OR nome_conversa ILIKE :nome OR username_ultimo ILIKE :emissor)
       ORDER BY ultima_mensagem DESC NULLS LAST,criacao DESC,id_conversa DESC");
-    $stmt->execute([':outro'=>$user,':usuario'=>$user,':vazio'=>$termo,':nome'=>'%'.$termo.'%',':emissor'=>'%'.$termo.'%']);
+    $stmt->execute([':outro' => $user, ':usuario' => $user, ':vazio' => $termo, ':nome' => '%' . $termo . '%', ':emissor' => '%' . $termo . '%']);
     $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
-    foreach ($rows as &$row) $row['foto_conversa_url'] = nookPublicUrl($row['foto_conversa_url']);
+    foreach ($rows as &$row) {
+        $row['foto_conversa_url'] = nookPublicUrl($row['foto_conversa_url']);
+    }
     unset($row);
-    chatResposta(200,['sucesso'=>true,'conversas'=>$rows]);
-} catch (Throwable $error) { error_log('Falha ao buscar conversas: '.$error->getMessage()); chatResposta(500,['sucesso'=>false,'mensagem'=>'Não foi possível carregar suas conversas.']); }
+    chatResposta(200, ['sucesso' => true, 'conversas' => $rows]);
+} catch (Throwable $error) {
+    error_log('Falha ao buscar conversas: ' . $error->getMessage());
+    chatResposta(500, ['sucesso' => false, 'mensagem' => 'Não foi possível carregar suas conversas.']);
+}

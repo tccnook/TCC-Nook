@@ -1,4 +1,5 @@
 <?php
+
 // buscar_geral.php — endpoint de pesquisa do header (usuários + livros)
 // Usado por: header.php (fetch)
 
@@ -27,9 +28,9 @@ if (mb_strlen($q) < 2) {
 }
 
 $id_user = $_SESSION['id_user'];
-$busca   = '%' . $q . '%';
+$busca = '%' . $q . '%';
 $usuarios = [];
-$livros   = [];
+$livros = [];
 
 // ---------- usuários (não mostra você nem quem está bloqueado) ----------
 $sql_usuarios = "
@@ -53,9 +54,9 @@ $sql_usuarios = "
 try {
     $stmt = $conn->prepare($sql_usuarios);
     $stmt->execute([
-        ':id_user'  => $id_user,
-        ':q_nome'   => $busca,
-        ':q_user'   => $busca,
+        ':id_user' => $id_user,
+        ':q_nome' => $busca,
+        ':q_user' => $busca,
         ':id_bloq1' => $id_user,
         ':id_bloq2' => $id_user
     ]);
@@ -83,7 +84,7 @@ try {
 }
 
 echo json_encode([
-    'sucesso'  => true,
+    'sucesso' => true,
     'usuarios' => $usuarios,
-    'livros'   => $livros
+    'livros' => $livros
 ]);

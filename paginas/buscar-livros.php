@@ -1,4 +1,5 @@
 <?php
+
 session_start();
 header('Content-Type: application/json; charset=UTF-8');
 
@@ -24,9 +25,9 @@ $generoNome = '';
 if ($genero !== false && $genero > 0) {
     $stmtGenero = $conn->prepare('SELECT nome_preferencia, preferencia FROM preferencia WHERE id_preferencia = :id');
     $stmtGenero->execute([':id' => $genero]);
-    $registroGenero=$stmtGenero->fetch(PDO::FETCH_ASSOC);
-    $temas=['fantasia'=>'fantasy','terror'=>'horror','suspense'=>'thriller','ficcao-cientifica'=>'science fiction','classicos'=>'classics','aventura'=>'adventure','historia'=>'history','poesia'=>'poetry','filosofia'=>'philosophy','misterio'=>'mystery','biografia'=>'biography','hq'=>'comics','distopia'=>'dystopia'];
-    $generoNome=$registroGenero?($temas[$registroGenero['preferencia']]??trim($registroGenero['nome_preferencia'])):'';
+    $registroGenero = $stmtGenero->fetch(PDO::FETCH_ASSOC);
+    $temas = ['fantasia' => 'fantasy', 'terror' => 'horror', 'suspense' => 'thriller', 'ficcao-cientifica' => 'science fiction', 'classicos' => 'classics', 'aventura' => 'adventure', 'historia' => 'history', 'poesia' => 'poetry', 'filosofia' => 'philosophy', 'misterio' => 'mystery', 'biografia' => 'biography', 'hq' => 'comics', 'distopia' => 'dystopia'];
+    $generoNome = $registroGenero ? ($temas[$registroGenero['preferencia']] ?? trim($registroGenero['nome_preferencia'])) : '';
 }
 $ordenacoes = [
     'titulo' => 'l.titulo_livro ASC',
@@ -35,8 +36,8 @@ $ordenacoes = [
 ];
 $orderBy = $ordenacoes[$ordem] ?? $ordenacoes['titulo'];
 
-$filtroIdioma=condicaoIdiomaCatalogo($schema);
-$camposOpcionais = implode(', ', array_map(static fn($coluna) => colunaOpcional($schema, 'livro', $coluna, 'l'), ['paginas', 'google_books_id', 'nota_google', 'link_leitura', 'link_compra', 'origem']));
+$filtroIdioma = condicaoIdiomaCatalogo($schema);
+$camposOpcionais = implode(', ', array_map(static fn ($coluna) => colunaOpcional($schema, 'livro', $coluna, 'l'), ['paginas', 'google_books_id', 'nota_google', 'link_leitura', 'link_compra', 'origem']));
 
 $sql = "
     SELECT
@@ -100,18 +101,20 @@ if (function_exists('curl_init')) {
     if ($generoNome !== '') {
         $consultaApi = trim($consultaApi . ' subject:"' . str_replace('"', '', $generoNome) . '"');
     }
+
     if ($consultaApi === '') {
         $consultaApi = 'fiction';
     }
+
     $parametrosApi = parametrosBuscaLivros($consultaApi, $inicio, $ordem);
-    $dadosGoogle = cacheGoogleBooks($parametrosApi+['locale'=>'pt-edicao-1'], static function () use ($parametrosApi, $chave_api): ?array {
+    $dadosGoogle = cacheGoogleBooks($parametrosApi + ['locale' => 'pt-edicao-1'], static function () use ($parametrosApi, $chave_api): ?array {
         return buscarVolumesExternos($parametrosApi, $chave_api);
     });
 
     if ($dadosGoogle !== null) {
-        $dadosGoogle=filtrarVolumesPortugues($dadosGoogle);
+        $dadosGoogle = filtrarVolumesPortugues($dadosGoogle);
         $totalGoogle = (int) ($dadosGoogle['totalItems'] ?? 0);
-        $temMaisGoogle = $inicio < 980 && ($dadosGoogle['quantidade_recebida']??0)>0 && $inicio + 20 < $totalGoogle;
+        $temMaisGoogle = $inicio < 980 && ($dadosGoogle['quantidade_recebida'] ?? 0) > 0 && $inicio + 20 < $totalGoogle;
 
         foreach ($dadosGoogle['items'] ?? [] as $itemGoogle) {
             $googleId = $itemGoogle['id'] ?? '';
@@ -120,20 +123,23 @@ if (function_exists('curl_init')) {
                 continue;
             }
 
+
             $capa = $infoGoogle['imageLinks']['extraLarge']
-                ?? $infoGoogle['imageLinks']['large']
-                ?? $infoGoogle['imageLinks']['medium']
-                ?? $infoGoogle['imageLinks']['thumbnail']
-                ?? null;
+                            ?? $infoGoogle['imageLinks']['large']
+                            ?? $infoGoogle['imageLinks']['medium']
+                            ?? $infoGoogle['imageLinks']['thumbnail']
+                            ?? null;
             if ($capa !== null) {
                 $capa = preg_replace('/^http:/i', 'https:', $capa);
             }
+
 
             $descricaoGoogle = $infoGoogle['description'] ?? null;
             if (is_string($descricaoGoogle)) {
                 $descricaoGoogle = preg_replace('/<br\s*\/?\s*>|<\/p>/i', "\n", $descricaoGoogle);
                 $descricaoGoogle = trim(html_entity_decode(strip_tags($descricaoGoogle), ENT_QUOTES | ENT_HTML5, 'UTF-8'));
             }
+
 
             $acessoDigital = normalizarAcessoDigitalLivro($itemGoogle);
             $livroGoogle = [
@@ -173,6 +179,7 @@ if (function_exists('curl_init')) {
                 $livros[$indiceLocal] = array_merge($livros[$indiceLocal], $livroGoogle);
                 continue;
             }
+
 
             $livros[] = array_merge([
                 'id_livro' => null,

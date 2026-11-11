@@ -3,7 +3,7 @@
 session_start();
 $_SESSION['list_csrf'] ??= bin2hex(random_bytes(32));
 
-if(!isset($_SESSION['id_user'])){
+if (!isset($_SESSION['id_user'])) {
     header('Location: login.php');
     exit();
 }
@@ -12,14 +12,14 @@ $id_user = $_SESSION['id_user'];
 
 require_once(__DIR__ . "/" . 'conexao.php');
 
-$db = new Database;
+$db = new Database();
 $conn = $db->conectar();
 require_once __DIR__ . '/schema_support.php';
 require_once __DIR__ . '/category_images.php';
 $schema = schemaProjeto($conn);
-require_once __DIR__.'/catalog_support.php';
-$filtroIdioma=condicaoIdiomaCatalogo($schema);
-$filtroIdiomaSemAlias=condicaoIdiomaCatalogo($schema,'livro');
+require_once __DIR__ . '/catalog_support.php';
+$filtroIdioma = condicaoIdiomaCatalogo($schema);
+$filtroIdiomaSemAlias = condicaoIdiomaCatalogo($schema, 'livro');
 
 $id_lista_contexto = filter_var($_GET['lista'] ?? null, FILTER_VALIDATE_INT);
 $lista_contexto = null;
@@ -72,8 +72,8 @@ if ($temSeguidoresAutor) {
 }
 $autores_sugeridos = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-$esc = static fn($valor) => htmlspecialchars((string) ($valor ?? ''), ENT_QUOTES, 'UTF-8');
-$imagemCatalogo = static fn($caminho) => $esc(nookPublicUrl($caminho));
+$esc = static fn ($valor) => htmlspecialchars((string) ($valor ?? ''), ENT_QUOTES, 'UTF-8');
+$imagemCatalogo = static fn ($caminho) => $esc(nookPublicUrl($caminho));
 ?>
 
 <!DOCTYPE html>
@@ -88,120 +88,144 @@ $imagemCatalogo = static fn($caminho) => $esc(nookPublicUrl($caminho));
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Lora:wght@400;500;600;700&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
     <title>Catálogo | Nook</title>
-<link rel="stylesheet" href="../front-end/css/pages/catalog-reference.css">
+    <link rel="stylesheet" href="../front-end/css/pages/catalog-reference.css">
 </head>
 <body>
-<?php require_once __DIR__ . '/header.php'; ?>
+    <?php require_once __DIR__ . '/header.php'; ?>
 
-<main class="catalog-page">
-    <?php if ($lista_contexto): ?>
+    <main class="catalog-page">
+        <?php if ($lista_contexto): ?>
         <a class="catalog-list-context" href="ver_lista.php?id=<?= (int) $lista_contexto['id'] ?>"><i data-lucide="arrow-left"></i> Adicionando livros a <strong><?= htmlspecialchars($lista_contexto['nome_lista'], ENT_QUOTES, 'UTF-8') ?></strong></a>
-    <?php endif; ?>
+        <?php endif; ?>
 
-    <section class="catalog-intro">
-        <p class="catalog-eyebrow">PRATELEIRAS NOOK</p>
-        <h1>Encontre sua próxima leitura.</h1>
-        <p>Explore títulos por nome, autor ou gênero e descubra histórias para guardar.</p>
-        <label class="catalog-search">
-            <i data-lucide="search"></i>
-            <input type="search" id="campo-pesquisa" value="<?= $esc(is_string($_GET['autor']??null)?$_GET['autor']:'') ?>" aria-label="Buscar por livro ou autor" placeholder="Busque por livro ou autor" autocomplete="off">
-        </label>
-    </section>
+        <section class="catalog-intro">
+            <p class="catalog-eyebrow">PRATELEIRAS NOOK</p>
+            <h1>Encontre sua próxima leitura.</h1>
+            <p>Explore títulos por nome, autor ou gênero e descubra histórias para guardar.</p>
+            <label class="catalog-search">
+                <i data-lucide="search"></i>
+                <input type="search" id="campo-pesquisa" value="<?= $esc(is_string($_GET['autor'] ?? null) ? $_GET['autor'] : '') ?>" aria-label="Buscar por livro ou autor" placeholder="Busque por livro ou autor" autocomplete="off">
+            </label>
+        </section>
 
-    <section class="catalog-controls" aria-label="Filtros do catálogo">
-        <div class="catalog-filter-wrap">
-            <button type="button" id="abrir-filtros-genero" class="catalog-filter-button" aria-expanded="false" aria-controls="filtros-genero">
-                <i data-lucide="list-filter"></i> Filtrar por categoria <i data-lucide="chevron-down"></i>
-            </button>
-            <div class="catalog-genres" id="filtros-genero" hidden>
-                <button type="button" class="genre-chip is-active" data-id="">Todas as categorias</button>
-                <?php foreach ($generos as $genero): ?>
+        <section class="catalog-controls" aria-label="Filtros do catálogo">
+            <div class="catalog-filter-wrap">
+                <button type="button" id="abrir-filtros-genero" class="catalog-filter-button" aria-expanded="false" aria-controls="filtros-genero">
+                    <i data-lucide="list-filter"></i> Filtrar por categoria <i data-lucide="chevron-down"></i>
+                </button>
+                <div class="catalog-genres" id="filtros-genero" hidden>
+                    <button type="button" class="genre-chip is-active" data-id="">Todas as categorias</button>
+                    <?php foreach ($generos as $genero): ?>
                     <button type="button" class="genre-chip" data-id="<?= (int) $genero['id_preferencia'] ?>">
                         <?= htmlspecialchars(nomeCategoria($genero['preferencia'], $genero['nome_preferencia']), ENT_QUOTES, 'UTF-8') ?>
                     </button>
-                <?php endforeach; ?>
+                    <?php endforeach; ?>
+                </div>
             </div>
-        </div>
-        <div class="catalog-quick-genres" aria-label="Categorias rápidas"><button type="button" class="genre-chip is-active" data-id="">Todos</button><?php foreach(array_slice($generos,0,8) as $quick):?><button type="button" class="genre-chip" data-id="<?=(int)$quick['id_preferencia']?>"><?=htmlspecialchars(nomeCategoria($quick['preferencia'],$quick['nome_preferencia']),ENT_QUOTES,'UTF-8')?></button><?php endforeach;?></div>
-        <label class="catalog-sort">Ordenar por
-            <select id="ordem-catalogo">
-                <option value="titulo">Título</option>
-                <option value="recentes">Mais recentes</option>
-                <option value="avaliados">Mais bem avaliados</option>
-            </select>
-        </label>
-    </section>
+            <div class="catalog-quick-genres" aria-label="Categorias rápidas"><button type="button" class="genre-chip is-active" data-id="">Todos</button><?php foreach (array_slice($generos, 0, 8) as $quick):?><button type="button" class="genre-chip" data-id="<?=(int) $quick['id_preferencia']?>"><?=htmlspecialchars(nomeCategoria($quick['preferencia'], $quick['nome_preferencia']), ENT_QUOTES, 'UTF-8')?></button><?php endforeach;?></div>
+            <label class="catalog-sort">Ordenar por
+                <select id="ordem-catalogo">
+                    <option value="titulo">Título</option>
+                    <option value="recentes">Mais recentes</option>
+                    <option value="avaliados">Mais bem avaliados</option>
+                </select>
+            </label>
+        </section>
 
-    <?php if ($continuar_lendo): ?>
+        <?php if ($continuar_lendo): ?>
         <section class="catalog-shelf catalog-continue-shelf">
-            <header class="catalog-shelf-heading"><div><p>RETOME SUA HISTÓRIA</p><h2>Continuar lendo</h2></div></header>
+            <header class="catalog-shelf-heading">
+                <div>
+                    <p>RETOME SUA HISTÓRIA</p>
+                    <h2>Continuar lendo</h2>
+                </div>
+            </header>
             <div class="catalog-continue-row">
                 <?php foreach ($continuar_lendo as $leitura): ?>
-                    <?php $progresso = min(100, max(0, (float) $leitura['porcentagem_progresso'])); ?>
-                    <a class="catalog-continue-book" href="ler_livro.php?id_livro=<?= (int) $leitura['id_livro'] ?>">
-                        <?php if ($leitura['capa_url']): ?><img src="<?= $imagemCatalogo($leitura['capa_url']) ?>" alt="Capa de <?= $esc($leitura['titulo_livro']) ?>" loading="lazy"><?php else: ?><img src="../img/livro-sem-capa.svg" alt="Capa de <?= $esc($leitura['titulo_livro']) ?>" loading="lazy"><?php endif; ?>
-                        <span class="catalog-continue-info"><strong><?= $esc($leitura['titulo_livro']) ?></strong><small><?= $esc($leitura['nome_autor'] ?: 'Autor não informado') ?></small><span class="catalog-progress"><span style="width: <?= $progresso ?>%"></span></span><small><?= round($progresso) ?>% concluído</small></span>
-                        <i data-lucide="play"></i>
-                    </a>
+                <?php $progresso = min(100, max(0, (float) $leitura['porcentagem_progresso'])); ?>
+                <a class="catalog-continue-book" href="ler_livro.php?id_livro=<?= (int) $leitura['id_livro'] ?>">
+                    <?php if ($leitura['capa_url']): ?><img src="<?= $imagemCatalogo($leitura['capa_url']) ?>" alt="Capa de <?= $esc($leitura['titulo_livro']) ?>" loading="lazy"><?php else: ?><img src="../img/livro-sem-capa.svg" alt="Capa de <?= $esc($leitura['titulo_livro']) ?>" loading="lazy"><?php endif; ?>
+                    <span class="catalog-continue-info"><strong><?= $esc($leitura['titulo_livro']) ?></strong><small><?= $esc($leitura['nome_autor'] ?: 'Autor não informado') ?></small><span class="catalog-progress"><span style="width: <?= $progresso ?>%"></span></span><small><?= round($progresso) ?>% concluído</small></span>
+                    <i data-lucide="play"></i>
+                </a>
                 <?php endforeach; ?>
             </div>
         </section>
-    <?php endif; ?>
+        <?php endif; ?>
 
-    <?php if ($livros_recomendados): ?>
+        <?php if ($livros_recomendados): ?>
         <section class="catalog-shelf">
-            <header class="catalog-shelf-heading"><div><p>CURADORIA PARA VOCÊ</p><h2>Livros que podem te conquistar</h2></div></header>
+            <header class="catalog-shelf-heading">
+                <div>
+                    <p>CURADORIA PARA VOCÊ</p>
+                    <h2>Livros que podem te conquistar</h2>
+                </div>
+            </header>
             <div class="catalog-rail">
                 <?php foreach ($livros_recomendados as $livro): ?>
-                    <a class="catalog-rail-book" href="visao_livro.php?id_livro=<?= (int) $livro['id_livro'] ?>">
-                        <span class="catalog-rail-cover"><?php if ($livro['capa_url']): ?><img src="<?= $imagemCatalogo($livro['capa_url']) ?>" alt="Capa de <?= $esc($livro['titulo_livro']) ?>" loading="lazy"><?php else: ?><img src="../img/livro-sem-capa.svg" alt="Capa de <?= $esc($livro['titulo_livro']) ?>" loading="lazy"><?php endif; ?></span>
-                        <strong><?= $esc($livro['titulo_livro']) ?></strong><small><?= $esc($livro['nome_autor'] ?: 'Autor não informado') ?></small>
-                    </a>
+                <a class="catalog-rail-book" href="visao_livro.php?id_livro=<?= (int) $livro['id_livro'] ?>">
+                    <span class="catalog-rail-cover"><?php if ($livro['capa_url']): ?><img src="<?= $imagemCatalogo($livro['capa_url']) ?>" alt="Capa de <?= $esc($livro['titulo_livro']) ?>" loading="lazy"><?php else: ?><img src="../img/livro-sem-capa.svg" alt="Capa de <?= $esc($livro['titulo_livro']) ?>" loading="lazy"><?php endif; ?></span>
+                    <strong><?= $esc($livro['titulo_livro']) ?></strong><small><?= $esc($livro['nome_autor'] ?: 'Autor não informado') ?></small>
+                </a>
                 <?php endforeach; ?>
             </div>
         </section>
-    <?php endif; ?>
+        <?php endif; ?>
 
-    <?php if ($livros_lidos): ?>
+        <?php if ($livros_lidos): ?>
         <section class="catalog-shelf">
-            <header class="catalog-shelf-heading"><div><p>SEU HISTÓRICO</p><h2>Livros lidos</h2></div><a href="perfil.php?aba=livros-lidos">Ver seu perfil <i data-lucide="arrow-up-right"></i></a></header>
+            <header class="catalog-shelf-heading">
+                <div>
+                    <p>SEU HISTÓRICO</p>
+                    <h2>Livros lidos</h2>
+                </div><a href="perfil.php?aba=livros-lidos">Ver seu perfil <i data-lucide="arrow-up-right"></i></a>
+            </header>
             <div class="catalog-rail">
                 <?php foreach ($livros_lidos as $livro): ?>
-                    <a class="catalog-rail-book" href="visao_livro.php?id_livro=<?= (int) $livro['id_livro'] ?>">
-                        <span class="catalog-rail-cover"><?php if ($livro['capa_url']): ?><img src="<?= $imagemCatalogo($livro['capa_url']) ?>" alt="Capa de <?= $esc($livro['titulo_livro']) ?>" loading="lazy"><?php else: ?><img src="../img/livro-sem-capa.svg" alt="Capa de <?= $esc($livro['titulo_livro']) ?>" loading="lazy"><?php endif; ?></span>
-                        <strong><?= $esc($livro['titulo_livro']) ?></strong><small><?= $esc($livro['nome_autor'] ?: 'Autor não informado') ?></small>
-                    </a>
+                <a class="catalog-rail-book" href="visao_livro.php?id_livro=<?= (int) $livro['id_livro'] ?>">
+                    <span class="catalog-rail-cover"><?php if ($livro['capa_url']): ?><img src="<?= $imagemCatalogo($livro['capa_url']) ?>" alt="Capa de <?= $esc($livro['titulo_livro']) ?>" loading="lazy"><?php else: ?><img src="../img/livro-sem-capa.svg" alt="Capa de <?= $esc($livro['titulo_livro']) ?>" loading="lazy"><?php endif; ?></span>
+                    <strong><?= $esc($livro['titulo_livro']) ?></strong><small><?= $esc($livro['nome_autor'] ?: 'Autor não informado') ?></small>
+                </a>
                 <?php endforeach; ?>
             </div>
         </section>
-    <?php endif; ?>
+        <?php endif; ?>
 
         <section class="catalog-shelf catalog-authors-shelf">
-            <header class="catalog-shelf-heading"><div><p>VOZES PARA DESCOBRIR</p><h2>Autores para conhecer</h2></div><a href="pesquisa_autores.php">Explorar autores <i data-lucide="arrow-up-right"></i></a></header>
+            <header class="catalog-shelf-heading">
+                <div>
+                    <p>VOZES PARA DESCOBRIR</p>
+                    <h2>Autores para conhecer</h2>
+                </div><a href="pesquisa_autores.php">Explorar autores <i data-lucide="arrow-up-right"></i></a>
+            </header>
             <div class="catalog-author-row">
                 <?php foreach ($autores_sugeridos as $autor): ?>
-                    <a class="catalog-author" href="perfil_autor.php?id_autor=<?= (int) $autor['id_autor'] ?>">
-                        <?php if ($autor['foto_url']): ?><img src="<?= $imagemCatalogo($autor['foto_url']) ?>" alt="" loading="lazy"><?php else: ?><span class="catalog-author-fallback"><?= $esc(mb_strtoupper(mb_substr($autor['nome_autor'] ?: $autor['autor'], 0, 1))) ?></span><?php endif; ?>
-                        <strong><?= $esc($autor['nome_autor'] ?: $autor['autor']) ?></strong><small><?= $autor['seguidores'] === null ? 'Conhecer autor' : (int) $autor['seguidores'] . ' seguidores' ?></small>
-                    </a>
+                <a class="catalog-author" href="perfil_autor.php?id_autor=<?= (int) $autor['id_autor'] ?>">
+                    <?php if ($autor['foto_url']): ?><img src="<?= $imagemCatalogo($autor['foto_url']) ?>" alt="" loading="lazy"><?php else: ?><span class="catalog-author-fallback"><?= $esc(mb_strtoupper(mb_substr($autor['nome_autor'] ?: $autor['autor'], 0, 1))) ?></span><?php endif; ?>
+                    <strong><?= $esc($autor['nome_autor'] ?: $autor['autor']) ?></strong><small><?= $autor['seguidores'] === null ? 'Conhecer autor' : (int) $autor['seguidores'] . ' seguidores' ?></small>
+                </a>
                 <?php endforeach; ?>
             </div>
         </section>
 
-    <section class="catalog-results-section" aria-live="polite">
-        <header class="catalog-results-header">
-            <div><p class="catalog-eyebrow">TODOS OS LIVROS</p><h2 id="titulo-resultados">Catálogo completo</h2><p class="catalog-section-description">Explore todos os títulos disponíveis na plataforma.</p></div>
-            <span id="total-resultados"></span>
-        </header>
-        <p id="aviso-google" class="catalog-api-notice" role="status" hidden></p>
-        <div id="resultado-livros" class="catalog-grid"></div>
-        <p id="estado-catalogo" class="catalog-empty" hidden></p>
-        <button type="button" id="carregar-mais-livros" class="catalog-load-more" hidden>Ver mais livros</button>
-    </section>
-</main>
+        <section class="catalog-results-section" aria-live="polite">
+            <header class="catalog-results-header">
+                <div>
+                    <p class="catalog-eyebrow">TODOS OS LIVROS</p>
+                    <h2 id="titulo-resultados">Catálogo completo</h2>
+                    <p class="catalog-section-description">Explore todos os títulos disponíveis na plataforma.</p>
+                </div>
+                <span id="total-resultados"></span>
+            </header>
+            <p id="aviso-google" class="catalog-api-notice" role="status" hidden></p>
+            <div id="resultado-livros" class="catalog-grid"></div>
+            <p id="estado-catalogo" class="catalog-empty" hidden></p>
+            <button type="button" id="carregar-mais-livros" class="catalog-load-more" hidden>Ver mais livros</button>
+        </section>
+    </main>
 
-<?php require_once __DIR__ . '/footer.php'; ?>
-<script>
+    <?php require_once __DIR__ . '/footer.php'; ?>
+    <script>
     const campoPesquisaCatalogo = document.getElementById('campo-pesquisa');
     const resultadoLivros = document.getElementById('resultado-livros');
     const estadoCatalogo = document.getElementById('estado-catalogo');
@@ -432,6 +456,6 @@ $imagemCatalogo = static fn($caminho) => $esc(nookPublicUrl($caminho));
         });
     }).catch(()=>{});
 </script>
-<script src="../front-end/js/pages/catalog-shelf-controls.js" defer></script>
+    <script src="../front-end/js/pages/catalog-shelf-controls.js" defer></script>
 </body>
 </html>

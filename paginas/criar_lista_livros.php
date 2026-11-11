@@ -1,9 +1,15 @@
 <?php
-require_once __DIR__.'/schema_support.php';
+
+// Fragmento: depende das variáveis e da autorização da página que o inclui.
+if (realpath($_SERVER['SCRIPT_FILENAME'] ?? '') === __FILE__) {
+    http_response_code(404);
+    exit('Componente interno. Acesse o Nook pela página inicial.');
+}
+require_once __DIR__ . '/schema_support.php';
 $schemaLista = schemaProjeto($conn);
-require_once __DIR__.'/privacy_settings.php';
-require_once __DIR__.'/catalog_support.php';
-require_once __DIR__.'/list_view_support.php';
+require_once __DIR__ . '/privacy_settings.php';
+require_once __DIR__ . '/catalog_support.php';
+require_once __DIR__ . '/list_view_support.php';
 $_SESSION['list_csrf'] ??= bin2hex(random_bytes(32));
 if (!isset($_POST['criar_lista'])) {
     return;
@@ -14,11 +20,18 @@ $descricao = '';
 $visibilidade = $_POST['visibilidade'] ?? 'publica';
 $tipo_capa = $_POST['tipo_capa'] ?? 'automatica';
 $erro_lista = '';
-if (!is_string($_POST['csrf']??null) || !hash_equals($_SESSION['list_csrf'],$_POST['csrf'])) { $erro_lista='Sessão expirada. Recarregue a página.'; return; }
+if (!is_string($_POST['csrf'] ?? null) || !hash_equals($_SESSION['list_csrf'], $_POST['csrf'])) {
+    $erro_lista = 'Sessão expirada. Recarregue a página.';
+    return;
+}
 try {
-    $textoLista=validarTextoLista($_POST['nome_lista']??'',$_POST['descricao']??'');
-    $nome_lista=$textoLista['nome_lista']; $descricao=$textoLista['descricao'];
-} catch (InvalidArgumentException $error) { $erro_lista=$error->getMessage(); return; }
+    $textoLista = validarTextoLista($_POST['nome_lista'] ?? '', $_POST['descricao'] ?? '');
+    $nome_lista = $textoLista['nome_lista'];
+    $descricao = $textoLista['descricao'];
+} catch (InvalidArgumentException $error) {
+    $erro_lista = $error->getMessage();
+    return;
+}
 $selecoes_enviadas = $_POST['livros_lista'] ?? null;
 $selecoes_livros = [];
 if (is_array($selecoes_enviadas)) {
@@ -27,6 +40,7 @@ if (is_array($selecoes_enviadas)) {
             $erro_lista = 'A seleção de livros é inválida.';
             break;
         }
+
         if (preg_match('/^local:([1-9][0-9]*)$/D', $selecao, $match)) {
             $selecoes_livros[$selecao] = ['tipo' => 'local', 'id' => (int) $match[1]];
         } elseif (preg_match('/^api:([A-Za-z0-9_-]{1,100})$/D', $selecao, $match)) {
@@ -41,11 +55,15 @@ if (is_array($selecoes_enviadas)) {
     if (is_array($ids_enviados)) {
         foreach ($ids_enviados as $id_enviado) {
             $id = filter_var($id_enviado, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
-            if ($id !== false) $selecoes_livros['local:' . $id] = ['tipo' => 'local', 'id' => $id];
+            if ($id !== false) {
+                $selecoes_livros['local:' . $id] = ['tipo' => 'local', 'id' => $id];
+            }
         }
     }
 }
-if (count($selecoes_livros) > 100) $erro_lista = 'Adicione no máximo 100 livros por lista.';
+if (count($selecoes_livros) > 100) {
+    $erro_lista = 'Adicione no máximo 100 livros por lista.';
+}
 
 if ($nome_lista === '' || mb_strlen($nome_lista) > 120 || mb_strlen($descricao) > 255) {
     $erro_lista = 'Informe um nome e uma descrição dentro dos limites.';
@@ -55,9 +73,15 @@ if ($nome_lista === '' || mb_strlen($nome_lista) > 120 || mb_strlen($descricao) 
     $erro_lista = 'Selecione uma imagem para a capa manual.';
 }
 
-if (!isset($schemaLista['whishlist']['descricao']) && $descricao !== '') { $erro_lista='A descrição ainda não está disponível para esta lista.'; }
-if (!isset($schemaLista['whishlist']['visibilidade']) && $visibilidade !== 'privada') { $erro_lista='Somente listas privadas estão disponíveis.'; }
-if (!isset($schemaLista['whishlist']['capa_url']) && $tipo_capa === 'manual') { $erro_lista='Use a capa automática para esta lista.'; }
+if (!isset($schemaLista['whishlist']['descricao']) && $descricao !== '') {
+    $erro_lista = 'A descrição ainda não está disponível para esta lista.';
+}
+if (!isset($schemaLista['whishlist']['visibilidade']) && $visibilidade !== 'privada') {
+    $erro_lista = 'Somente listas privadas estão disponíveis.';
+}
+if (!isset($schemaLista['whishlist']['capa_url']) && $tipo_capa === 'manual') {
+    $erro_lista = 'Use a capa automática para esta lista.';
+}
 
 if ($erro_lista !== '') {
     return;
@@ -67,28 +91,37 @@ $capa_manual = null;
 $capa_extensoes = ['image/jpeg' => 'jpg', 'image/png' => 'png', 'image/webp' => 'webp'];
 if ($tipo_capa === 'manual') {
     $imagem = $_FILES['capa_manual'];
-    if (!is_string($imagem['tmp_name']??null) || !is_uploaded_file($imagem['tmp_name']) || filesize($imagem['tmp_name'])>5*1024*1024) {
+    if (!is_string($imagem['tmp_name'] ?? null) || !is_uploaded_file($imagem['tmp_name']) || filesize($imagem['tmp_name']) > 5 * 1024 * 1024) {
         $erro_lista = 'Envie uma imagem de até 5 MB para a capa.';
         return;
     }
+
     $info_imagem = getimagesize($imagem['tmp_name']);
     if (!$info_imagem || !isset($capa_extensoes[$info_imagem['mime']])) {
         $erro_lista = 'A capa deve ser uma imagem JPG, PNG ou WebP.';
         return;
     }
+
     $capa_manual = 'img/capas_listas/' . bin2hex(random_bytes(16)) . '.' . $capa_extensoes[$info_imagem['mime']];
 }
 
 try {
     $volumes_externos = [];
     foreach ($selecoes_livros as $selecao) {
-        if ($selecao['tipo'] !== 'api') continue;
+        if ($selecao['tipo'] !== 'api') {
+            continue;
+        }
+
         $volume = consultarVolumeExternoPorId($selecao['id']);
-        if (!$volume) throw new DomainException('Uma das fontes externas não conseguiu validar o livro. Tente novamente.');
+        if (!$volume) {
+            throw new DomainException('Uma das fontes externas não conseguiu validar o livro. Tente novamente.');
+        }
+
         $volumes_externos[$selecao['id']] = $volume;
     }
 
-    $destinosMencao=destinosMencoes($conn,$nome_lista.' '.$descricao,(int)$id_user);
+
+    $destinosMencao = destinosMencoes($conn, $nome_lista . ' ' . $descricao, (int) $id_user);
     $conn->beginTransaction();
 
     $ids_livros = [];
@@ -97,8 +130,10 @@ try {
             $ids_livros[] = $selecao['id'];
             continue;
         }
+
         $ids_livros[] = importarLivroExternoParaLista($conn, $selecao['id'], $volumes_externos[$selecao['id']], $schemaLista);
     }
+
     $ids_livros = array_values(array_unique($ids_livros));
 
     $capas_livros = [];
@@ -112,13 +147,14 @@ try {
         }
     }
 
+
     $capa_url = $tipo_capa === 'manual'
-        ? $capa_manual
-        : null;
-    $valores = array_intersect_key(['nome_lista'=>$nome_lista,'id_user'=>$id_user,'descricao'=>$descricao,'visibilidade'=>$visibilidade,'tipo_capa'=>$tipo_capa,'capa_url'=>$capa_url],$schemaLista['whishlist']);
-    $colunas=array_keys($valores);
-    $params=array_combine(array_map(static fn($c)=>':'.$c,$colunas),array_values($valores));
-    $stmt=$conn->prepare('INSERT INTO whishlist ('.implode(',',$colunas).') VALUES ('.implode(',',array_keys($params)).') RETURNING id');
+            ? $capa_manual
+            : null;
+    $valores = array_intersect_key(['nome_lista' => $nome_lista, 'id_user' => $id_user, 'descricao' => $descricao, 'visibilidade' => $visibilidade, 'tipo_capa' => $tipo_capa, 'capa_url' => $capa_url], $schemaLista['whishlist']);
+    $colunas = array_keys($valores);
+    $params = array_combine(array_map(static fn ($c) => ':' . $c, $colunas), array_values($valores));
+    $stmt = $conn->prepare('INSERT INTO whishlist (' . implode(',', $colunas) . ') VALUES (' . implode(',', array_keys($params)) . ') RETURNING id');
     $stmt->execute($params);
     $id_lista = (int) $stmt->fetchColumn();
 
@@ -126,23 +162,29 @@ try {
         $comOrdem = isset($schemaLista['whishbook']['ordem']);
         $insert = $conn->prepare($comOrdem ? 'INSERT INTO whishbook (id_livro,id_user,id_whishlist,ordem) VALUES (:livro,:user,:lista,:ordem)' : 'INSERT INTO whishbook (id_livro,id_user,id_whishlist) VALUES (:livro,:user,:lista)');
         foreach ($ids_livros as $indice => $id_livro) {
-            $params=[':livro'=>$id_livro, ':user'=>$id_user, ':lista'=>$id_lista];
-            if($comOrdem)$params[':ordem']=$indice+1;
+            $params = [':livro' => $id_livro, ':user' => $id_user, ':lista' => $id_lista];
+            if ($comOrdem) {
+                $params[':ordem'] = $indice + 1;
+            }
+
             $insert->execute($params);
         }
     }
+
 
     if ($tipo_capa === 'manual') {
         $diretorio = __DIR__ . '/../img/capas_listas/';
         if (!is_dir($diretorio) && !mkdir($diretorio, 0775, true) && !is_dir($diretorio)) {
             throw new RuntimeException('Não foi possível preparar a pasta das capas.');
         }
+
         if (!move_uploaded_file($_FILES['capa_manual']['tmp_name'], __DIR__ . '/../' . $capa_manual)) {
             throw new RuntimeException('Não foi possível salvar a capa da lista.');
         }
     }
 
-    registrarMencoes($conn,$destinosMencao,(int)$id_user,'whishlist',$id_lista);
+
+    registrarMencoes($conn, $destinosMencao, (int) $id_user, 'whishlist', $id_lista);
     $conn->commit();
     header('Location: perfil.php?aba=listas-leitura&lista_criada=1');
     exit();
@@ -150,8 +192,11 @@ try {
     if ($conn->inTransaction()) {
         $conn->rollBack();
     }
-    if ($capa_manual && is_file(__DIR__.'/../'.$capa_manual)) unlink(__DIR__.'/../'.$capa_manual);
+
+    if ($capa_manual && is_file(__DIR__ . '/../' . $capa_manual)) {
+        unlink(__DIR__ . '/../' . $capa_manual);
+    }
+
     error_log('Falha ao criar lista: ' . $erro->getMessage());
-$erro_lista=$erro instanceof DomainException?$erro->getMessage():'Não foi possível criar a lista. Revise os dados e tente novamente.';
+    $erro_lista = $erro instanceof DomainException ? $erro->getMessage() : 'Não foi possível criar a lista. Revise os dados e tente novamente.';
 }
-?>

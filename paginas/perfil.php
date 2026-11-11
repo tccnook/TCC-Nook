@@ -1,50 +1,54 @@
 <?php
-    session_start();
+session_start();
 
-    // guarda a saída do html: assim o header("Location") funciona mesmo nos arquivos
-    // incluídos abaixo (salvar perfil, excluir do top 5, criar lista)
-    ob_start();
+// guarda a saída do html: assim o header("Location") funciona mesmo nos arquivos
+// incluídos abaixo (salvar perfil, excluir do top 5, criar lista)
+ob_start();
 
-    require_once(__DIR__ . "/" . 'conexao.php');
+require_once(__DIR__ . "/" . 'conexao.php');
 
-    $db = new Database();
-    $conn = $db->conectar();
+$db = new Database();
+$conn = $db->conectar();
 
-    if(!isset($_SESSION['id_user'])){
-        header('location:login.php');
-        exit();
+if (!isset($_SESSION['id_user'])) {
+    header('location:login.php');
+    exit();
+}
+
+$id_user = $_SESSION['id_user'];
+
+$possiveisAbas = [
+    'visao-geral' => 'Visão Geral',
+    'livros-lidos' => 'Livros lidos',
+    'listas-leitura' => 'Listas de leitura',
+    'resenhas' => 'Resenhas',
+    'marcadores' => 'Marcadores'
+];
+
+require_once __DIR__ . '/publishing_service.php';
+if (ehAutor($conn, (int) $id_user)) {
+    $possiveisAbas['livros-publicados'] = 'Livros publicados';
+}
+
+$aba = is_string($_GET['aba'] ?? null) ? $_GET['aba'] : 'visao-geral';
+
+if (!array_key_exists($aba, $possiveisAbas)) {
+    $aba = 'visao-geral';
+}
+
+// estrelas de 0 a 5 (usado em várias abas)
+function estrelas($nota)
+{
+    $nota = round((float) $nota);
+    $html = '';
+
+    for ($i = 1; $i <= 5; $i++) {
+        $html .= $i <= $nota ? '★' : '☆';
     }
 
-    $id_user = $_SESSION['id_user'];
 
-    $possiveisAbas = [
-        'visao-geral'    => 'Visão Geral',
-        'livros-lidos'   => 'Livros lidos',
-        'listas-leitura' => 'Listas de leitura',
-        'resenhas'       => 'Resenhas',
-        'marcadores' => 'Marcadores'
-    ];
-
-    require_once __DIR__.'/publishing_service.php';
-    if(ehAutor($conn,(int)$id_user)) $possiveisAbas['livros-publicados']='Livros publicados';
-
-    $aba = is_string($_GET['aba'] ?? null) ? $_GET['aba'] : 'visao-geral';
-
-    if (!array_key_exists($aba, $possiveisAbas)) {
-        $aba = 'visao-geral';
-    }
-
-    // estrelas de 0 a 5 (usado em várias abas)
-    function estrelas($nota){
-        $nota = round((float) $nota);
-        $html = '';
-
-        for($i = 1; $i <= 5; $i++){
-            $html .= $i <= $nota ? '★' : '☆';
-        }
-
-        return '<span class="estrelas" role="img" aria-label="Nota ' . $nota . ' de 5">' . $html . '</span>';
-    }
+    return '<span class="estrelas" role="img" aria-label="Nota ' . $nota . ' de 5">' . $html . '</span>';
+}
 ?>
 <!DOCTYPE html>
 <html lang="pt-br">
@@ -69,7 +73,7 @@
 
     <script src="https://unpkg.com/lucide@latest"></script>
     <title>Perfil</title>
-<link rel="stylesheet" href="../front-end/css/components/goal-manager.css">
+    <link rel="stylesheet" href="../front-end/css/components/goal-manager.css">
 </head>
 <body class="profile-page" data-profile-tab="<?= htmlspecialchars($aba, ENT_QUOTES, 'UTF-8') ?>">
     <header class="header">
@@ -79,11 +83,9 @@
     <main>
         <nav class="perfil-nav" aria-label="Seções do perfil">
             <?php foreach ($possiveisAbas as $chave => $titulo): ?>
-                <a href="?aba=<?= $chave ?>"
-                   class="<?= $aba === $chave ? 'ativo' : '' ?>"
-                   <?= $aba === $chave ? 'aria-current="page"' : '' ?>>
-                    <?= $titulo ?>
-                </a>
+            <a href="?aba=<?= $chave ?>" class="<?= $aba === $chave ? 'ativo' : '' ?>" <?= $aba === $chave ? 'aria-current="page"' : '' ?>>
+                <?= $titulo ?>
+            </a>
             <?php endforeach; ?>
         </nav>
 
@@ -112,14 +114,14 @@
                     require __DIR__ . "/" . 'resenhas_perfil.php';
                     break;
             }
-            
-            ?>
+
+?>
         </div>
     </main>
 
     <?php
         require_once(__DIR__ . "/" . 'footer.php');
-    ?>
+?>
 
     <script>
         // roda por último para pegar os ícones de todas as abas

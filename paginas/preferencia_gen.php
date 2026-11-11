@@ -1,28 +1,28 @@
 <?php
 session_start();
-require_once __DIR__.'/auth_support.php';
+require_once __DIR__ . '/auth_support.php';
 $_SESSION['genre_csrf'] ??= bin2hex(random_bytes(32));
 require_once __DIR__ . "/category_images.php";
-if(!isset($_SESSION['id_user'])){
+if (!isset($_SESSION['id_user'])) {
     header('location:cadastro.php');
     exit();
 }
 
 $id_user = $_SESSION['id_user'];
 
-if(!isset($_SESSION['cadastro_concluido'])){
+if (!isset($_SESSION['cadastro_concluido'])) {
     header('location:cadastro.php');
     exit();
 }
 
-if(isset($_SESSION['generos_concluido'])){
+if (isset($_SESSION['generos_concluido'])) {
     header('location:preferencia_autor.php');
     exit();
 }
 
 require_once(__DIR__ . "/" . "conexao.php");
 
-$db = new Database;
+$db = new Database();
 $conn = $db->conectar();
 
 $select = "SELECT * FROM preferencia;";
@@ -38,7 +38,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST' && !authTokenValido($_SESSI
 } elseif (isset($_POST['pular'])) {
     $origemConfig = !empty($_SESSION['origem_config']);
     unset($_SESSION['cadastro_concluido'], $_SESSION['generos_concluido'], $_SESSION['origem_config']);
-    header('Location: '.($origemConfig ? 'config_user.php' : 'reset.php'));
+    header('Location: ' . ($origemConfig ? 'config_user.php' : 'reset.php'));
     exit;
 } elseif (isset($_POST['continuar'])) {
     $selecionados = validarGeneros($_POST['generos'] ?? null, array_map('intval', array_column($generos, 'id_preferencia')));
@@ -48,13 +48,16 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST' && !authTokenValido($_SESSI
     } else {
         try {
             $conn->beginTransaction();
-            substituirGenerosUsuario($conn, (int)$id_user, $selecionados);
+            substituirGenerosUsuario($conn, (int) $id_user, $selecionados);
             $conn->commit();
             $_SESSION['generos_concluido'] = true;
             header('Location: preferencia_autor.php');
             exit();
         } catch (PDOException $e) {
-            if ($conn->inTransaction()) { $conn->rollBack(); }
+            if ($conn->inTransaction()) {
+                $conn->rollBack();
+            }
+
             $erroGeneros = 'Não foi possível salvar seus gêneros. Tente novamente.';
         }
     }
@@ -122,22 +125,22 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST' && !authTokenValido($_SESSI
 
             <section class="genre-grid">
 
-                <?php foreach($generos as $genero){
+                <?php foreach ($generos as $genero) {
                     $imagem = imagemCategoria((string) $genero['preferencia']);
-                ?>
+                    ?>
 
-                    <label class="genre-card" data-name="<?= htmlspecialchars(nomeCategoria($genero['preferencia'], $genero['nome_preferencia']), ENT_QUOTES, 'UTF-8') ?>">
-                        <?php if ($imagem): ?>
-                            <img class="genre-image" src="<?= htmlspecialchars($imagem, ENT_QUOTES, 'UTF-8') ?>" alt="" width="480" height="480" loading="lazy" decoding="async">
-                        <?php endif; ?>
+                <label class="genre-card" data-name="<?= htmlspecialchars(nomeCategoria($genero['preferencia'], $genero['nome_preferencia']), ENT_QUOTES, 'UTF-8') ?>">
+                    <?php if ($imagem): ?>
+                    <img class="genre-image" src="<?= htmlspecialchars($imagem, ENT_QUOTES, 'UTF-8') ?>" alt="" width="480" height="480" loading="lazy" decoding="async">
+                    <?php endif; ?>
 
-                        <input type="checkbox" name="generos[]" value="<?= (int) $genero['id_preferencia']; ?>" aria-label="<?= htmlspecialchars(nomeCategoria($genero['preferencia'], $genero['nome_preferencia']), ENT_QUOTES, 'UTF-8') ?>" class="genre-checkbox" <?= in_array((int) $genero['id_preferencia'], $selecionados, true) ? 'checked' : '' ?>>
+                    <input type="checkbox" name="generos[]" value="<?= (int) $genero['id_preferencia']; ?>" aria-label="<?= htmlspecialchars(nomeCategoria($genero['preferencia'], $genero['nome_preferencia']), ENT_QUOTES, 'UTF-8') ?>" class="genre-checkbox" <?= in_array((int) $genero['id_preferencia'], $selecionados, true) ? 'checked' : '' ?>>
 
-                        <?php if (!$imagem): ?><span class="genre-name">
-                            <?= htmlspecialchars(nomeCategoria($genero['preferencia'], $genero['nome_preferencia']), ENT_QUOTES, 'UTF-8'); ?>
-                        </span><?php endif; ?>
+                    <?php if (!$imagem): ?><span class="genre-name">
+                        <?= htmlspecialchars(nomeCategoria($genero['preferencia'], $genero['nome_preferencia']), ENT_QUOTES, 'UTF-8'); ?>
+                    </span><?php endif; ?>
 
-                    </label>
+                </label>
 
                 <?php } ?>
 

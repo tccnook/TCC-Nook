@@ -1,78 +1,98 @@
 <?php
+// Fragmento: depende das variáveis e da autorização da página que o inclui.
+if (realpath($_SERVER['SCRIPT_FILENAME'] ?? '') === __FILE__) {
+    http_response_code(404);
+    exit('Componente interno. Acesse o Nook pela página inicial.');
+}
+require_once(__DIR__ . "/" . 'header.php');
+// Incluído pelo perfil.php ($conn, $id_user e $aba já existem)
 
- require_once(__DIR__ . "/" . 'header.php');
-    // Incluído pelo perfil.php ($conn, $id_user e $aba já existem)
-
-    function contar($conn, $sql, $id_user){
-        $stmt = $conn->prepare($sql);
-        $stmt->execute([":id_user" => $id_user]);
-        return $stmt->fetchColumn();
-    }
-
-    require_once __DIR__.'/profile_upload.php';
-    $_SESSION['profile_csrf'] ??= bin2hex(random_bytes(32));
-
-    $select_usuario = "select * from usuario where id_user = :id_user;";
-    $stmt = $conn->prepare($select_usuario);
+function contar($conn, $sql, $id_user)
+{
+    $stmt = $conn->prepare($sql);
     $stmt->execute([":id_user" => $id_user]);
-    $usuario = $stmt->fetch(PDO::FETCH_ASSOC);
+    return $stmt->fetchColumn();
+}
 
-    $select_conta = "select * from conta where id_user = :id_user;";
-    $stmt = $conn->prepare($select_conta);
-    $stmt->execute([":id_user" => $id_user]);
-    $conta = $stmt->fetch(PDO::FETCH_ASSOC) ?: [];
+require_once __DIR__ . '/profile_upload.php';
+$_SESSION['profile_csrf'] ??= bin2hex(random_bytes(32));
 
-    $seguidores = contar($conn, "select COUNT(*) from follow where id_following = :id_user;", $id_user);
-    $seguindo   = contar($conn, "select COUNT(*) from follow where id_follower = :id_user;", $id_user);
-    $resenhas   = contar($conn, "select COUNT(*) from resenha where id_user = :id_user;", $id_user);
-    require_once __DIR__.'/reading_library.php';
-    $lidos = count(livrosLidosUsuario($conn,(int)$id_user));
+$select_usuario = "select * from usuario where id_user = :id_user;";
+$stmt = $conn->prepare($select_usuario);
+$stmt->execute([":id_user" => $id_user]);
+$usuario = $stmt->fetch(PDO::FETCH_ASSOC);
 
-    $erro_perfil = '';
+$select_conta = "select * from conta where id_user = :id_user;";
+$stmt = $conn->prepare($select_conta);
+$stmt->execute([":id_user" => $id_user]);
+$conta = $stmt->fetch(PDO::FETCH_ASSOC) ?: [];
 
-    if(isset($_POST['salvar'])){
-        $nova_foto=$novo_banner=null;
-        try {
-            if(!is_string($_POST['csrf']??null)||!hash_equals($_SESSION['profile_csrf'],$_POST['csrf']))throw new InvalidArgumentException('Sua sessão expirou. Recarregue a página.');
-            $bio=trim(is_string($_POST['bio']??null)?$_POST['bio']:'');
-            if(mb_strlen($bio)>1000)throw new InvalidArgumentException('A biografia pode ter até 1.000 caracteres.');
-            $visibilidade=in_array($_POST['visibilidade']??'', ['publico','privado'],true)?$_POST['visibilidade']:'publico';
-            $nova_foto=receberImagemPerfil($_FILES['foto_perfil']??null,'img/foto_perfil/');
-            $novo_banner=receberImagemPerfil($_FILES['banner']??null,'img/banner_perfil/');
-            $conn->beginTransaction();
-            $stmt=$conn->prepare('INSERT INTO conta(id_user) SELECT ? WHERE NOT EXISTS(SELECT 1 FROM conta WHERE id_user=?)');$stmt->execute([$id_user,$id_user]);
-            $stmt=$conn->prepare('UPDATE conta SET foto_perfil_url=?,banner_url=?,bio=?,visibilidade=? WHERE id_user=?');
-            $stmt->execute([$nova_foto??($conta['foto_perfil_url']??null),$novo_banner??($conta['banner_url']??null),$bio,$visibilidade,$id_user]);
-            $conn->commit();header('Location: perfil.php?aba='.urlencode($aba));exit;
-        }catch(Throwable $e){
-            if($conn->inTransaction())$conn->rollBack();removerNovaImagemPerfil($nova_foto);removerNovaImagemPerfil($novo_banner);
-            $erro_perfil=$e instanceof InvalidArgumentException||$e instanceof RuntimeException&&!($e instanceof PDOException)?$e->getMessage():'Não foi possível atualizar o perfil. Sua foto anterior foi preservada.';
-            if($e instanceof PDOException)error_log('Perfil: '.$e->getMessage());
+$seguidores = contar($conn, "select COUNT(*) from follow where id_following = :id_user;", $id_user);
+$seguindo = contar($conn, "select COUNT(*) from follow where id_follower = :id_user;", $id_user);
+$resenhas = contar($conn, "select COUNT(*) from resenha where id_user = :id_user;", $id_user);
+require_once __DIR__ . '/reading_library.php';
+$lidos = count(livrosLidosUsuario($conn, (int) $id_user));
+
+$erro_perfil = '';
+
+if (isset($_POST['salvar'])) {
+    $nova_foto = $novo_banner = null;
+    try {
+        if (!is_string($_POST['csrf'] ?? null) || !hash_equals($_SESSION['profile_csrf'], $_POST['csrf'])) {
+            throw new InvalidArgumentException('Sua sessão expirou. Recarregue a página.');
+        }
+
+        $bio = trim(is_string($_POST['bio'] ?? null) ? $_POST['bio'] : '');
+        if (mb_strlen($bio) > 1000) {
+            throw new InvalidArgumentException('A biografia pode ter até 1.000 caracteres.');
+        }
+
+        $visibilidade = in_array($_POST['visibilidade'] ?? '', ['publico', 'privado'], true) ? $_POST['visibilidade'] : 'publico';
+        $nova_foto = receberImagemPerfil($_FILES['foto_perfil'] ?? null, 'img/foto_perfil/');
+        $novo_banner = receberImagemPerfil($_FILES['banner'] ?? null, 'img/banner_perfil/');
+        $conn->beginTransaction();
+        $stmt = $conn->prepare('INSERT INTO conta(id_user) SELECT ? WHERE NOT EXISTS(SELECT 1 FROM conta WHERE id_user=?)');
+        $stmt->execute([$id_user, $id_user]);
+        $stmt = $conn->prepare('UPDATE conta SET foto_perfil_url=?,banner_url=?,bio=?,visibilidade=? WHERE id_user=?');
+        $stmt->execute([$nova_foto ?? ($conta['foto_perfil_url'] ?? null), $novo_banner ?? ($conta['banner_url'] ?? null), $bio, $visibilidade, $id_user]);
+        $conn->commit();
+        header('Location: perfil.php?aba=' . urlencode($aba));
+        exit;
+    } catch (Throwable $e) {
+        if ($conn->inTransaction()) {
+            $conn->rollBack();
+        }
+        removerNovaImagemPerfil($nova_foto);
+        removerNovaImagemPerfil($novo_banner);
+        $erro_perfil = $e instanceof InvalidArgumentException || $e instanceof RuntimeException && !($e instanceof PDOException) ? $e->getMessage() : 'Não foi possível atualizar o perfil. Sua foto anterior foi preservada.';
+        if ($e instanceof PDOException) {
+            error_log('Perfil: ' . $e->getMessage());
         }
     }
+}
 
-    $publico = ($conta['visibilidade'] ?? 'publico') === 'publico';
+$publico = ($conta['visibilidade'] ?? 'publico') === 'publico';
 ?>
 
 <section class="main">
 
     <section class="perfil-banner">
-        <?php if(empty($conta['banner_url'])): ?>
-            <section class="sem-banner" aria-label="Banner do perfil"></section>
+        <?php if (empty($conta['banner_url'])): ?>
+        <section class="sem-banner" aria-label="Banner do perfil"></section>
         <?php else: ?>
-            <img src="../<?= htmlspecialchars($conta['banner_url'], ENT_QUOTES, 'UTF-8') ?>" alt="Banner do perfil">
+        <img src="../<?= htmlspecialchars($conta['banner_url'], ENT_QUOTES, 'UTF-8') ?>" alt="Banner do perfil">
         <?php endif; ?>
     </section>
 
     <section class="perfil-header">
 
         <section class="perfil-avatar">
-            <?php if(empty($conta['foto_perfil_url'])): ?>
-                <section class="sem-foto-perfil" role="img" aria-label="Sem foto de perfil">
-                    <i data-lucide="camera"></i>
-                </section>
+            <?php if (empty($conta['foto_perfil_url'])): ?>
+            <section class="sem-foto-perfil" role="img" aria-label="Sem foto de perfil">
+                <i data-lucide="camera"></i>
+            </section>
             <?php else: ?>
-                <img class="com-foto-perfil" src="../<?= htmlspecialchars($conta['foto_perfil_url']) ?>" alt="Foto de perfil">
+            <img class="com-foto-perfil" src="../<?= htmlspecialchars($conta['foto_perfil_url']) ?>" alt="Foto de perfil">
             <?php endif; ?>
         </section>
 
@@ -84,10 +104,10 @@
             </section>
 
             <section class="bio">
-                <?php if(empty($conta['bio'])): ?>
-                    <p>Adicione uma bio!</p>
+                <?php if (empty($conta['bio'])): ?>
+                <p>Adicione uma bio!</p>
                 <?php else: ?>
-                    <p><?= nl2br(htmlspecialchars($conta['bio'])) ?></p>
+                <p><?= nl2br(htmlspecialchars($conta['bio'])) ?></p>
                 <?php endif; ?>
 
                 <section class="perfil-actions">
@@ -108,7 +128,7 @@
                             <a href="#">Notificações</a>
                             <a href="config_user.php">Configurações</a>
                             <a href="minhas_obras.php">Espaço do autor Nook</a>
-                            <?php if(ehAutor($conn,(int)$id_user)):?><a href="perfil_autor.php?id_user=<?= (int)$id_user ?>">Ver perfil de autor</a><?php endif;?>
+                            <?php if (ehAutor($conn, (int) $id_user)):?><a href="perfil_autor.php?id_user=<?= (int) $id_user ?>">Ver perfil de autor</a><?php endif;?>
                         </section>
                     </section>
                 </section>
@@ -132,11 +152,11 @@
         <h2>Editar perfil</h2>
         <p class="subtitulo">Atualize suas informações e personalize o seu perfil!</p>
 
-        <?php if($erro_perfil !== ''): ?>
-            <p class="erro-form" role="alert"><?= htmlspecialchars($erro_perfil) ?></p>
+        <?php if ($erro_perfil !== ''): ?>
+        <p class="erro-form" role="alert"><?= htmlspecialchars($erro_perfil) ?></p>
         <?php endif; ?>
 
-        <form action="perfil.php?aba=<?=urlencode($aba)?>" method="POST" enctype="multipart/form-data" class="form-perfil"><input type="hidden" name="csrf" value="<?=htmlspecialchars($_SESSION['profile_csrf'],ENT_QUOTES,'UTF-8')?>">
+        <form action="perfil.php?aba=<?=urlencode($aba)?>" method="POST" enctype="multipart/form-data" class="form-perfil"><input type="hidden" name="csrf" value="<?=htmlspecialchars($_SESSION['profile_csrf'], ENT_QUOTES, 'UTF-8')?>">
 
             <!-- prévia do perfil -->
             <aside class="previa">

@@ -1,6 +1,7 @@
 <?php
-require_once __DIR__.'/session_registry.php';
-require_once __DIR__.'/runtime.php';
+
+require_once __DIR__ . '/session_registry.php';
+require_once __DIR__ . '/runtime.php';
 
 class Database
 {
@@ -17,14 +18,17 @@ class Database
         $this->user = trim(nookEnv('DB_USER', 'postgres'));
         $this->password = nookEnv('DB_PASSWORD', '1234');
         $this->port = trim(nookEnv('DB_PORT', '5432'));
-        if (!ctype_digit($this->port) || (int)$this->port < 1 || (int)$this->port > 65535) {
+        if (!ctype_digit($this->port) || (int) $this->port < 1 || (int) $this->port > 65535) {
             throw new RuntimeException('DB_PORT precisa ser numérico.');
         }
     }
 
     public function conectar(): PDO
     {
-        if (!extension_loaded('pdo_pgsql')) throw new RuntimeException('Habilite a extensão pdo_pgsql no PHP usado pelo servidor.');
+        if (!extension_loaded('pdo_pgsql')) {
+            throw new RuntimeException('Habilite a extensão pdo_pgsql no PHP usado pelo servidor.');
+        }
+
         try {
             $connection = new PDO(
                 "pgsql:host={$this->host};port={$this->port};dbname={$this->dbname}",

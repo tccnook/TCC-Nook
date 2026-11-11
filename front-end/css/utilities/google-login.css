@@ -9,18 +9,17 @@
     border-radius: 12px;
     font-weight: 600;
     color: var(--text-primary);
-    transition: .2s;
+    transition: 0.2s;
 }
 
 .google-btn:hover {
     transform: translateY(-1px);
-    box-shadow: 0 4px 10px rgba(0,0,0,.08);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
 }
 
 .ico-google {
     width: 15px;
     margin-right: 10px;
-
 }
 
 .division-google-area {
@@ -33,6 +32,6 @@
     }
     span {
         font-size: 14px;
-    color: #252525;
+        color: #252525;
     }
 }

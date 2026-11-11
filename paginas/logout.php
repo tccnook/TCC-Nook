@@ -1,11 +1,14 @@
 <?php
-if (session_status() !== PHP_SESSION_ACTIVE) session_start();
-if(isset($_SESSION['id_user'])){
+
+if (session_status() !== PHP_SESSION_ACTIVE) {
+    session_start();
+}
+if (isset($_SESSION['id_user'])) {
     try {
-    require_once __DIR__.'/conexao.php';
-    $conn=(new Database())->conectar();
-    $stmt=$conn->prepare('UPDATE sessao_usuario SET revogado_em=now() WHERE assinatura=:assinatura AND id_user=:usuario');
-    $stmt->execute([':assinatura'=>hash('sha256',session_id()),':usuario'=>$_SESSION['id_user']]);
+        require_once __DIR__ . '/conexao.php';
+        $conn = (new Database())->conectar();
+        $stmt = $conn->prepare('UPDATE sessao_usuario SET revogado_em=now() WHERE assinatura=:assinatura AND id_user=:usuario');
+        $stmt->execute([':assinatura' => hash('sha256', session_id()), ':usuario' => $_SESSION['id_user']]);
     } catch (Throwable $e) {
         // O encerramento local deve funcionar mesmo se o banco estiver indisponível.
         error_log('Não foi possível registrar o encerramento da sessão.');

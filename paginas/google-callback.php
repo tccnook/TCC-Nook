@@ -1,5 +1,6 @@
 <?php
-require_once __DIR__.'/auth_support.php';
+
+require_once __DIR__ . '/auth_support.php';
 session_start();
 
 $expectedState = (string) ($_SESSION['google_oauth_state'] ?? '');
@@ -24,8 +25,8 @@ if (!is_file($autoload)) {
 require_once $autoload;
 require_once __DIR__ . '/conexao.php';
 
-require_once __DIR__.'/runtime.php';
-$environmentValue = static fn(string $name): string => nookEnv($name);
+require_once __DIR__ . '/runtime.php';
+$environmentValue = static fn (string $name): string => nookEnv($name);
 $clientId = $environmentValue('GOOGLE_CLIENT_ID');
 $clientSecret = $environmentValue('GOOGLE_CLIENT_SECRET');
 if ($clientId === '' || $clientSecret === '') {
@@ -45,6 +46,7 @@ try {
     if (isset($token['error'])) {
         throw new RuntimeException('Falha na troca do código OAuth.');
     }
+
     $client->setAccessToken($token);
     $googleService = new Google\Service\Oauth2($client);
     $userInfo = $googleService->userinfo->get();
@@ -61,9 +63,11 @@ if ($idGoogle === '' || !filter_var($emailGoogle, FILTER_VALIDATE_EMAIL) || !$us
 }
 
 $conn = (new Database())->conectar();
-$stmt = $conn->prepare('SELECT id_user FROM usuario WHERE google_id = :google_id LIMIT 1');
+$stmt = $conn->prepare('SELECT id_user, ativo, excluido_em FROM usuario WHERE google_id = :google_id LIMIT 1');
 $stmt->execute([':google_id' => $idGoogle]);
-$idUsuario = $stmt->fetchColumn();
+$contaGoogle = $stmt->fetch(PDO::FETCH_ASSOC);
+if ($contaGoogle && (!$contaGoogle['ativo'] || $contaGoogle['excluido_em'])) { http_response_code(403); exit('Esta conta está indisponível.'); }
+$idUsuario = $contaGoogle['id_user'] ?? null;
 
 if ($idUsuario) {
     session_regenerate_id(true);

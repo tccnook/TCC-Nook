@@ -1,18 +1,41 @@
 <?php
 session_start();
-if (!isset($_SESSION['id_user'])) { header('Location: login.php'); exit; }
-require_once __DIR__.'/chat_support.php';
-try { $id_conversa = chatId($_GET['id_conversa'] ?? null); }
-catch (InvalidArgumentException $error) { header('Location: conversas.php'); exit; }
-require_once __DIR__.'/conexao.php';
+if (!isset($_SESSION['id_user'])) {
+    header('Location: login.php');
+    exit;
+}
+require_once __DIR__ . '/chat_support.php';
+try {
+    $id_conversa = chatId($_GET['id_conversa'] ?? null);
+} catch (InvalidArgumentException $error) {
+    header('Location: conversas.php');
+    exit;
+}
+require_once __DIR__ . '/conexao.php';
 $conn = (new Database())->conectar();
-$group = chatConversa($conn,$id_conversa,(int)$_SESSION['id_user']);
-if (!$group || !chatPodeAdministrar($group,(int)$_SESSION['id_user'])) { http_response_code(403); exit('Você não pode adicionar pessoas a este grupo.'); }
+$group = chatConversa($conn, $id_conversa, (int) $_SESSION['id_user']);
+if (!$group || !chatPodeAdministrar($group, (int) $_SESSION['id_user'])) {
+    http_response_code(403);
+    exit('Você não pode adicionar pessoas a este grupo.');
+}
 $csrf = chatCsrf();
 ?>
-<!DOCTYPE html><html lang="pt-br"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Adicionar leitores | Nook</title><link rel="stylesheet" href="../front-end/css/main.css"></head><body>
-<main><h1>Adicionar leitores ao grupo</h1><form id="buscar-amigo" role="search"><label for="nome">Leitores que você segue</label><input type="search" id="nome" name="nome" maxlength="100" placeholder="Procure seus amigos"></form><p id="status-amigos" role="status"></p><div id="lista-amigos"></div><a href="chat.php?id_conversa=<?=$id_conversa?>">Voltar à conversa</a></main>
-<script>
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Adicionar leitores | Nook</title>
+    <link rel="stylesheet" href="../front-end/css/main.css">
+</head>
+<body>
+    <main>
+        <h1>Adicionar leitores ao grupo</h1>
+        <form id="buscar-amigo" role="search"><label for="nome">Leitores que você segue</label><input type="search" id="nome" name="nome" maxlength="100" placeholder="Procure seus amigos"></form>
+        <p id="status-amigos" role="status"></p>
+        <div id="lista-amigos"></div><a href="chat.php?id_conversa=<?=$id_conversa?>">Voltar à conversa</a>
+    </main>
+    <script>
 (() => {
     const campoPesquisa = document.getElementById('nome');
     const listaAmigos = document.getElementById('lista-amigos');
@@ -50,4 +73,6 @@ $csrf = chatCsrf();
     campoPesquisa.addEventListener('input', () => { clearTimeout(atraso); atraso = setTimeout(pesquisarAmigos,250); });
     pesquisarAmigos();
 })();
-</script></body></html>
+</script>
+</body>
+</html>

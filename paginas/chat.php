@@ -5,8 +5,8 @@ if (!isset($_SESSION['id_user'])) {
     exit();
 }
 $id_user = (int) $_SESSION['id_user'];
-require_once __DIR__.'/chat_support.php';
-$id_conversa = filter_var($_GET['id_conversa'] ?? null, FILTER_VALIDATE_INT, ['options'=>['min_range'=>1]]);
+require_once __DIR__ . '/chat_support.php';
+$id_conversa = filter_var($_GET['id_conversa'] ?? null, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
 if (!$id_conversa) {
     header('Location: conversas.php');
     exit();
@@ -28,7 +28,7 @@ $participantes = $stmt->fetchAll(PDO::FETCH_ASSOC);
 $isGrupo = $conversa['tipo'] === 'grupo';
 $tituloConversa = $isGrupo ? ($conversa['nome_conversa'] ?: 'Grupo') : ($conversa['username_parceiro'] ?: 'Conversa direta');
 $fotoConversa = $isGrupo ? ($conversa['foto_conversa_url'] ?? '') : ($conversa['foto_parceiro'] ?? '');
-$esc = static fn($valor) => htmlspecialchars((string) ($valor ?? ''), ENT_QUOTES, 'UTF-8');
+$esc = static fn ($valor) => htmlspecialchars((string) ($valor ?? ''), ENT_QUOTES, 'UTF-8');
 $chatCsrf = chatCsrf();
 $imagemUrl = static function ($caminho) use ($esc) {
     return $esc(nookPublicUrl($caminho));
@@ -48,34 +48,41 @@ $imagemUrl = static function ($caminho) use ($esc) {
     <title><?= $esc($tituloConversa) ?> · Mensagens Nook</title>
 </head>
 <body>
-<?php require_once __DIR__ . '/header.php'; ?>
-<main class="chat-page">
-    <aside class="chat-sidebar">
-        <header><div><p>NOOK DIRECT</p><h1>Mensagens</h1></div><a href="conversas.php" aria-label="Ver todas as conversas"><i data-lucide="square-pen"></i></a></header>
-        <label class="inbox-search"><i data-lucide="search"></i><input type="search" id="busca-conversa-chat" placeholder="Pesquisar conversas"></label>
-        <div id="lista-conversas-chat" class="inbox-list"></div>
-    </aside>
+    <?php require_once __DIR__ . '/header.php'; ?>
+    <main class="chat-page">
+        <aside class="chat-sidebar">
+            <header>
+                <div>
+                    <p>NOOK DIRECT</p>
+                    <h1>Mensagens</h1>
+                </div><a href="conversas.php" aria-label="Ver todas as conversas"><i data-lucide="square-pen"></i></a>
+            </header>
+            <label class="inbox-search"><i data-lucide="search"></i><input type="search" id="busca-conversa-chat" placeholder="Pesquisar conversas"></label>
+            <div id="lista-conversas-chat" class="inbox-list"></div>
+        </aside>
 
-    <section class="chat-window" data-conversa="<?= $id_conversa ?>" data-user="<?= $id_user ?>">
-        <header class="chat-topbar">
-            <a href="<?= $isGrupo ? 'gerenciar_grupo.php?id_conversa=' . $id_conversa : 'perfil_user_terceiro.php?id_user=' . (int) ($participantes[0]['id_user'] ?? 0) ?>" class="chat-contact">
-                <?php if ($fotoConversa): ?><img src="<?= $imagemUrl($fotoConversa) ?>" alt="">
-                <?php else: ?><span class="chat-avatar-fallback"><?= $esc(mb_strtoupper(mb_substr($tituloConversa, 0, 1))) ?></span><?php endif; ?>
-                <span><strong><?= $esc($tituloConversa) ?></strong><small><?= $isGrupo ? count($participantes) + 1 . ' participantes' : 'Conversa direta' ?></small></span>
-            </a>
-            <a class="chat-info-button" href="<?= $isGrupo ? 'gerenciar_grupo.php' : 'gerenciar_conversa.php' ?>?id_conversa=<?= $id_conversa ?>" aria-label="Informações da conversa"><i data-lucide="ellipsis"></i></a>
-        </header>
-        <div class="chat-messages" id="mensagens-conversa" aria-live="polite"><p class="chat-loading">Carregando mensagens...</p></div>
-        <p class="chat-status" id="status-mensagem" role="status" aria-live="polite"></p>
-        <form class="chat-composer" id="form-mensagem">
-            <label class="sr-only" for="input-mensagem">Escreva uma mensagem</label>
-            <textarea id="input-mensagem" name="mensagem" rows="1" placeholder="Escreva uma mensagem..." required></textarea>
-            <button type="submit" aria-label="Enviar mensagem"><i data-lucide="send"></i></button>
-        </form>
-    </section>
-</main>
-<?php require_once __DIR__ . '/footer.php'; ?>
-<script>
+        <section class="chat-window" data-conversa="<?= $id_conversa ?>" data-user="<?= $id_user ?>">
+            <header class="chat-topbar">
+                <a href="<?= $isGrupo ? 'gerenciar_grupo.php?id_conversa=' . $id_conversa : 'perfil_user_terceiro.php?id_user=' . (int) ($participantes[0]['id_user'] ?? 0) ?>" class="chat-contact">
+                    <?php if ($fotoConversa): ?><img src="<?= $imagemUrl($fotoConversa) ?>" alt="">
+                    <?php else: ?><span class="chat-avatar-fallback"><?= $esc(mb_strtoupper(mb_substr($tituloConversa, 0, 1))) ?></span><?php endif; ?>
+                    <span><strong><?= $esc($tituloConversa) ?></strong><small><?= $isGrupo ? count($participantes) + 1 . ' participantes' : 'Conversa direta' ?></small></span>
+                </a>
+                <a class="chat-info-button" href="<?= $isGrupo ? 'gerenciar_grupo.php' : 'gerenciar_conversa.php' ?>?id_conversa=<?= $id_conversa ?>" aria-label="Informações da conversa"><i data-lucide="ellipsis"></i></a>
+            </header>
+            <div class="chat-messages" id="mensagens-conversa" aria-live="polite">
+                <p class="chat-loading">Carregando mensagens...</p>
+            </div>
+            <p class="chat-status" id="status-mensagem" role="status" aria-live="polite"></p>
+            <form class="chat-composer" id="form-mensagem">
+                <label class="sr-only" for="input-mensagem">Escreva uma mensagem</label>
+                <textarea id="input-mensagem" name="mensagem" rows="1" placeholder="Escreva uma mensagem..." required></textarea>
+                <button type="submit" aria-label="Enviar mensagem"><i data-lucide="send"></i></button>
+            </form>
+        </section>
+    </main>
+    <?php require_once __DIR__ . '/footer.php'; ?>
+    <script>
     const idConversa = <?= json_encode($id_conversa) ?>;
     const idUsuarioAtual = <?= json_encode($id_user) ?>;
     const chatCsrf = <?= json_encode($chatCsrf) ?>;

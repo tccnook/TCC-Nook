@@ -1,1 +1,23 @@
-(()=>{'use strict';const menu=document.querySelector('[data-writing-menu]'),search=document.querySelector('[data-writing-search]'),profile=document.getElementById('btnMenuPerfil');menu?.addEventListener('click',event=>{event.stopPropagation();profile?.click();menu.setAttribute('aria-expanded',profile?.getAttribute('aria-expanded')||'false');});search?.addEventListener('click',()=>{const open=document.body.classList.toggle('writing-search-open');search.setAttribute('aria-expanded',String(open));if(open)document.getElementById('pesquisa-header')?.focus();});document.addEventListener('keydown',event=>{if(event.key==='Escape'&&document.body.classList.contains('writing-search-open')){document.body.classList.remove('writing-search-open');search?.setAttribute('aria-expanded','false');search?.focus();}});})();
+(() => {
+    "use strict";
+    const menu = document.querySelector("[data-writing-menu]"),
+        search = document.querySelector("[data-writing-search]"),
+        profile = document.getElementById("btnMenuPerfil");
+    menu?.addEventListener("click", (event) => {
+        event.stopPropagation();
+        profile?.click();
+        menu.setAttribute("aria-expanded", profile?.getAttribute("aria-expanded") || "false");
+    });
+    search?.addEventListener("click", () => {
+        const open = document.body.classList.toggle("writing-search-open");
+        search.setAttribute("aria-expanded", String(open));
+        if (open) document.getElementById("pesquisa-header")?.focus();
+    });
+    document.addEventListener("keydown", (event) => {
+        if (event.key === "Escape" && document.body.classList.contains("writing-search-open")) {
+            document.body.classList.remove("writing-search-open");
+            search?.setAttribute("aria-expanded", "false");
+            search?.focus();
+        }
+    });
+})();
