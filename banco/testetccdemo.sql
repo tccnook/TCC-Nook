@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict QxU6PBpHvCTnh8Xag5Y2VE5RqjsBPSPRhTJFYZ2sgD5tokW4zmFtatQA7Uryw36
+\restrict Vn0iPyE54k0UrxCJtIJtj1rWGlVUwGhCitftg7Ku2MTgcCk03svAlTcfx6R4bRk
 
 -- Dumped from database version 18.6
 -- Dumped by pg_dump version 18.6
@@ -32,11 +32,45 @@ CREATE TABLE public.admin (
     nome_completo character varying(100),
     email character varying(100),
     senha character varying(250),
-    criacao_conta timestamp without time zone DEFAULT now()
+    criacao_conta timestamp without time zone DEFAULT now(),
+    nivel text DEFAULT 'supervisionado'::text NOT NULL,
+    ativo boolean DEFAULT true NOT NULL,
+    excluido_em timestamp with time zone,
+    id_user integer,
+    CONSTRAINT admin_nivel_check CHECK ((nivel = ANY (ARRAY['provisorio'::text, 'supremo'::text, 'gestor'::text, 'supervisionado'::text])))
 );
 
 
 ALTER TABLE public.admin OWNER TO postgres;
+
+--
+-- Name: admin_auditoria; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.admin_auditoria (
+    id bigint NOT NULL,
+    id_admin integer,
+    acao text NOT NULL,
+    alvo text NOT NULL,
+    criado_em timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+ALTER TABLE public.admin_auditoria OWNER TO postgres;
+
+--
+-- Name: admin_auditoria_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+ALTER TABLE public.admin_auditoria ALTER COLUMN id ADD GENERATED ALWAYS AS IDENTITY (
+    SEQUENCE NAME public.admin_auditoria_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1
+);
+
 
 --
 -- Name: admin_id_admin_seq; Type: SEQUENCE; Schema: public; Owner: postgres
@@ -44,6 +78,43 @@ ALTER TABLE public.admin OWNER TO postgres;
 
 ALTER TABLE public.admin ALTER COLUMN id_admin ADD GENERATED ALWAYS AS IDENTITY (
     SEQUENCE NAME public.admin_id_admin_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1
+);
+
+
+--
+-- Name: admin_solicitacao; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.admin_solicitacao (
+    id bigint NOT NULL,
+    solicitante integer NOT NULL,
+    rota text NOT NULL,
+    dados jsonb NOT NULL,
+    assinatura text NOT NULL,
+    estado text DEFAULT 'pendente'::text NOT NULL,
+    criado_em timestamp with time zone DEFAULT now() NOT NULL,
+    decidido_por integer,
+    decidido_em timestamp with time zone,
+    expira_em timestamp with time zone,
+    justificativa text DEFAULT ''::text NOT NULL,
+    utilizado_em timestamp with time zone,
+    CONSTRAINT admin_solicitacao_estado_check CHECK ((estado = ANY (ARRAY['pendente'::text, 'aprovada'::text, 'rejeitada'::text, 'utilizada'::text, 'cancelada'::text])))
+);
+
+
+ALTER TABLE public.admin_solicitacao OWNER TO postgres;
+
+--
+-- Name: admin_solicitacao_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+ALTER TABLE public.admin_solicitacao ALTER COLUMN id ADD GENERATED ALWAYS AS IDENTITY (
+    SEQUENCE NAME public.admin_solicitacao_id_seq
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
@@ -374,6 +445,39 @@ ALTER TABLE public.curtida OWNER TO postgres;
 
 ALTER TABLE public.curtida ALTER COLUMN id_curtida ADD GENERATED ALWAYS AS IDENTITY (
     SEQUENCE NAME public.curtida_id_curtida_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1
+);
+
+
+--
+-- Name: denuncia; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.denuncia (
+    id_denuncia integer NOT NULL,
+    id_denunciado integer NOT NULL,
+    id_denunciador integer NOT NULL,
+    tipo_denunciado character varying(30) NOT NULL,
+    denuncia text NOT NULL,
+    status character varying(20) DEFAULT 'pendente'::character varying NOT NULL,
+    emissao timestamp without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    resolvido timestamp without time zone,
+    CONSTRAINT denuncia_status_check CHECK (((status)::text = ANY ((ARRAY['pendente'::character varying, 'ignorada'::character varying, 'resolvida'::character varying])::text[])))
+);
+
+
+ALTER TABLE public.denuncia OWNER TO postgres;
+
+--
+-- Name: denuncia_id_denuncia_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+ALTER TABLE public.denuncia ALTER COLUMN id_denuncia ADD GENERATED ALWAYS AS IDENTITY (
+    SEQUENCE NAME public.denuncia_id_denuncia_seq
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
@@ -1136,7 +1240,10 @@ CREATE TABLE public.usuario (
     senha character varying(250) NOT NULL,
     criacao_conta timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
     google_id character varying(255),
-    autor_desde timestamp with time zone
+    autor_desde timestamp with time zone,
+    ativo boolean DEFAULT true NOT NULL,
+    excluido_em timestamp with time zone,
+    escrita_bloqueada boolean DEFAULT false NOT NULL
 );
 
 
@@ -1308,7 +1415,29 @@ ALTER TABLE ONLY public.progresso_leitura ALTER COLUMN id_progresso SET DEFAULT 
 -- Data for Name: admin; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.admin (id_admin, nome_completo, email, senha, criacao_conta) FROM stdin;
+COPY public.admin (id_admin, nome_completo, email, senha, criacao_conta, nivel, ativo, excluido_em, id_user) FROM stdin;
+5	Murillo Barboza de Oliveira	murillograndao@gmail.com	$2y$10$YwNa8YCocZyf4y1lm1p/T.9w1LVZYQ423PCAY1pL9RSibtm1IVBg.	2026-11-11 13:16:25.235494	supremo	t	\N	\N
+3	Administrador padrão	adm@adm.adm	$2y$10$qE518vYahrFepVvcVnjMeeGEJ8ldwqhvZs5HoC.7/wmrRjJnUc.Si	2026-11-10 09:54:03.201517	provisorio	f	\N	\N
+4	Caio Barile Passoli	caio@caio.caio	$2y$10$oFtOfhBdBFFUMs7zrt1y4OS8d9z7Y0PFDn9o1cE7mrwgzy2vAj.hG	2026-11-11 09:13:02.77403	supervisionado	f	2026-11-11 13:16:58.099044-03	\N
+\.
+
+
+--
+-- Data for Name: admin_auditoria; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.admin_auditoria (id, id_admin, acao, alvo, criado_em) FROM stdin;
+1	3	configurar_supremo	murillograndao@gmail.com	2026-11-11 13:16:25.235494-03
+2	5	nivel_admin	4	2026-11-11 13:16:51.996361-03
+3	5	excluir_admin	4	2026-11-11 13:16:58.099044-03
+\.
+
+
+--
+-- Data for Name: admin_solicitacao; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.admin_solicitacao (id, solicitante, rota, dados, assinatura, estado, criado_em, decidido_por, decidido_em, expira_em, justificativa, utilizado_em) FROM stdin;
 \.
 
 
@@ -1326,6 +1455,9 @@ COPY public.autor (id_autor, nome_autor, autor, bio, foto_url) FROM stdin;
 1	Machado de Assis	machado-de-assis	\N	\N
 2	Edgar Allan Paul	edgar-allan-paul	\N	\N
 4	Abel Ferreira	abel-ferreira	\N	\N
+20	J. K. Rowling	openlibrary-OL23919A	\N	https://covers.openlibrary.org/a/olid/OL23919A-M.jpg?default=false
+21	Emily Brontë	openlibrary-OL24529A	\N	https://covers.openlibrary.org/a/olid/OL24529A-M.jpg?default=false
+22	Mary Shelley	openlibrary-OL25342A	\N	https://covers.openlibrary.org/a/olid/OL25342A-M.jpg?default=false
 \.
 
 
@@ -1360,6 +1492,11 @@ COPY public.autor_user (id_user, id_autor, id) FROM stdin;
 35	8	40
 35	3	41
 35	1	42
+128	20	43
+128	21	44
+128	22	45
+128	9	46
+128	5	47
 \.
 
 
@@ -1474,6 +1611,7 @@ COPY public.conta (id_user, foto_perfil_url, bio, visibilidade, banner_url) FROM
 29	\N	\N	publico	\N
 34	img/foto_perfil/3ed8d904af47acd0575117521bd2ff00.webp	Eu amo carregar livros\r\nEu serei o maior leitor de livros de todos os tempos	publico	img/banner_perfil/bcc9a04a2a207f6b3838b012cac3c432.webp
 35	img/foto_perfil/38389a8252d444a365b3637b7c2ee853.webp	Eu sou o maior amante de livros de todos os tempos\r\neu vou ler todos os livros de todos os tempos	publico	img/banner_perfil/d6e03b9ebab35b30eac75c32179e4e47.webp
+128	\N	\N	publico	\N
 \.
 
 
@@ -1483,6 +1621,12 @@ COPY public.conta (id_user, foto_perfil_url, bio, visibilidade, banner_url) FROM
 
 COPY public.conversa (id_conversa, tipo, nome_conversa, foto_conversa_url, id_dono, criacao) FROM stdin;
 1	direct	muxys	img/foto_perfil/3ed8d904af47acd0575117521bd2ff00.webp	35	2026-10-20 18:16:06.889677
+2	direct	mais_testes	\N	35	2026-11-11 08:43:10.824124
+3	direct	selmao	\N	35	2026-11-11 08:43:15.436368
+4	direct	Lucas P	\N	35	2026-11-11 08:43:16.852339
+5	direct	luizviado	\N	35	2026-11-11 08:43:17.738109
+6	direct	usuario1	\N	35	2026-11-11 08:43:18.537767
+7	direct	fsdf	\N	35	2026-11-11 08:43:19.330059
 \.
 
 
@@ -1493,6 +1637,18 @@ COPY public.conversa (id_conversa, tipo, nome_conversa, foto_conversa_url, id_do
 COPY public.conversa_participante (id_conversa, id_user, cargo, joinet_at, last_read_message) FROM stdin;
 1	35	Integrante	2026-10-20 18:16:06.889677	2026-10-20 18:16:06.889677
 1	34	Integrante	2026-10-20 18:16:06.889677	2026-10-20 18:16:06.889677
+2	35	Integrante	2026-11-11 08:43:10.824124	2026-11-11 08:43:10.824124
+2	128	Integrante	2026-11-11 08:43:10.824124	2026-11-11 08:43:10.824124
+3	35	Integrante	2026-11-11 08:43:15.436368	2026-11-11 08:43:15.436368
+3	29	Integrante	2026-11-11 08:43:15.436368	2026-11-11 08:43:15.436368
+4	35	Integrante	2026-11-11 08:43:16.852339	2026-11-11 08:43:16.852339
+4	28	Integrante	2026-11-11 08:43:16.852339	2026-11-11 08:43:16.852339
+5	35	Integrante	2026-11-11 08:43:17.738109	2026-11-11 08:43:17.738109
+5	27	Integrante	2026-11-11 08:43:17.738109	2026-11-11 08:43:17.738109
+6	35	Integrante	2026-11-11 08:43:18.537767	2026-11-11 08:43:18.537767
+6	24	Integrante	2026-11-11 08:43:18.537767	2026-11-11 08:43:18.537767
+7	35	Integrante	2026-11-11 08:43:19.330059	2026-11-11 08:43:19.330059
+7	23	Integrante	2026-11-11 08:43:19.330059	2026-11-11 08:43:19.330059
 \.
 
 
@@ -1504,6 +1660,14 @@ COPY public.curtida (id_curtida, id_user, categoria_curtido, id_coisocurtido) FR
 1	19	post	1
 2	19	post	2
 3	19	post	3
+\.
+
+
+--
+-- Data for Name: denuncia; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.denuncia (id_denuncia, id_denunciado, id_denunciador, tipo_denunciado, denuncia, status, emissao, resolvido) FROM stdin;
 \.
 
 
@@ -1561,10 +1725,10 @@ COPY public.livro (id_livro, titulo_livro, resumo_livro, class_ind, nome_autor, 
 5	Guardador de Rebanhos	Guardador de Rebanhos, de Fernando Pessoa, escrito sob o heter“nimo Alberto Caeiro, ‚ um conjunto de poemas que apresenta uma visÆo simples, direta e profundamente ligada … natureza. O eu l¡rico rejeita interpreta‡äes filos¢ficas e metaf¡sicas do mundo e prefere observar as coisas exatamente como elas sÆo. Para Caeiro, pensar demais sobre a realidade pode afastar o ser humano da experiˆncia verdadeira de simplesmente ver, sentir e existir. A natureza, os animais, as  rvores, as flores, o c‚u e as sensa‡äes cotidianas tornam-se elementos centrais de sua poesia. O poema tamb‚m questiona conceitos tradicionais sobre Deus, espiritualidade e transcendˆncia, defendendo uma esp‚cie de rela‡Æo concreta e imediata com o mundo.	10	JoÆo Pessoa	\N	Guardador de Rebanhos acompanha o olhar de um eu l¡rico que se apresenta como um pastor que guarda rebanhos, embora esses rebanhos sejam, sobretudo, pensamentos e sensa‡äes. Ao observar a natureza, ele desenvolve uma filosofia baseada na simplicidade, recusando explica‡äes abstratas e procurando enxergar o mundo sem atribuir-lhe significados ocultos. Ao longo da obra, a natureza funciona como fonte de conhecimento e verdade, enquanto o pensamento excessivo ‚ visto como algo que complica aquilo que deveria ser simples. A obra constr¢i, assim, uma reflexÆo po‚tica sobre a existˆncia, a percep‡Æo e a rela‡Æo do ser humano com a realidade.	../img/capas_livros/rebanhos-capa.jpg	2026-08-10 13:21:21.325504	Portugues-BR	publico	\N	\N	\N	\N	\N	\N	\N	\N
 41	Ficciones	\N	0	Jorge Luis Borges	\N	A collection of his short stories in which Borges often uses the labyrinth as a literary device to expound his ideas on all aspects of human life and endeavor.\r\n\r\n\r\n----------\r\nContains:\r\n[Tlön, Uqbar, Orbis Tertius](https://openlibrary.org/works/OL444914W)	https://covers.openlibrary.org/b/id/10832290-L.jpg	1945-01-01 00:00:00	pt	publico	\N	\N	OL110971W	\N	\N	openlibrary	\N	\N
 89	Sem título	\N	0	murillo oliveira	35	\N	/TCC-Nook/img/livro-sem-capa.svg	\N	pt-BR	privado	\N	\N	\N	\N	\N	nook	\N	\N
-19	Sem título	\N	0	murillo oliveira	35	\N	/TCC-Nook/img/livro-sem-capa.svg	\N	pt-BR	privado	\N	\N	\N	\N	\N	nook	\N	\N
 20	Sem título	\N	0	murillo oliveira	35	\N	/TCC-Nook/img/livro-sem-capa.svg	\N	pt-BR	privado	\N	\N	\N	\N	\N	nook	\N	\N
 21	Sem título	\N	0	murillo oliveira	35	\N	/TCC-Nook/img/livro-sem-capa.svg	\N	pt-BR	privado	\N	\N	\N	\N	\N	nook	\N	\N
 23	Sem título	\N	0	murillo oliveira	35	\N	/TCC-Nook/img/livro-sem-capa.svg	\N	pt-BR	privado	\N	\N	\N	\N	\N	nook	\N	\N
+19	Sem título	\N	0	murillo oliveira	35	\N	/TCC-Nook/img/livro-sem-capa.svg	\N	pt-BR	privado	\N	\N	\N	\N	\N	nook	\N	\N
 56	A Torre Negra: A Escolha dos Três	\N	0	Stephen King	\N	\N	https://covers.openlibrary.org/b/id/15117963-L.jpg	2004-01-01 00:00:00	pt	publico	416	\N	OL81616W	\N	\N	openlibrary	\N	\N
 22	Livro de teste real	resumo teste do livro teste pra testar a capa teste com um resumo teste uma história teste e tudo é um teste	0	murillo oliveira	35	resumo teste do livro teste pra testar a capa teste com um resumo teste uma história teste e tudo é um teste	/TCC-Nook/paginas/arquivo_obra.php?id_livro=22&tipo=capa&versao=53	2026-10-22 19:43:35.913532	pt-BR	publico	3	\N	\N	\N	\N	nook	\N	\N
 57	O Iluminado	\N	0	Stephen King	\N	O romance, magistralmente levado ao cinema por Stanley Kubrick, continua apaixonando (e aterrorizando) novas gerações de leitores. A luta assustadora entre dois mundos. Um menino e o desejo assassino de poderosas forças malignas. Uma família refém do mal. Nesta guerra sem testemunhas, vencerá o mais forte. Danny Torrance não é um menino comum. É capaz de ouvir pensamentos e transportar-se no tempo. Danny é iluminado. Será uma maldição ou uma bênção? A resposta pode estar guardada na imponência assustadora do hotel Overlook. Em O iluminado, quando Jack Torrance consegue o emprego de zelador no velho hotel, todos os problemas da família parecem estar solucionados. Não mais o desemprego e as noites de bebedeiras. Não mais o sofrimento da esposa, Wendy. Tranquilidade e ar puro para o pequeno Danny livrar-se das convulsões que assustam a família. Só que o Overlook não é um hotel comum. O tempo esqueceu-se de enterrar velhos ódios e de cicatrizar antigas feridas, e espíritos malignos ainda residem nos corredores. O hotel é uma chaga aberta de ressentimento e desejo de vingança. É uma sentença de morte. E somente os poderes de Danny podem fazer frente à disseminação do mal.	https://covers.openlibrary.org/b/id/14834369-L.jpg	2012-11-19 00:00:00	pt	publico	464	\N	OL81633W	\N	\N	openlibrary	\N	\N
@@ -1572,6 +1736,7 @@ COPY public.livro (id_livro, titulo_livro, resumo_livro, class_ind, nome_autor, 
 37	Dom Casmurro	\N	0	Machado de Assis	\N	**Dom Casmurro**, publicado pela primeira vez em 1899, é um dos romances realistas mais importantes de Machado de Assis, considerado por alguns sua obra-prima. O livro narra a história de Bento Gonçalves desde sua juventude, abordando temas como religião, adultério e ambiguidade moral.	https://covers.openlibrary.org/b/id/647501-L.jpg	1900-01-01 00:00:00	pt	publico	\N	\N	OL1003040W	\N	\N	openlibrary	\N	\N
 58	Sem título	\N	0	murillo oliveira	35	\N	/TCC-Nook/img/livro-sem-capa.svg	\N	pt-BR	privado	\N	\N	\N	\N	\N	nook	\N	\N
 65	O Grande Deus Pã and Outros Contos de Horror	\N	0	Jan Wigmar, Arthur Machen	\N	\N	\N	2020-01-01 00:00:00	pt	publico	\N	\N	OL30583123W	\N	\N	openlibrary	\N	\N
+90	As Aventuras de Sherlock Holmes	\N	0	Arthur Conan Doyle	\N	Sir Arthur Conan Doyle virou uma página na história da literatura policial ao criar Sherlock Holmes, seu maior personagem. Detetive mais amado de todos os tempos, ícone da virada do século XIX para o século XX e símbolo de uma Inglaterra cavalheiresca e genial, mas também problemática e ambígua, Holmes tem suas aventuras reunidas numa edição comentada e ilustrada.\r\n\r\n\r\nO primeiro volume traz, na sequência em que foram originalmente publicados na Strand Magazine entre 1891 e 1892, os 12 contos que compõem As aventuras de Sherlock Holmes, entre eles "Escândalo na Boêmia", texto de estreia do personagem.\r\nCom notas de Leslie S. Klinger, a maior autoridade mundial no assunto, o livro procura esclarecer as dúvidas que ainda pairavam sobre os casos resolvidos por Holmes e Watson, além de trazer minuciosas informações sobre a época em que foram escritos.	https://covers.openlibrary.org/b/id/15255684-L.jpg	\N	pt	publico	484	\N	OL262421W	\N	\N	openlibrary	\N	\N
 \.
 
 
@@ -1594,6 +1759,7 @@ COPY public.livros_lidos (id_user, id_livro, atualizado_em) FROM stdin;
 35	3	2026-10-20 19:12:37.187583
 35	22	2026-10-22 21:44:42.572302
 35	56	2026-10-23 07:39:10.323089
+128	90	2026-10-30 10:46:16.41897
 \.
 
 
@@ -1655,6 +1821,7 @@ COPY public.meta_leitura_listas (id_meta, id_lista) FROM stdin;
 --
 
 COPY public.moderacao_obra (id, id_livro, id_admin, acao, motivo, criada_em) FROM stdin;
+9	19	3	retirar	Estou fazendo testes e quero saber o que acontece quando eu tiro um livro do ar	2026-11-11 09:10:01.711265-03
 \.
 
 
@@ -2167,6 +2334,11 @@ COPY public.preferencia_user (id_user, id_preferencia, id) FROM stdin;
 35	7	85
 35	9	86
 35	13	87
+128	1	88
+128	2	89
+128	9	90
+128	30	91
+128	31	92
 \.
 
 
@@ -2182,6 +2354,7 @@ COPY public.progresso_leitura (id_progresso, id_user, id_livro, capitulo_atual, 
 8	35	3	4	100.00	2026-10-20 19:12:37.187583
 99	35	56	1	100.00	2026-10-23 07:39:10.323089
 62	35	22	1	100.00	2026-10-22 21:45:10.749138
+112	128	90	1	100.00	2026-10-30 10:46:16.41897
 \.
 
 
@@ -2201,11 +2374,11 @@ COPY public.progresso_publicacao (id_user, id_livro, id_versao, pagina, concluid
 COPY public.publicacao_obra (id_livro, id_autor, modalidade, estado, titulo, resumo, id_genero, classificacao, capa_url, pdf_rascunho, revisao, atualizado_em, criado_em, retirado_em, motivo_retirada, id_versao_atual) FROM stdin;
 58	35	editor	rascunho	Ainda não tem título certo	Este livro é do  balaco baco mas eu ainda não sei sobre o que é	10	10	e0f264051e4ec9ec0ade310d0effc82d8f34cbaf.png	\N	18	2026-10-22 21:58:30.376757-03	2026-10-22 21:55:00.003622-03	\N	\N	\N
 22	35	editor	publicado	Livro de teste real	resumo teste do livro teste pra testar a capa teste com um resumo teste uma história teste e tudo é um teste	10	0	e438c31d58461c336c0c389fa0bb8199d265ac3e.webp	\N	37	2026-10-22 19:43:35.913532-03	2026-10-20 19:49:55.772642-03	\N	\N	53
-19	35	editor	excluido			\N	\N	a69c4dc9fd52a6a290e6a931f8b408487bf9c609.webp	\N	14	2026-10-20 19:44:32.592729-03	2026-10-20 19:40:48.533691-03	\N	\N	\N
 20	35	pdf	rascunho			\N	\N	\N	\N	1	2026-10-20 19:44:35.886045-03	2026-10-20 19:44:35.886045-03	\N	\N	\N
 21	35	editor	arquivado	Livro irado de teste		17	0	\N	\N	8	2026-10-20 19:48:28.026284-03	2026-10-20 19:47:09.56507-03	\N	\N	\N
 23	35	pdf	rascunho	Livro de teste	um livro teste com um resumo teste pra testar a capa teste dos testes de resumo e teste de publicação	14	0	c3a209c7a84d5970f55c1eff4d95d621a7f4f105.webp	\N	8	2026-10-20 20:32:31.174303-03	2026-10-20 20:11:25.74665-03	\N	\N	\N
 89	35	editor	rascunho	Livro de teste	livro teste	\N	\N	\N	\N	3	2026-10-24 09:34:38.112265-03	2026-10-24 09:34:28.918866-03	\N	\N	\N
+19	35	editor	excluido			\N	\N	a69c4dc9fd52a6a290e6a931f8b408487bf9c609.webp	\N	15	2026-10-20 19:44:32.592729-03	2026-10-20 19:40:48.533691-03	2026-11-11 09:10:01.711265-03	Estou fazendo testes e quero saber o que acontece quando eu tiro um livro do ar	\N
 \.
 
 
@@ -2252,6 +2425,10 @@ a58423f310866b73d323ceee882611d02c3f014ac62094973a6020fe78c3fc3b	14	Python-urlli
 245fda940274261dc0c643d8c270cf2252b14796839bda243797ae4342119aa1	14	Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/154.0.0.0 Safari/537.36	2026-10-20 19:20:39.870474-03	2026-10-20 22:34:51.274027-03
 1d7d950ac34a7708013964c8444b4fb36bb87575f7fae7d60f3236c221fb4dea	19	Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/154.0.0.0 Safari/537.36	2026-10-20 19:20:44.772393-03	2026-10-20 22:34:51.274027-03
 f9563420e0656d6930421a3f7480bec672f939ff77ca9e350bcaf2a4c9ec3849	35	Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/154.0.0.0 Safari/537.36	2026-10-24 08:28:05.569891-03	\N
+b94059ef7134db83d746364955c055d81413e873eaa0be5500aec64309ec1084	128	Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/156.0.0.0 Safari/537.36	2026-10-30 10:42:18.547654-03	2026-10-30 10:44:56.795801-03
+fcd4f7c4ef561a1707983106ddaf4bf932946e2b77b4a630a0088be7755836d1	128	Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/156.0.0.0 Safari/537.36	2026-10-30 10:45:20.57201-03	\N
+3dd700640528626a21677116e349111bb6e8079bc82a1060ec802e4d76adcf78	35	Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/157.0.0.0 Safari/537.36	2026-11-10 09:39:24.923757-03	\N
+8c3f5f36cd730c00b42457cd7d2305f7979706d3a626a823dd33e1c4fae633d7	35	Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/157.0.0.0 Safari/537.36	2026-11-11 08:42:52.996645-03	\N
 \.
 
 
@@ -2279,22 +2456,23 @@ COPY public.top5_livros (id_user, id_livro, posicao, atualizado_em) FROM stdin;
 -- Data for Name: usuario; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.usuario (id_user, nome_completo, username, data_nascimento, email, senha, criacao_conta, google_id, autor_desde) FROM stdin;
-14	Miguel Campos	viadinho	1960-03-12	miguel@gmail.com	$2y$10$eZYaMKmWYI.NoM0j3EHHwuB5ijcjeLB1hfYDQsMGw//VeTPl4ogGO	2026-08-05 08:50:11.4769	\N	\N
-16	Pedro	podpedro	2001-09-11	pedro@gmail.com	$2y$10$OxRjZpneEul97RzqRrvsd.Cx/fLqgLz9IBk9pVMiwPgVGSXlhm9Yi	2026-08-06 11:15:00.456644	\N	\N
-17	Nook	NOOKADMIN	2026-02-02	tccnook@gmail.com	$2y$10$edZ3VgguFJoAOX7zbZTWY.Ie05aWBEjhQ83TfH8rOt.raSUHm7McW	2026-08-06 11:16:14.282838	115543703945018518444	\N
-18	Paulo	pauladentro	1967-07-12	paulo@gmail.com	$2y$10$U8sBW4gzzPpXLYn2pUNYY.Trzvz8eyge8br3b7TS3rKGBdq6csmW6	2026-08-06 11:17:13.697667	\N	\N
-20	Jeuca	jeuquinha	1870-05-12	jeuca@gmail.com	$2y$10$662GeaJa96f.QPgjlImNJOG/1lu0GdUyJ.r9GimSBq8kermA5zZxW	2026-08-06 15:37:05.928915	\N	\N
-21	Gabriel	gaybriel	2004-06-22	gabriel@gmail.com	$2y$10$kgtF.n/i.6lRjnBDUOapRelcJ89mlzhYUhRnPpSzN0U3ohbFA/6FK	2026-08-06 15:43:54.598026	\N	\N
-22	Mirian	mii	1912-12-12	mirian@gmail.com	$2y$10$RJQzpg1wk5gYoBeOfPVa0eBeLoraIIeVYrX8V8Pbl/ad9N9i2aVx.	2026-08-06 15:45:03.121692	\N	\N
-23	fsdf	fsdf	1999-09-21	fsdfsdfsdfsdfsdf	$2y$10$JEIPcLrkYrwip/Gl/n/tJO9utlt1RdnbIKzYyHrosCyNYHEnRdC5m	2026-08-06 15:46:16.596591	\N	\N
-24	Usuario1	usuario1	0205-03-12	usuario1@gmail.com	$2y$10$GIFMX/YuDNE18m1ym7WORuAbg58lpeUOj7UKH7001b8Ez5Hr2lVJG	2026-08-06 15:53:11.91489	\N	\N
-27	Projeto LITTERA	luizviado	2000-03-12	projetolittera2026@gmail.com	$2y$10$1K5vbJhwufuVWYg5CberAO6hmFLX/zR8pQJYcNZ6sxuidzf9lgcdS	2026-08-10 17:04:04.083766	109725691836031282460	\N
-28	lucas passoli	Lucas P	2004-09-13	lucaspassoli1309@gmail.com	$2y$10$NOvNUh.2gtHJXV95U3uU/.B7tp3ETcQkNJzy0L0VVpik3MqUwwq8i	2026-08-16 20:20:39.23169	\N	\N
-19	Caio Passoli	caico	2008-09-16	passolicaio@gmail.com	$2y$10$lKNJFtjCN0UedXL6R3mB9OrVqI.F7Zj0LnReH0YurYd5h71xAoTmK	2026-08-06 11:19:29.329523	114771290742095317837	\N
-29	Anselmo Paulo Florentino	selmao	1980-06-09	anselmo@gmail.com	$2y$10$6f.Fv3fslTq5ss5iC91TkuFE16FAWKOIOWyHeH9J7V77vLk2aElfS	2026-08-17 13:28:22.52121	\N	\N
-34	murillo oliveira	muxys	2008-11-09	murillograndao@gmail.com	$2y$10$Yo1DFFM0EEyc/8.S0sU8IuLkprE1dzGvPR6Lxxk7wZS/HUHPK1M8K	2026-09-07 19:23:26.888366	\N	\N
-35	murillo oliveira	teste_muxys	2008-11-09	murillo.oliveira212@gmail.com	$2y$10$K/g9JWIIQCNJ7I9uM1zZc.BeiXHdqY4KZ6C65SBNIxdxz8lcYqk46	2026-10-20 18:09:24.501171	\N	2026-10-20 19:38:53.847173-03
+COPY public.usuario (id_user, nome_completo, username, data_nascimento, email, senha, criacao_conta, google_id, autor_desde, ativo, excluido_em, escrita_bloqueada) FROM stdin;
+14	Miguel Campos	viadinho	1960-03-12	miguel@gmail.com	$2y$10$eZYaMKmWYI.NoM0j3EHHwuB5ijcjeLB1hfYDQsMGw//VeTPl4ogGO	2026-08-05 08:50:11.4769	\N	\N	t	\N	f
+16	Pedro	podpedro	2001-09-11	pedro@gmail.com	$2y$10$OxRjZpneEul97RzqRrvsd.Cx/fLqgLz9IBk9pVMiwPgVGSXlhm9Yi	2026-08-06 11:15:00.456644	\N	\N	t	\N	f
+17	Nook	NOOKADMIN	2026-02-02	tccnook@gmail.com	$2y$10$edZ3VgguFJoAOX7zbZTWY.Ie05aWBEjhQ83TfH8rOt.raSUHm7McW	2026-08-06 11:16:14.282838	115543703945018518444	\N	t	\N	f
+18	Paulo	pauladentro	1967-07-12	paulo@gmail.com	$2y$10$U8sBW4gzzPpXLYn2pUNYY.Trzvz8eyge8br3b7TS3rKGBdq6csmW6	2026-08-06 11:17:13.697667	\N	\N	t	\N	f
+20	Jeuca	jeuquinha	1870-05-12	jeuca@gmail.com	$2y$10$662GeaJa96f.QPgjlImNJOG/1lu0GdUyJ.r9GimSBq8kermA5zZxW	2026-08-06 15:37:05.928915	\N	\N	t	\N	f
+21	Gabriel	gaybriel	2004-06-22	gabriel@gmail.com	$2y$10$kgtF.n/i.6lRjnBDUOapRelcJ89mlzhYUhRnPpSzN0U3ohbFA/6FK	2026-08-06 15:43:54.598026	\N	\N	t	\N	f
+22	Mirian	mii	1912-12-12	mirian@gmail.com	$2y$10$RJQzpg1wk5gYoBeOfPVa0eBeLoraIIeVYrX8V8Pbl/ad9N9i2aVx.	2026-08-06 15:45:03.121692	\N	\N	t	\N	f
+23	fsdf	fsdf	1999-09-21	fsdfsdfsdfsdfsdf	$2y$10$JEIPcLrkYrwip/Gl/n/tJO9utlt1RdnbIKzYyHrosCyNYHEnRdC5m	2026-08-06 15:46:16.596591	\N	\N	t	\N	f
+24	Usuario1	usuario1	0205-03-12	usuario1@gmail.com	$2y$10$GIFMX/YuDNE18m1ym7WORuAbg58lpeUOj7UKH7001b8Ez5Hr2lVJG	2026-08-06 15:53:11.91489	\N	\N	t	\N	f
+27	Projeto LITTERA	luizviado	2000-03-12	projetolittera2026@gmail.com	$2y$10$1K5vbJhwufuVWYg5CberAO6hmFLX/zR8pQJYcNZ6sxuidzf9lgcdS	2026-08-10 17:04:04.083766	109725691836031282460	\N	t	\N	f
+28	lucas passoli	Lucas P	2004-09-13	lucaspassoli1309@gmail.com	$2y$10$NOvNUh.2gtHJXV95U3uU/.B7tp3ETcQkNJzy0L0VVpik3MqUwwq8i	2026-08-16 20:20:39.23169	\N	\N	t	\N	f
+19	Caio Passoli	caico	2008-09-16	passolicaio@gmail.com	$2y$10$lKNJFtjCN0UedXL6R3mB9OrVqI.F7Zj0LnReH0YurYd5h71xAoTmK	2026-08-06 11:19:29.329523	114771290742095317837	\N	t	\N	f
+29	Anselmo Paulo Florentino	selmao	1980-06-09	anselmo@gmail.com	$2y$10$6f.Fv3fslTq5ss5iC91TkuFE16FAWKOIOWyHeH9J7V77vLk2aElfS	2026-08-17 13:28:22.52121	\N	\N	t	\N	f
+34	murillo oliveira	muxys	2008-11-09	murillograndao@gmail.com	$2y$10$Yo1DFFM0EEyc/8.S0sU8IuLkprE1dzGvPR6Lxxk7wZS/HUHPK1M8K	2026-09-07 19:23:26.888366	\N	\N	t	\N	f
+35	murillo oliveira	teste_muxys	2008-11-09	murillo.oliveira212@gmail.com	$2y$10$K/g9JWIIQCNJ7I9uM1zZc.BeiXHdqY4KZ6C65SBNIxdxz8lcYqk46	2026-10-20 18:09:24.501171	\N	2026-10-20 19:38:53.847173-03	t	\N	f
+128	murillo oliveira	mais_testes	2008-11-09	murillograndao.o@gmail.com	$2y$10$HxyyJIN/YNZCMGHy/aaTaeGvTzoBvwmtG8th7eRfw.5rFwcdj4oMK	2026-10-30 10:42:18.491008	\N	\N	t	\N	f
 \.
 
 
@@ -2350,24 +2528,38 @@ COPY public.worldbuilding_registro (id, id_livro, tipo, nome, descricao, detalhe
 
 
 --
+-- Name: admin_auditoria_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.admin_auditoria_id_seq', 3, true);
+
+
+--
 -- Name: admin_id_admin_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.admin_id_admin_seq', 2, true);
+SELECT pg_catalog.setval('public.admin_id_admin_seq', 5, true);
+
+
+--
+-- Name: admin_solicitacao_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.admin_solicitacao_id_seq', 1, false);
 
 
 --
 -- Name: autor_id_autor_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.autor_id_autor_seq', 19, true);
+SELECT pg_catalog.setval('public.autor_id_autor_seq', 22, true);
 
 
 --
 -- Name: autor_user_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.autor_user_id_seq', 42, true);
+SELECT pg_catalog.setval('public.autor_user_id_seq', 47, true);
 
 
 --
@@ -2409,7 +2601,7 @@ SELECT pg_catalog.setval('public.comentario_obra_id_seq', 1, true);
 -- Name: conversa_id_conversa_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.conversa_id_conversa_seq', 1, true);
+SELECT pg_catalog.setval('public.conversa_id_conversa_seq', 7, true);
 
 
 --
@@ -2417,6 +2609,13 @@ SELECT pg_catalog.setval('public.conversa_id_conversa_seq', 1, true);
 --
 
 SELECT pg_catalog.setval('public.curtida_id_curtida_seq', 3, true);
+
+
+--
+-- Name: denuncia_id_denuncia_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.denuncia_id_denuncia_seq', 1, false);
 
 
 --
@@ -2437,7 +2636,7 @@ SELECT pg_catalog.setval('public.edicao_livro_id_seq', 41, true);
 -- Name: livro_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.livro_id_seq', 89, true);
+SELECT pg_catalog.setval('public.livro_id_seq', 90, true);
 
 
 --
@@ -2472,7 +2671,7 @@ SELECT pg_catalog.setval('public.meta_leitura_id_seq', 23, true);
 -- Name: moderacao_obra_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.moderacao_obra_id_seq', 8, true);
+SELECT pg_catalog.setval('public.moderacao_obra_id_seq', 9, true);
 
 
 --
@@ -2521,14 +2720,14 @@ SELECT pg_catalog.setval('public.preferencia_livro_id_seq', 87, true);
 -- Name: preferencia_user_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.preferencia_user_id_seq', 87, true);
+SELECT pg_catalog.setval('public.preferencia_user_id_seq', 92, true);
 
 
 --
 -- Name: progresso_leitura_id_progresso_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.progresso_leitura_id_progresso_seq', 111, true);
+SELECT pg_catalog.setval('public.progresso_leitura_id_progresso_seq', 112, true);
 
 
 --
@@ -2549,7 +2748,7 @@ SELECT pg_catalog.setval('public.resenha_id_resenha_seq', 3, true);
 -- Name: usuario_id_user_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.usuario_id_user_seq', 127, true);
+SELECT pg_catalog.setval('public.usuario_id_user_seq', 128, true);
 
 
 --
@@ -2581,6 +2780,14 @@ SELECT pg_catalog.setval('public.worldbuilding_registro_id_seq', 5, true);
 
 
 --
+-- Name: admin_auditoria admin_auditoria_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.admin_auditoria
+    ADD CONSTRAINT admin_auditoria_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: admin admin_email_key; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -2594,6 +2801,14 @@ ALTER TABLE ONLY public.admin
 
 ALTER TABLE ONLY public.admin
     ADD CONSTRAINT admin_pkey PRIMARY KEY (id_admin);
+
+
+--
+-- Name: admin_solicitacao admin_solicitacao_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.admin_solicitacao
+    ADD CONSTRAINT admin_solicitacao_pkey PRIMARY KEY (id);
 
 
 --
@@ -2690,6 +2905,14 @@ ALTER TABLE ONLY public.curtida
 
 ALTER TABLE ONLY public.denuncia_obra
     ADD CONSTRAINT denuncia_obra_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: denuncia denuncia_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.denuncia
+    ADD CONSTRAINT denuncia_pkey PRIMARY KEY (id_denuncia);
 
 
 --
@@ -2997,6 +3220,34 @@ ALTER TABLE ONLY public.worldbuilding_registro
 
 
 --
+-- Name: admin_solicitacao_assinatura; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX admin_solicitacao_assinatura ON public.admin_solicitacao USING btree (solicitante, rota, assinatura);
+
+
+--
+-- Name: admin_solicitacao_fila; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX admin_solicitacao_fila ON public.admin_solicitacao USING btree (estado, criado_em DESC);
+
+
+--
+-- Name: admin_supremo_unico; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE UNIQUE INDEX admin_supremo_unico ON public.admin USING btree (nivel) WHERE ((nivel = 'supremo'::text) AND ativo AND (excluido_em IS NULL));
+
+
+--
+-- Name: admin_usuario_unico; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE UNIQUE INDEX admin_usuario_unico ON public.admin USING btree (id_user) WHERE ((id_user IS NOT NULL) AND (excluido_em IS NULL));
+
+
+--
 -- Name: comentario_obra_livro; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -3015,6 +3266,13 @@ CREATE INDEX comentario_obra_usuario ON public.comentario_obra USING btree (id_u
 --
 
 CREATE INDEX denuncia_obra_estado ON public.denuncia_obra USING btree (estado, criada_em DESC);
+
+
+--
+-- Name: denuncia_pendentes_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX denuncia_pendentes_idx ON public.denuncia USING btree (tipo_denunciado, emissao DESC) WHERE ((status)::text = 'pendente'::text);
 
 
 --
@@ -3064,6 +3322,38 @@ CREATE INDEX worldbuilding_obra_tipo ON public.worldbuilding_registro USING btre
 --
 
 CREATE UNIQUE INDEX worldbuilding_resumo_unico ON public.worldbuilding_registro USING btree (id_livro) WHERE (tipo = 'resumo'::text);
+
+
+--
+-- Name: admin_auditoria admin_auditoria_id_admin_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.admin_auditoria
+    ADD CONSTRAINT admin_auditoria_id_admin_fkey FOREIGN KEY (id_admin) REFERENCES public.admin(id_admin) ON DELETE SET NULL;
+
+
+--
+-- Name: admin admin_id_user_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.admin
+    ADD CONSTRAINT admin_id_user_fkey FOREIGN KEY (id_user) REFERENCES public.usuario(id_user) ON DELETE SET NULL;
+
+
+--
+-- Name: admin_solicitacao admin_solicitacao_decidido_por_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.admin_solicitacao
+    ADD CONSTRAINT admin_solicitacao_decidido_por_fkey FOREIGN KEY (decidido_por) REFERENCES public.admin(id_admin);
+
+
+--
+-- Name: admin_solicitacao admin_solicitacao_solicitante_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.admin_solicitacao
+    ADD CONSTRAINT admin_solicitacao_solicitante_fkey FOREIGN KEY (solicitante) REFERENCES public.admin(id_admin);
 
 
 --
@@ -3152,6 +3442,14 @@ ALTER TABLE ONLY public.configuracao_usuario
 
 ALTER TABLE ONLY public.conversa
     ADD CONSTRAINT conversa_dono FOREIGN KEY (id_dono) REFERENCES public.usuario(id_user) ON DELETE CASCADE;
+
+
+--
+-- Name: denuncia denuncia_id_denunciador_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.denuncia
+    ADD CONSTRAINT denuncia_id_denunciador_fkey FOREIGN KEY (id_denunciador) REFERENCES public.usuario(id_user);
 
 
 --
@@ -3662,5 +3960,5 @@ ALTER TABLE ONLY public.worldbuilding_registro
 -- PostgreSQL database dump complete
 --
 
-\unrestrict QxU6PBpHvCTnh8Xag5Y2VE5RqjsBPSPRhTJFYZ2sgD5tokW4zmFtatQA7Uryw36
+\unrestrict Vn0iPyE54k0UrxCJtIJtj1rWGlVUwGhCitftg7Ku2MTgcCk03svAlTcfx6R4bRk
 
