@@ -98,7 +98,7 @@ function nookGoogleMailOAuthClient(): Google\Client
     $client->setClientId($clientId);
     $client->setClientSecret($clientSecret);
     $client->setRedirectUri($redirectUri);
-    $client->setScopes([Google\Service\Gmail::GMAIL_SEND]);
+    $client->setScopes(['openid', 'email', Google\Service\Gmail::GMAIL_SEND]);
     $client->setAccessType('offline');
     $client->setPrompt('consent');
 

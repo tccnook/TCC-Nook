@@ -29,8 +29,13 @@ try {
     }
     $client->setAccessToken($token);
 
-    $profile = (new Google\Service\Gmail($client))->users->getProfile('me');
-    $senderEmail = strtolower((string) $profile->getEmailAddress());
+    $identityToken = is_string($token['id_token'] ?? null) ? $token['id_token'] : '';
+    $identity = $identityToken !== '' ? $client->verifyIdToken($identityToken) : false;
+    if (!is_array($identity) || ($identity['email_verified'] ?? false) !== true) {
+        throw new RuntimeException('A identidade Gmail não foi confirmada.');
+    }
+
+    $senderEmail = strtolower((string) ($identity['email'] ?? ''));
     $expectedSender = strtolower(nookGoogleMailSender());
     if (!filter_var($senderEmail, FILTER_VALIDATE_EMAIL)
         || ($expectedSender !== '' && !hash_equals($expectedSender, $senderEmail))) {

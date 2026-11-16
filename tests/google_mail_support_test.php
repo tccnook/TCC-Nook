@@ -83,9 +83,11 @@ try {
     $check(
         $authorizationQuery['redirect_uri'] === 'http://localhost/TCC-Nook/paginas/gmail-oauth-callback.php'
             && str_contains($authorizationQuery['scope'], 'https://www.googleapis.com/auth/gmail.send')
+            && str_contains($authorizationQuery['scope'], 'openid')
+            && str_contains($authorizationQuery['scope'], 'email')
             && $authorizationQuery['access_type'] === 'offline'
             && $authorizationQuery['prompt'] === 'consent',
-        'OAuth requests persistent Gmail send authorization at the registered callback'
+        'OAuth requests verified sender identity and persistent Gmail send authorization'
     );
     putenv('GOOGLE_MAIL_CLIENT_ID=');
     putenv('GOOGLE_MAIL_REFRESH_TOKEN=');
