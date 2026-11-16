@@ -12,18 +12,20 @@ $published = $count("SELECT COUNT(*) FROM publicacao_obra WHERE estado = 'public
 $comments = $count('SELECT COUNT(*) FROM comentario');
 $bookReports = $count("SELECT COUNT(*) FROM denuncia_obra WHERE estado = 'aberta'");
 $commentReports = $count("SELECT COUNT(*) FROM denuncia WHERE status = 'pendente' AND tipo_denunciado = 'comentario'");
+$userReports = $count("SELECT COUNT(*) FROM denuncia WHERE status = 'pendente' AND tipo_denunciado = 'usuario'");
 $newUsers = $count("SELECT COUNT(*) FROM usuario WHERE criacao_conta >= $since");
 $newComments = $count("SELECT COUNT(*) FROM comentario WHERE criado_em >= $since");
 $daily = $conn->query("SELECT d::date AS dia, COUNT(u.id_user) AS total FROM generate_series($since, CURRENT_DATE, INTERVAL '1 day') d LEFT JOIN usuario u ON u.criacao_conta >= d AND u.criacao_conta < d + INTERVAL '1 day' GROUP BY d ORDER BY d")->fetchAll(PDO::FETCH_ASSOC);
 $types = $conn->query("SELECT modalidade, COUNT(*) AS total FROM publicacao_obra WHERE estado = 'publicado' AND retirado_em IS NULL GROUP BY modalidade ORDER BY total DESC, modalidade")->fetchAll(PDO::FETCH_ASSOC);
 $genres = $conn->query("SELECT g.nome_preferencia AS nome, COUNT(*) AS total FROM publicacao_obra p JOIN preferencia g ON g.id_preferencia = p.id_genero WHERE p.estado = 'publicado' AND p.retirado_em IS NULL GROUP BY g.id_preferencia, g.nome_preferencia ORDER BY total DESC, nome LIMIT 5")->fetchAll(PDO::FETCH_ASSOC);
-$reports = $conn->query("SELECT 'Obra' AS tipo, l.titulo_livro AS conteudo, d.motivo, d.criada_em AS data, 'moderacao_obras.php' AS href FROM denuncia_obra d JOIN livro l USING(id_livro) WHERE d.estado = 'aberta' UNION ALL SELECT 'Comentário', COALESCE(c.comentario, 'Comentário indisponível'), d.denuncia, d.emissao, 'denuncia_comentario.php' FROM denuncia d LEFT JOIN comentario c ON c.id_comentario = d.id_denunciado WHERE d.status = 'pendente' AND d.tipo_denunciado = 'comentario' ORDER BY data DESC LIMIT 3")->fetchAll(PDO::FETCH_ASSOC);
+$reports = $conn->query("SELECT 'Obra' AS tipo,l.titulo_livro AS conteudo,d.motivo,d.criada_em AS data,'moderacao_obras.php' AS href FROM denuncia_obra d JOIN livro l USING(id_livro) WHERE d.estado='aberta' UNION ALL SELECT 'Comentário',COALESCE(c.comentario,'Comentário indisponível'),d.denuncia,d.emissao,'denuncia_comentario.php' FROM denuncia d LEFT JOIN comentario c ON c.id_comentario=d.id_denunciado WHERE d.status='pendente' AND d.tipo_denunciado='comentario' UNION ALL SELECT 'Usuário',COALESCE(u.username,'Conta removida'),d.denuncia,d.emissao,'denuncia_usuario.php' FROM denuncia d LEFT JOIN usuario u ON u.id_user=d.id_denunciado WHERE d.status='pendente' AND d.tipo_denunciado='usuario' ORDER BY data DESC LIMIT 3")->fetchAll(PDO::FETCH_ASSOC);
 $activity = $conn->query("SELECT 'Novo usuário cadastrado' AS titulo, username AS detalhe, criacao_conta AS data, 'user' AS icone FROM usuario WHERE criacao_conta >= $since UNION ALL SELECT 'Obra atualizada', titulo, atualizado_em, 'book' FROM publicacao_obra WHERE estado = 'publicado' AND atualizado_em >= $since UNION ALL SELECT 'Nova denúncia de obra', motivo, criada_em, 'flag' FROM denuncia_obra WHERE criada_em >= $since UNION ALL SELECT 'Nova denúncia de comentário', denuncia, emissao, 'flag' FROM denuncia WHERE tipo_denunciado = 'comentario' AND emissao >= $since ORDER BY data DESC LIMIT 4")->fetchAll(PDO::FETCH_ASSOC);
 $sections = [
     ['Autores', 'crud_autores.php', $count('SELECT COUNT(*) FROM autor'), 'cadastrados', 'user'],
     ['Gêneros', 'crud_genero.php', $count('SELECT COUNT(*) FROM preferencia'), 'cadastrados', 'tag'],
     ['Denúncias de obras', 'moderacao_obras.php', $bookReports, 'pendentes', 'book'],
     ['Denúncias de comentários', 'denuncia_comentario.php', $commentReports, 'pendentes', 'message'],
+    ['Denúncias de usuários', 'denuncia_usuario.php', $userReports, 'pendentes', 'user'],
 ];
 $format = static fn($n): string => number_format((int) $n, 0, ',', '.');
 $maximum = max(4, (int) (ceil(max(1, ...array_column($daily, 'total')) / 4) * 4));
@@ -41,7 +43,7 @@ adminInicio('Visão geral', 'Acompanhe a atividade da plataforma, gerencie conte
     <button type="submit" class="secondary">Aplicar</button>
 </form>
 <section class="admin-stats" aria-label="Indicadores da plataforma">
-<?php foreach ([[$users, 'Usuários totais', "$newUsers novos no período", 'user'], [$published, 'Obras publicadas', 'Disponíveis na plataforma', 'book'], [$comments, 'Comentários', "$newComments novos no período", 'message'], [$bookReports + $commentReports, 'Denúncias pendentes', $bookReports + $commentReports > 0 ? 'Aguardando análise' : 'Nenhuma pendência', 'flag']] as [$value, $label, $note, $icon]): ?>
+<?php foreach ([[$users, 'Usuários totais', "$newUsers novos no período", 'user'], [$published, 'Obras publicadas', 'Disponíveis na plataforma', 'book'], [$comments, 'Comentários', "$newComments novos no período", 'message'], [$bookReports + $commentReports + $userReports, 'Denúncias pendentes', $bookReports + $commentReports + $userReports > 0 ? 'Aguardando análise' : 'Nenhuma pendência', 'flag']] as [$value, $label, $note, $icon]): ?>
 <article class="admin-panel admin-stat"><span class="admin-icon-disc"><?= adminIcon($icon) ?></span><div><strong><?= $format($value) ?></strong><span><?= $label ?></span><small><?= adminEscape($note) ?></small></div><span class="admin-stat-watermark"><?= adminIcon($icon) ?></span></article>
 <?php endforeach; ?>
 </section>

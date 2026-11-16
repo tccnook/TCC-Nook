@@ -38,6 +38,7 @@ function registrarComentarioLivro(PDO $conn, int $livro, int $usuario, string $t
             throw new InvalidArgumentException('Publicação indisponível.');
         }
     }
+    require_once __DIR__ . '/notifications_support.php';
     require_once __DIR__ . '/privacy_settings.php';
     if ($dados['id_user'] && !interacaoPermitida($conn, 'comentarios', (int) $dados['id_user'], $usuario)) {
         throw new DomainException('O autor não permite este comentário.');
@@ -46,5 +47,11 @@ function registrarComentarioLivro(PDO $conn, int $livro, int $usuario, string $t
     $destinos = destinosMencoes($conn, $texto, $usuario);
     $stmt = $conn->prepare("INSERT INTO comentario(id_user,categoria_curtida,id_coisocurtido,comentario) VALUES(?,'livro',?,?)");
     $stmt->execute([$usuario, $livro, $texto]);
+    $stmt = $conn->prepare("SELECT id_autor FROM publicacao_obra WHERE id_livro=? AND estado='publicado' AND retirado_em IS NULL");
+    $stmt->execute([$livro]);
+    if ($autor = $stmt->fetchColumn()) {
+        registrarNotificacao($conn, (int) $autor, $usuario, 'comentario_livro', $livro);
+    }
+
     registrarMencoes($conn, $destinos, $usuario, 'livro', $livro);
 }

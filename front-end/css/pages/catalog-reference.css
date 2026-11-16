@@ -3,25 +3,25 @@
     padding-top: 34px;
 }
 .catalog-intro h1 {
-    font-size: clamp(1.8rem, 3.1vw, 2.65rem);
+    font-size: var(--font-size-title);
     font-weight: 500;
     letter-spacing: -0.035em;
 }
 .catalog-intro > p:not(.catalog-eyebrow) {
-    font-size: 0.94rem;
+    font-size: var(--font-size-body);
     margin: 10px 0 18px;
 }
 .catalog-search {
     max-width: 650px;
     height: 48px;
-    min-height: 48px;
+    min-height: var(--size-button-height);
     background: #fcfaff;
     border: 0;
-    border-radius: 8px;
+    border-radius: var(--radius-control);
     box-shadow: 0 3px 12px #2b1f4710;
 }
 .catalog-search input {
-    font-size: 0.85rem;
+    font-size: var(--font-size-small);
     background: transparent;
 }
 .catalog-controls {
@@ -32,11 +32,11 @@
 }
 .catalog-filter-button {
     border: 0;
-    border-radius: 7px;
+    border-radius: var(--radius-control);
     padding: 10px 16px;
     background: #fbf8fd;
     box-shadow: 0 2px 10px #2b1f470d;
-    font-size: 0.8rem;
+    font-size: var(--font-size-caption);
 }
 .catalog-quick-genres {
     flex: 1;
@@ -46,35 +46,35 @@
     overflow-x: auto;
     padding: 5px;
     background: #f3eee7;
-    border-radius: 8px;
+    border-radius: var(--radius-control);
 }
 .catalog-quick-genres .genre-chip {
     min-height: 36px;
     padding: 8px 12px;
     white-space: nowrap;
-    font-size: 0.7rem;
+    font-size: var(--font-size-caption);
     border: 0;
     border-radius: 5px;
     background: #fffdf9;
 }
 .catalog-quick-genres .genre-chip.is-active {
     color: white;
-    background: #7b6aa8;
+    background: var(--color-lavender);
 }
 .catalog-sort {
     margin-left: auto;
-    font-size: 0.75rem;
+    font-size: var(--font-size-caption);
 }
 .catalog-sort select {
     min-height: 42px;
-    font-size: 0.8rem;
+    font-size: var(--font-size-caption);
     border-color: #e1d8e5;
     background: #fcfaff;
 }
 .catalog-shelf {
     padding: 22px;
     border: 0;
-    border-radius: 12px;
+    border-radius: var(--radius-card);
     background: #ebe5d982;
     margin-bottom: 28px;
 }
@@ -92,13 +92,13 @@
     margin-bottom: 18px;
 }
 .catalog-shelf-heading h2 {
-    font-size: 1.45rem;
+    font-size: var(--font-size-heading);
     font-weight: 500;
     letter-spacing: -0.025em;
 }
 .catalog-shelf-heading p,
 .catalog-eyebrow {
-    font-size: 0.68rem;
+    font-size: var(--font-size-caption);
     letter-spacing: 0.065em;
 }
 .catalog-rail {
@@ -127,7 +127,7 @@
     object-fit: cover;
 }
 .catalog-rail-book > strong {
-    font-size: 0.8rem;
+    font-size: var(--font-size-caption);
     font-weight: 600;
     overflow: hidden;
     display: -webkit-box;
@@ -135,7 +135,7 @@
     -webkit-line-clamp: 1;
 }
 .catalog-rail-book > small {
-    font-size: 0.75rem;
+    font-size: var(--font-size-caption);
     color: #8d8095;
 }
 .catalog-author-row {
@@ -148,7 +148,7 @@
 .catalog-author {
     background: #f4eff8;
     border: 0;
-    border-radius: 7px;
+    border-radius: var(--radius-control);
     min-width: 0;
     padding: 18px 10px;
 }
@@ -159,25 +159,23 @@
     margin: 0 auto 10px;
 }
 .catalog-author strong {
-    font-size: 0.7rem;
+    font-size: var(--font-size-caption);
     overflow-wrap: anywhere;
 }
 .catalog-author small {
-    font-size: 0.65rem;
+    font-size: var(--font-size-caption);
 }
 .catalog-results-header {
     align-items: start;
 }
 .catalog-results-header h2 {
     font:
-        500 1.7rem Lora,
-        Georgia,
-        serif;
+        500 1.7rem var(--font-secondary);
     letter-spacing: -0.02em;
     margin: 4px 0;
 }
 .catalog-section-description {
-    font-size: 0.85rem;
+    font-size: var(--font-size-small);
     color: #8c7e96;
     margin-top: 6px;
 }
@@ -199,13 +197,13 @@
 }
 .catalog-book-meta h3 {
     order: -1;
-    font-size: 0.8rem;
+    font-size: var(--font-size-caption);
     font-weight: 600;
     line-height: 1.4;
     -webkit-line-clamp: 1;
 }
 .catalog-book-meta > p {
-    font-size: 0.75rem;
+    font-size: var(--font-size-caption);
     color: #8d8095;
     -webkit-line-clamp: 1;
 }
@@ -220,11 +218,11 @@
     gap: 5px;
 }
 .catalog-rating > span {
-    font-size: 1rem;
+    font-size: var(--font-size-body);
     color: #d29436;
 }
 .catalog-rating small {
-    font-size: 0.7rem;
+    font-size: var(--font-size-caption);
     color: #8d8095;
 }
 .catalog-book-actions {
@@ -248,7 +246,7 @@
     border-radius: 5px;
     background: #efe8f6;
     color: #5c457b;
-    font-size: 0.7rem;
+    font-size: var(--font-size-caption);
 }
 .catalog-review-link {
     flex: 1;
@@ -295,7 +293,7 @@
     }
     .catalog-filter-button {
         padding: 10px 12px;
-        font-size: 0.75rem;
+        font-size: var(--font-size-caption);
     }
     .catalog-grid {
         grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -312,10 +310,10 @@
         padding: 18px;
     }
     .catalog-shelf-heading h2 {
-        font-size: 1.25rem;
+        font-size: var(--font-size-subtitle);
     }
     .catalog-results-header h2 {
-        font-size: 1.5rem;
+        font-size: var(--font-size-heading);
     }
 }
 @media (max-width: 450px) {
@@ -330,15 +328,15 @@
         grid-auto-columns: 115px;
     }
     .catalog-filter-button {
-        font-size: 0.7rem;
+        font-size: var(--font-size-caption);
     }
     .catalog-sort select {
         max-width: 130px;
     }
     .catalog-shelf-heading > a {
-        font-size: 0.7rem;
+        font-size: var(--font-size-caption);
     }
     .catalog-book-meta h3 {
-        font-size: 0.85rem;
+        font-size: var(--font-size-small);
     }
 }

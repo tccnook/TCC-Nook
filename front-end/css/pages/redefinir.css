@@ -3,7 +3,7 @@
     min-height: 100dvh;
     place-items: center;
     padding: 2rem 1rem;
-    background: linear-gradient(155deg, #fbfbfb 0%, #d1cadf 43%, #7b6aa8 100%);
+    background: linear-gradient(155deg, #fbfbfb 0%, #d1cadf 43%, var(--color-lavender) 100%);
     font-family: var(--font-primary);
     color: #151515;
 }
@@ -11,7 +11,7 @@
     width: min(100%, 420px);
     min-height: 400px;
     padding: 2rem;
-    border-radius: 16px;
+    border-radius: var(--radius-card);
     background: #f8f8f8;
     box-shadow: 0 10px 26px #1f173b40;
 }
@@ -28,7 +28,7 @@
     font: 500 clamp(1.3rem, 4vw, 1.6rem) / 1.3 var(--font-secundary);
 }
 .recovery-card > p {
-    font-size: 0.85rem;
+    font-size: var(--font-size-small);
     line-height: 1.5;
     margin-bottom: 1.5rem;
 }
@@ -38,14 +38,14 @@
 }
 .recovery-card label {
     font-weight: 600;
-    font-size: 0.8rem;
+    font-size: var(--font-size-caption);
 }
 .recovery-card input {
-    min-height: 44px;
+    min-height: var(--size-control-height);
     width: 100%;
     padding: 0.65rem 0.75rem;
     border: 1px solid #d7d7d7;
-    border-radius: 10px;
+    border-radius: var(--radius-control);
     background: white;
 }
 .recovery-card .recovery-button {
@@ -53,14 +53,14 @@
     align-items: center;
     justify-content: center;
     width: 100%;
-    min-height: 44px;
+    min-height: var(--size-control-height);
     margin-top: 0.5rem;
     padding: 0.65rem;
     background: #b975f4;
     color: white;
     border: 0;
     border-radius: 6px;
-    font-size: 0.85rem;
+    font-size: var(--font-size-small);
     box-shadow: 0 3px 7px #0002;
 }
 .recovery-card .recovery-button.secondary {
@@ -88,7 +88,7 @@
     border-radius: 5px;
     background: #dedede;
     text-align: center;
-    font-size: 1.5rem;
+    font-size: var(--font-size-heading);
 }
 .recovery-card [role="alert"] {
     color: #8a2424;

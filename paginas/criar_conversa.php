@@ -6,7 +6,8 @@ if (!isset($_SESSION['id_user'])) {
 }
 require_once __DIR__ . '/chat_support.php';
 require_once __DIR__ . '/conexao.php';
-$conn = (new Database())->conectar();
+$conn = null;
+$json = str_contains($_SERVER['HTTP_ACCEPT'] ?? '', 'application/json');
 $csrf = chatCsrf();
 $erro = '';
 $nome_grupo = '';
@@ -23,6 +24,9 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
             throw new InvalidArgumentException('Informe um nome de até 100 caracteres.');
         }
 
+        $participantes = ($json || isset($_POST['participantes']))
+            ? chatParticipantesGrupo($_POST['participantes'] ?? [], (int) $_SESSION['id_user']) : [];
+        $conn = (new Database())->conectar();
         $foto = $_FILES['foto_grupo'] ?? null;
         if ($foto !== null && (!is_array($foto) || !is_int($foto['error'] ?? null))) {
             throw new InvalidArgumentException('Arquivo inválido.');
@@ -52,16 +56,27 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
         }
 
         $conn->beginTransaction();
+        if ($participantes) {
+            $permitido = $conn->prepare("SELECT 1 FROM follow f JOIN usuario u ON u.id_user=f.id_following WHERE f.id_follower=? AND f.id_following=? AND u.ativo AND u.excluido_em IS NULL AND NOT EXISTS (SELECT 1 FROM bloqueio b WHERE b.status_bloqueio='bloqueado' AND ((b.id_bloqueador=? AND b.id_bloqueado=?) OR (b.id_bloqueador=? AND b.id_bloqueado=?)))");
+            foreach ($participantes as $membro) {
+                $criador = (int) $_SESSION['id_user'];
+                $permitido->execute([$criador, $membro, $criador, $membro, $membro, $criador]);
+                if (!$permitido->fetchColumn()) throw new InvalidArgumentException('Selecione apenas leitores disponíveis que você segue.');
+            }
+        }
         $stmt = $conn->prepare("INSERT INTO conversa (tipo,nome_conversa,foto_conversa_url,id_dono) VALUES ('grupo',:nome,:foto,:usuario) RETURNING id_conversa");
         $stmt->execute([':nome' => $nome_grupo, ':foto' => $caminho, ':usuario' => (int) $_SESSION['id_user']]);
         $id_conversa = (int) $stmt->fetchColumn();
         $stmt = $conn->prepare("INSERT INTO conversa_participante (id_conversa,id_user,cargo) VALUES (:conversa,:usuario,'Admin')");
         $stmt->execute([':conversa' => $id_conversa, ':usuario' => (int) $_SESSION['id_user']]);
+        $adicionar = $conn->prepare("INSERT INTO conversa_participante (id_conversa,id_user,cargo) VALUES (?,?,'Integrante')");
+        foreach ($participantes as $membro) $adicionar->execute([$id_conversa, $membro]);
         $conn->commit();
+        if ($json) chatResposta(201, ['sucesso' => true, 'id_conversa' => $id_conversa]);
         header('Location: adicionar_integrantes_grupo.php?id_conversa=' . $id_conversa);
         exit;
     } catch (Throwable $error) {
-        if ($conn->inTransaction()) {
+        if ($conn instanceof PDO && $conn->inTransaction()) {
             $conn->rollBack();
         }
 
@@ -73,6 +88,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
         if (!$error instanceof InvalidArgumentException) {
             error_log('Falha ao criar grupo: ' . $error->getMessage());
         }
+        if ($json) chatResposta($error instanceof InvalidArgumentException ? 422 : 500, ['sucesso' => false, 'mensagem' => $erro]);
     }
 }
 $esc = static fn ($value) => htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8');

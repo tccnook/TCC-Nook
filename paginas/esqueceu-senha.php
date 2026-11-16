@@ -10,6 +10,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } elseif (!filter_var($_POST['email'] ?? '', FILTER_VALIDATE_EMAIL)) {
         $erro = 'Informe um e-mail válido.';
     } elseif (time() - (int) ($_SESSION['recuperacao_ultima_solicitacao'] ?? 0) < 60) {
+        // Um duplo envio ou retorno pelo navegador deve retomar o código existente.
+        $fluxo = $_SESSION['recuperacao_fluxo'] ?? null;
+        if (is_array($fluxo) && !empty($fluxo['token']) && !empty($fluxo['email'])) {
+            header('Location: verificar-codigo.php');
+            exit;
+        }
         $erro = 'Aguarde um minuto antes de pedir outro código.';
     } else {
         $email = trim($_POST['email']);

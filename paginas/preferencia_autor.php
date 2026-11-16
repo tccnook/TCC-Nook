@@ -150,6 +150,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             <input type="hidden" name="csrf" value="<?= htmlspecialchars($_SESSION['author_csrf'], ENT_QUOTES, 'UTF-8') ?>">
             <section class="author-grid" id="author-grid" aria-label="Autores para escolher"></section>
+            <div class="author-load-more"><button type="button" class="btn btn-secondary" id="load-more-authors" aria-controls="author-grid" disabled>Buscar mais autores</button></div>
             <script type="application/json" id="selected-authors"><?= json_encode($selecionados, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?></script>
             <section class="actions">
 

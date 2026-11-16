@@ -26,7 +26,7 @@ function chatEndpoint(string $route, int $user, array $post = [], array $get = [
 {
     global $config,$sessionDir;
     $root = dirname(__DIR__);
-    $code = 'ini_set("session.save_path",' . var_export($sessionDir, true) . '); session_id("' . bin2hex(random_bytes(12)) . '"); session_start(); $_SESSION=["id_user"=>' . $user . ',"chat_csrf"=>"integration-token"]; session_write_close(); $_POST=' . var_export($post, true) . '; $_GET=' . var_export($get, true) . '; $_SERVER["REQUEST_METHOD"]=' . var_export($method, true) . '; $_SERVER["HTTP_ACCEPT"]="application/json"; register_shutdown_function(function(){fwrite(STDERR,"STATUS=".(http_response_code()?:200));}); require ' . var_export($root . '/paginas/' . $route, true) . ';';
+    $code = 'ini_set("session.save_path",' . var_export($sessionDir, true) . '); session_id("' . bin2hex(random_bytes(12)) . '"); session_start(); $_SESSION=["id_user"=>' . $user . ',"chat_csrf"=>"integration-token"]; session_write_close(); $_POST=' . var_export($post, true) . '; $_GET=' . var_export($get, true) . '; $_SERVER["REQUEST_METHOD"]=' . var_export($method, true) . '; $_SERVER["HTTP_ACCEPT"]=' . var_export($json ? 'application/json' : 'text/html', true) . '; register_shutdown_function(function(){fwrite(STDERR,"STATUS=".(http_response_code()?:200));}); require ' . var_export($root . '/paginas/' . $route, true) . ';';
     $env = array_merge(getenv(), ['DB_HOST' => $config[1], 'DB_PORT' => $config[2], 'DB_NAME' => $config[3], 'DB_USER' => getenv('NOOK_TEST_DB_USER') ?: 'murillo', 'DB_PASSWORD' => '', 'APP_BASE_URL' => 'http://localhost/TCC-Nook']);
     $process = proc_open([PHP_BINARY, '-r', $code], [1 => ['pipe', 'w'], 2 => ['pipe', 'w']], $pipes, $root, $env);
     $output = stream_get_contents($pipes[1]);
@@ -57,6 +57,10 @@ try {
     $conn->exec("INSERT INTO conversa (id_conversa,tipo,nome_conversa,id_dono) OVERRIDING SYSTEM VALUE VALUES (800201,'grupo','Group one',800101),(800202,'grupo','Group two',800101),(800203,'direct','Stale title',800101)");
     $conn->exec("INSERT INTO conversa_participante (id_conversa,id_user,cargo) VALUES (800201,800101,'admin'),(800201,800102,'Integrante'),(800201,800103,'Admin'),(800202,800101,'Admin'),(800202,800102,'Integrante'),(800203,800101,'Integrante'),(800203,800102,'Integrante')");
     $conn->exec("INSERT INTO follow (id_follower,id_following,status_follow) VALUES (800101,800104,'seguindo')");
+    [$status,$html] = chatEndpoint('gerenciar_grupo.php', 800101, [], ['id_conversa' => 800201], 'GET', false);
+    chatIntegrationCheck($status === 200 && str_contains($html, 'Toda boa conversa começa com uma história.'), 'The group management page renders its default description.');
+    [$status] = chatEndpoint('gerenciar_grupo.php', 800101, ['id_conversa' => 800201, 'csrf' => 'integration-token', 'acao' => 'editar', 'nome' => 'Group one', 'descricao' => 'A space for literary discussions'], [], 'POST', false);
+    chatIntegrationCheck($status === 302 && $conn->query('SELECT descricao FROM conversa WHERE id_conversa=800201')->fetchColumn() === 'A space for literary discussions', 'A group admin can save its description.');
     [$status,$data] = chatEndpoint('enviar_mensagem.php', 800101, ['id_conversa' => 800201, 'conteudo' => 'Visible message', 'csrf' => 'integration-token']);
     chatIntegrationCheck($status === 201 && $data['sucesso'], 'A valid member can send a message.');
     $message = $conn->query("SELECT id_mensagem,editado_em,delatado_em FROM mensagem WHERE id_conversa=800201")->fetch(PDO::FETCH_ASSOC);
@@ -94,12 +98,18 @@ try {
     chatIntegrationCheck($status === 200 && str_contains($html, 'Group one'), 'The chat page renders a group with real schema and no undefined variables.');
     [$status,$html] = chatEndpoint('gerenciar_conversa.php', 800101, [], ['id_conversa' => 800203], 'GET', false);
     chatIntegrationCheck($status === 200 && str_contains($html, 'chat_member'), 'Direct management loads its partner without requiring a profile-photo row.');
-    [$status,$html] = chatEndpoint('gerenciar_grupo.php', 800101, [], ['id_conversa' => 800201], 'GET', false);
-    chatIntegrationCheck($status === 200, 'The group management page renders without undefined owner/connection variables.');
     [$status,$html] = chatEndpoint('criar_conversa.php', 800101, ['nome_grupo' => 'Group without photo', 'csrf' => 'integration-token'], [], 'POST', false);
     $created = $conn->query("SELECT id_conversa,foto_conversa_url FROM conversa WHERE nome_conversa='Group without photo' AND id_dono=800101")->fetch(PDO::FETCH_ASSOC);
     chatIntegrationCheck($status === 302 && $created && $created['foto_conversa_url'] === null, 'Creating a group without a photo defines its optional image and redirects before HTML.');
     chatIntegrationCheck($conn->query('SELECT cargo FROM conversa_participante WHERE id_conversa=' . (int) $created['id_conversa'] . ' AND id_user=800101')->fetchColumn() === 'Admin', 'The creator joins the new group with a consistent admin role.');
+    [$status,$data] = chatEndpoint('criar_conversa.php', 800101, ['nome_grupo' => 'Modal group', 'participantes' => ['800104','800104'], 'csrf' => 'integration-token']);
+    chatIntegrationCheck($status === 201 && $data['sucesso'], 'Modal creates a group and returns its ID.');
+    $groupId = (int) $data['id_conversa'];
+    chatIntegrationCheck((int) $conn->query("SELECT count(*) FROM conversa_participante WHERE id_conversa=$groupId")->fetchColumn() === 2, 'Creator and selected member are inserted once.');
+    [$status,$data] = chatEndpoint('criar_conversa.php', 800101, ['nome_grupo' => 'Forbidden modal group', 'participantes' => ['800102'], 'csrf' => 'integration-token']);
+    chatIntegrationCheck($status === 422 && !(bool)$conn->query("SELECT 1 FROM conversa WHERE nome_conversa='Forbidden modal group'")->fetchColumn(), 'Unfollowed participants rejected without creating a group.');
+    [$status,$data] = chatEndpoint('criar_conversa.php', 800101, ['nome_grupo' => 'CSRF modal group', 'participantes' => ['800104'], 'csrf' => 'wrong']);
+    chatIntegrationCheck($status === 422 && !$data['sucesso'], 'Group modal rejects invalid CSRF.');
     echo "PASS: $checks chat PostgreSQL integration checks.\n";
 } finally {
     if ($conn->inTransaction()) {

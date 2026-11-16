@@ -8,7 +8,7 @@
 #author-status {
     min-height: 1.5em;
     margin: -0.5rem auto 1rem;
-    font-size: 0.85rem;
+    font-size: var(--font-size-small);
     text-align: center;
     color: var(--text-muted);
 }
@@ -27,7 +27,7 @@
     padding: 0.85rem 0.75rem 0.9rem;
     background: white;
     border: 2px solid transparent;
-    border-radius: 12px;
+    border-radius: var(--radius-card);
     box-shadow: 0 5px 9px #0002;
     cursor: pointer;
 }
@@ -65,7 +65,7 @@
     color: var(--color-primary);
 }
 .aut-name {
-    font: 500 clamp(1rem, 1.6vw, 1.35rem) / 1.15 var(--font-primary);
+    font: 500 var(--font-size-card-title) / 1.15 var(--font-primary);
     overflow-wrap: anywhere;
     color: var(--color-text);
 }
@@ -76,7 +76,7 @@
     overflow: hidden;
     margin-top: 0.35rem;
     color: #78629b;
-    font-size: 0.8rem;
+    font-size: var(--font-size-caption);
     line-height: 1.4;
 }
 .aut-badge {
@@ -90,7 +90,7 @@
     border: 1px solid var(--selection-color);
     border-radius: 50%;
     color: var(--selection-color);
-    font-size: 0.75rem;
+    font-size: var(--font-size-caption);
 }
 .aut-card.selected {
     border-color: var(--selection-color);
@@ -114,7 +114,7 @@
         gap: 0.85rem;
     }
     .aut-name {
-        font-size: 1.05rem;
+        font-size: var(--font-size-body);
     }
 }
 #author-status:empty {
@@ -123,3 +123,7 @@
 .author-grid {
     align-items: stretch;
 }
+
+.author-load-more { display: flex; justify-content: center; padding: 24px 0; }
+.author-load-more button { min-height: 44px; }
+.author-load-more button:disabled { opacity: .65; cursor: default; }

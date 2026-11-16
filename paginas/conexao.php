@@ -10,6 +10,7 @@ class Database
     private string $user;
     private string $password;
     private string $port;
+    private string $sslMode;
 
     public function __construct()
     {
@@ -18,6 +19,10 @@ class Database
         $this->user = trim(nookEnv('DB_USER', 'postgres'));
         $this->password = nookEnv('DB_PASSWORD', '1234');
         $this->port = trim(nookEnv('DB_PORT', '5432'));
+        $this->sslMode = trim(nookEnv('DB_SSLMODE', 'prefer'));
+        if (!in_array($this->sslMode, ['disable', 'allow', 'prefer', 'require', 'verify-ca', 'verify-full'], true)) {
+            throw new RuntimeException('DB_SSLMODE inválido.');
+        }
         if (!ctype_digit($this->port) || (int) $this->port < 1 || (int) $this->port > 65535) {
             throw new RuntimeException('DB_PORT precisa ser numérico.');
         }
@@ -31,7 +36,7 @@ class Database
 
         try {
             $connection = new PDO(
-                "pgsql:host={$this->host};port={$this->port};dbname={$this->dbname}",
+                "pgsql:host={$this->host};port={$this->port};dbname={$this->dbname};sslmode={$this->sslMode};connect_timeout=15",
                 $this->user,
                 $this->password,
                 [

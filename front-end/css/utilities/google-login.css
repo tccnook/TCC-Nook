@@ -6,7 +6,7 @@
     height: 52px;
     background: var(--bg-secondary);
     border: 1px solid var(--border-primary);
-    border-radius: 12px;
+    border-radius: var(--radius-card);
     font-weight: 600;
     color: var(--text-primary);
     transition: 0.2s;
@@ -31,7 +31,7 @@
         width: clamp(30px, 15vw, 600px);
     }
     span {
-        font-size: 14px;
-        color: #252525;
+        font-size: var(--font-size-small);
+        color: var(--color-text);
     }
 }

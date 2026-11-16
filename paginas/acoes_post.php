@@ -34,6 +34,7 @@ if (in_array($acao, ['curtir', 'comentar'], true)
 
 require_once __DIR__ . '/conexao.php';
 require_once __DIR__ . '/privacy_settings.php';
+require_once __DIR__ . '/notifications_support.php';
 require_once __DIR__ . '/post_support.php';
 $conn = (new Database())->conectar();
 $config = configuracoesUsuario($conn, $idUser);
@@ -77,11 +78,17 @@ if ($acao === 'listar_comentarios') {
 
 try {
     if ($acao === 'curtir') {
+        $conn->beginTransaction();
         $stmt = $conn->prepare("INSERT INTO curtida (id_user,categoria_curtido,id_coisocurtido) SELECT :user,'post',:post WHERE NOT EXISTS(SELECT 1 FROM curtida WHERE id_user=:check_user AND categoria_curtido='post' AND id_coisocurtido=:check_post)");
         $stmt->execute([':user' => $idUser, ':post' => $idPost, ':check_user' => $idUser, ':check_post' => $idPost]);
+        if ($stmt->rowCount() > 0) {
+            registrarNotificacao($conn, (int) $post['id_user'], $idUser, 'curtida_post', (int) $idPost);
+        }
         $stmt = $conn->prepare("SELECT COUNT(*) FROM curtida WHERE categoria_curtido='post' AND id_coisocurtido=:post");
         $stmt->execute([':post' => $idPost]);
-        responderAcaoPost(200, ['mensagem' => 'Post curtido.', 'total_curtidas' => (int) $stmt->fetchColumn(), 'curtido' => true]);
+        $totalCurtidas = (int) $stmt->fetchColumn();
+        $conn->commit();
+        responderAcaoPost(200, ['mensagem' => 'Post curtido.', 'total_curtidas' => $totalCurtidas, 'curtido' => true]);
     }
 
 
@@ -104,6 +111,7 @@ try {
     $stmt = $conn->prepare("INSERT INTO comentario (id_user,categoria_curtida,id_coisocurtido,comentario) VALUES (:user,'post',:post,:comentario) RETURNING id_comentario");
     $stmt->execute([':user' => $idUser, ':post' => $idPost, ':comentario' => $comentario]);
     $idComentario = (int) $stmt->fetchColumn();
+    registrarNotificacao($conn, (int) $post['id_user'], $idUser, 'comentario_post', (int) $idPost);
     registrarMencoes($conn, $destinos, $idUser, 'post', (int) $idPost);
     $comentarios = comentariosPostParaModal($conn, (int) $idPost);
     $stmt = $conn->prepare("SELECT COUNT(*) FROM comentario WHERE categoria_curtida='post' AND id_coisocurtido=:post");

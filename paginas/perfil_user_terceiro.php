@@ -6,6 +6,7 @@ require_once __DIR__ . '/profile_access.php';
 require_once __DIR__ . '/reading_library.php';
 require_once __DIR__ . '/list_view_support.php';
 require_once __DIR__ . '/publishing_service.php';
+require_once __DIR__ . '/notifications_support.php';
 $visitante = (int) ($_SESSION['id_user'] ?? 0);
 $titular = filter_var($_GET['id_user'] ?? $_GET['id_user_terceiro'] ?? null, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
 if (!$titular) {
@@ -42,8 +43,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (($_POST['acao'] ?? '') === 'seguir') {
             $stmt = $conn->prepare("INSERT INTO follow(id_follower,id_following,status_follow) SELECT :v,:t,'seguindo' WHERE NOT EXISTS(SELECT 1 FROM follow WHERE id_follower=:v2 AND id_following=:t2)");
             $stmt->execute([':v' => $visitante, ':t' => $titular, ':v2' => $visitante, ':t2' => $titular]);
+            $novoSeguimento = $stmt->rowCount() > 0;
             $conn->prepare("UPDATE follow SET status_follow = 'seguindo' WHERE id_follower = ? AND id_following = ?")
                 ->execute([$visitante, $titular]);
+            if ($novoSeguimento) {
+                registrarNotificacao($conn, $titular, $visitante, 'seguir', $visitante);
+            }
         } elseif (($_POST['acao'] ?? '') === 'deixar-seguir') {
             $stmt = $conn->prepare('DELETE FROM follow WHERE id_follower=:v AND id_following=:t');
             $stmt->execute([':v' => $visitante, ':t' => $titular]);

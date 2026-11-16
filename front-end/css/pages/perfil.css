@@ -26,7 +26,7 @@
 
 .perfil-nav a {
     padding: 0.25rem 0.5rem;
-    font-size: 0.8rem;
+    font-size: var(--font-size-caption);
     white-space: nowrap;
     color: var(--text-secondary);
     border-bottom: 2px solid transparent;
@@ -46,7 +46,7 @@
 
 .aba-vazia {
     color: var(--text-secondary);
-    font-size: 0.9rem;
+    font-size: var(--font-size-small);
 }
 
 .aba-topo {
@@ -60,7 +60,7 @@
 
 .aba-topo h2 {
     font-family: var(--font-secundary);
-    font-size: 1.1rem;
+    font-size: var(--font-size-lead);
     font-weight: 500;
     color: var(--text-title);
 }
@@ -85,7 +85,7 @@
     align-items: center;
     gap: 0.4rem;
     font-family: var(--font-secundary);
-    font-size: 1rem;
+    font-size: var(--font-size-body);
     font-weight: 500;
     color: var(--text-title);
 }
@@ -99,7 +99,7 @@
     display: inline-flex;
     align-items: center;
     gap: 0.3rem;
-    font-size: 0.75rem;
+    font-size: var(--font-size-caption);
     color: var(--text-secondary);
 }
 
@@ -110,7 +110,7 @@
 
 .link-card.sublinhado {
     text-decoration: underline;
-    font-size: 0.85rem;
+    font-size: var(--font-size-small);
 }
 
 .pilula {
@@ -118,18 +118,18 @@
     border-radius: 6px;
     background: var(--color-accent);
     color: var(--text-on-dark);
-    font-size: 0.7rem;
+    font-size: var(--font-size-caption);
     white-space: nowrap;
 }
 
 .estrelas {
     color: var(--color-accent2);
     letter-spacing: 2px;
-    font-size: 0.85rem;
+    font-size: var(--font-size-small);
 }
 
 .autor {
-    font-size: 0.75rem;
+    font-size: var(--font-size-caption);
     color: var(--text-secondary);
 }
 
@@ -141,8 +141,8 @@
     padding: 0.5rem;
     background: var(--bg-cards-light);
     color: var(--text-on-dark);
-    border-radius: 8px;
-    font-size: 0.7rem;
+    border-radius: var(--radius-control);
+    font-size: var(--font-size-caption);
     text-align: center;
 }
 
@@ -206,7 +206,7 @@
     position: relative;
     aspect-ratio: 2 / 3;
     border: 3px solid var(--cor-posicao);
-    border-radius: 10px;
+    border-radius: var(--radius-control);
     overflow: hidden;
     background: var(--all-white);
 }
@@ -235,7 +235,7 @@
     border-radius: 50%;
     background: var(--cor-posicao);
     color: var(--text-on-dark);
-    font-size: 0.75rem;
+    font-size: var(--font-size-caption);
     font-weight: 700;
 }
 
@@ -265,7 +265,7 @@
 }
 
 .top5-item h3 {
-    font-size: 0.8rem;
+    font-size: var(--font-size-caption);
     line-height: 1.3;
 }
 
@@ -278,9 +278,9 @@
     width: 100%;
     aspect-ratio: 2 / 3;
     border: 2px dashed var(--color-accent2);
-    border-radius: 12px;
+    border-radius: var(--radius-card);
     color: var(--color-accent2);
-    font-size: 0.75rem;
+    font-size: var(--font-size-caption);
 }
 
 .top5-adicionar svg {
@@ -288,7 +288,7 @@
     height: 2rem;
     padding: 0.35rem;
     border: 2px solid var(--color-accent2);
-    border-radius: 8px;
+    border-radius: var(--radius-control);
 }
 
 /* últimos livros lidos */
@@ -305,7 +305,7 @@
     width: 100%;
     aspect-ratio: 2 / 3;
     object-fit: cover;
-    border-radius: 8px;
+    border-radius: var(--radius-control);
     border: 2px solid var(--rating-one);
 }
 
@@ -313,7 +313,7 @@
     display: grid;
     gap: 0.35rem;
     color: var(--text-primary);
-    font-size: 0.7rem;
+    font-size: var(--font-size-caption);
     line-height: 1.3;
 }
 
@@ -333,17 +333,17 @@
 }
 
 .meta h3 {
-    font-size: 0.9rem;
+    font-size: var(--font-size-small);
 }
 
 .meta-periodo {
-    font-size: 0.75rem;
+    font-size: var(--font-size-caption);
     color: var(--text-muted);
 }
 
 .meta-numeros {
     margin: 0.5rem 0;
-    font-size: 0.85rem;
+    font-size: var(--font-size-small);
     color: var(--text-secondary);
 }
 
@@ -386,7 +386,7 @@
 
 .meta-mensagem {
     margin-top: 0.5rem;
-    font-size: 0.75rem;
+    font-size: var(--font-size-caption);
     color: var(--warning);
 }
 
@@ -396,7 +396,7 @@
 
 .meta-status {
     margin-top: 0.25rem;
-    font-size: 0.7rem;
+    font-size: var(--font-size-caption);
     color: var(--text-muted);
 }
 
@@ -415,10 +415,10 @@
     gap: 0.35rem;
     padding: 0.75rem 0.5rem;
     border: 1px solid var(--soft-border);
-    border-radius: 10px;
+    border-radius: var(--radius-control);
     background: var(--bg-soft);
     text-align: center;
-    font-size: 0.7rem;
+    font-size: var(--font-size-caption);
     overflow-wrap: anywhere;
 }
 
@@ -430,18 +430,18 @@
 
 .mini-card strong {
     font-family: var(--font-secundary);
-    font-size: 1.5rem;
+    font-size: var(--font-size-heading);
     font-weight: 500;
     color: var(--color-accent);
 }
 
 .mini-card strong.texto {
-    font-size: 1rem;
+    font-size: var(--font-size-body);
     line-height: 1.2;
 }
 
 .mini-card small {
-    font-size: 0.65rem;
+    font-size: var(--font-size-caption);
     color: var(--text-muted);
 }
 
@@ -494,7 +494,7 @@
 }
 
 .livro-info h3 {
-    font-size: 1rem;
+    font-size: var(--font-size-body);
     line-height: 1.25;
 }
 
@@ -510,7 +510,7 @@
     line-clamp: 4;
     -webkit-box-orient: vertical;
     overflow: hidden;
-    font-size: 0.75rem;
+    font-size: var(--font-size-caption);
     line-height: 1.4;
     color: var(--text-secondary);
 }
@@ -518,15 +518,15 @@
 .sem-resenha {
     display: block;
     padding: 0.75rem;
-    border-radius: 12px;
+    border-radius: var(--radius-card);
     background: var(--bg-soft-strong);
     color: var(--text-secondary);
-    font-size: 0.8rem;
+    font-size: var(--font-size-caption);
 }
 
 .lido-em {
     margin-top: auto;
-    font-size: 0.75rem;
+    font-size: var(--font-size-caption);
     color: var(--text-secondary);
 }
 
@@ -558,7 +558,7 @@
 .lista-dono {
     display: inline-block;
     margin-top: 0.5rem;
-    font-size: 0.7rem;
+    font-size: var(--font-size-caption);
 }
 
 .lista-card a {
@@ -581,7 +581,7 @@
     overflow: hidden;
     margin-bottom: 0.35rem;
     font-family: var(--font-secundary);
-    font-size: 1rem;
+    font-size: var(--font-size-body);
     font-weight: 500;
 }
 
@@ -591,7 +591,7 @@
     line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
-    font-size: 0.75rem;
+    font-size: var(--font-size-caption);
 }
 
 .lista-salvar {
@@ -625,7 +625,7 @@
     gap: 0.5rem 1rem;
     padding: 0.75rem 1rem 1rem;
     list-style: none;
-    font-size: 0.75rem;
+    font-size: var(--font-size-caption);
     color: var(--text-secondary);
 }
 
@@ -683,13 +683,13 @@
 
 .modal-lista-cabecalho h2 {
     color: var(--text-title);
-    font: 600 1rem var(--font-secundary);
+    font: 600 var(--font-size-body) var(--font-secundary);
 }
 
 .modal-lista-cabecalho p {
     margin-top: 0.15rem;
     color: var(--text-secondary);
-    font-size: 0.65rem;
+    font-size: var(--font-size-caption);
 }
 
 .modal-lista-fechar {
@@ -712,7 +712,7 @@
 .lista-form-secao h3 {
     margin-bottom: 0.45rem;
     color: var(--text-primary);
-    font-size: 0.72rem;
+    font-size: var(--font-size-caption);
     font-weight: 700;
 }
 
@@ -730,9 +730,9 @@
     place-content: center;
     gap: 0.45rem;
     border: 1px solid var(--border-primary);
-    border-radius: 7px;
+    border-radius: var(--radius-control);
     color: var(--text-title);
-    font: 500 0.7rem var(--font-secundary);
+    font: 500 var(--font-size-caption) var(--font-secundary);
     text-align: center;
     cursor: pointer;
 }
@@ -750,20 +750,20 @@
 
 .lista-ou {
     color: var(--color-accent);
-    font-size: 0.7rem;
+    font-size: var(--font-size-caption);
 }
 
 .lista-capa-opcoes > p {
     max-width: 14rem;
     color: var(--text-secondary);
-    font-size: 0.62rem;
+    font-size: var(--font-size-caption);
 }
 
 .campo-capa-manual {
     display: grid;
     gap: 0.3rem;
     margin-top: 0.45rem;
-    font-size: 0.68rem;
+    font-size: var(--font-size-caption);
 }
 
 .campo-capa-manual[hidden] {
@@ -772,7 +772,7 @@
 
 .lista-campo-label {
     color: var(--text-primary);
-    font-size: 0.68rem;
+    font-size: var(--font-size-caption);
     font-weight: 600;
 }
 
@@ -792,7 +792,7 @@
     background: var(--all-white);
     color: var(--text-primary);
     font: inherit;
-    font-size: 0.7rem;
+    font-size: var(--font-size-caption);
 }
 
 .lista-contador-campo textarea {
@@ -803,7 +803,7 @@
 .lista-contador-campo > span {
     flex: none;
     color: var(--text-secondary);
-    font-size: 0.62rem;
+    font-size: var(--font-size-caption);
 }
 
 .lista-visibilidade-opcoes {
@@ -822,7 +822,7 @@
     min-height: 4.4rem;
     padding: 0.65rem;
     border: 1px solid var(--border-primary);
-    border-radius: 8px;
+    border-radius: var(--radius-control);
     cursor: pointer;
 }
 
@@ -840,13 +840,13 @@
 }
 
 .lista-visibilidade-card strong {
-    font-size: 0.7rem;
+    font-size: var(--font-size-caption);
 }
 
 .lista-visibilidade-card > span {
     grid-column: 2 / 4;
     color: var(--text-secondary);
-    font-size: 0.6rem;
+    font-size: var(--font-size-caption);
 }
 
 .lista-busca {
@@ -871,7 +871,7 @@
     background: transparent;
     color: var(--text-primary);
     font: inherit;
-    font-size: 0.7rem;
+    font-size: var(--font-size-caption);
 }
 
 .lista-resultados:empty {
@@ -915,7 +915,7 @@
 .lista-livro-selecionado strong {
     overflow: hidden;
     color: var(--text-primary);
-    font-size: 0.65rem;
+    font-size: var(--font-size-caption);
     text-overflow: ellipsis;
     white-space: nowrap;
 }
@@ -923,7 +923,7 @@
 .lista-livro-resultado small,
 .lista-livro-selecionado small {
     color: var(--text-secondary);
-    font-size: 0.58rem;
+    font-size: var(--font-size-caption);
 }
 
 .lista-livro-resultado .lista-livro-origem {
@@ -932,14 +932,14 @@
 .lista-resultados-aviso {
     padding: 0.35rem 0.45rem;
     color: var(--text-secondary);
-    font-size: 0.62rem;
+    font-size: var(--font-size-caption);
     line-height: 1.4;
 }
 
 .lista-livro-resultado button {
     margin-left: auto;
     color: var(--color-accent);
-    font-size: 0.62rem;
+    font-size: var(--font-size-caption);
 }
 
 .lista-livro-resultado button:disabled {
@@ -980,7 +980,7 @@
 .lista-feedback {
     margin: 0.5rem 0;
     color: var(--danger);
-    font-size: 0.75rem;
+    font-size: var(--font-size-caption);
 }
 
 @media (max-width: 520px) {
@@ -998,7 +998,7 @@
     }
 
     .lista-capa-opcoes > p {
-        font-size: 0.58rem;
+        font-size: var(--font-size-caption);
     }
 
     .lista-visibilidade-opcoes {

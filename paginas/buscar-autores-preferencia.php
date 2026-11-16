@@ -22,6 +22,13 @@ if (isset($_GET['autor'])) {
     }
 }
 $busca = mb_substr(trim(is_string($_GET['q'] ?? '') ? ($_GET['q'] ?? '') : ''), 0, 100);
+$pagina = filter_var($_GET['pagina'] ?? 1, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1, 'max_range' => 100]]);
+if ($pagina === false) {
+    http_response_code(422);
+    echo json_encode(['mensagem' => 'Página inválida.']);
+    exit;
+}
+$mais = false;
 session_write_close();
 if ($relacionado) {
     $assuntos = array_filter($relacionado['assuntos'], static fn ($s) => !in_array(mb_strtolower($s), ['fiction', 'literature', 'accessible book', 'protected daisy', 'in library'], true));
@@ -40,6 +47,7 @@ if ($relacionado) {
     $path = '/search.json';
     $params = ['q' => 'language:por', 'lang' => 'pt', 'limit' => 30, 'fields' => 'author_key,author_name,subject'];
 }
+$params['offset'] = ($pagina - 1) * $params['limit'];
 $dados = cacheGoogleBooks(['provider' => 'openlibrary', 'path' => $path] + $params, static function () use ($path, $params): ?array {
     if (!function_exists('curl_init')) {
         return null;
@@ -57,18 +65,21 @@ $dados = cacheGoogleBooks(['provider' => 'openlibrary', 'path' => $path] + $para
     $json = json_decode($body, true);
     return is_array($json) && isset($json['docs']) ? $json : null;
 }, null, 3600);
+$mais = $dados !== null && ($params['offset'] + count($dados['docs'] ?? [])) < (int) ($dados['numFound'] ?? $dados['num_found'] ?? 0);
 $autores = normalizarAutores($dados ?? [], $relacionado ? [$relacionado['id']] : []);
 if ($dados === null) {
     require_once __DIR__ . '/author_search_service.php';
     require_once __DIR__ . '/config_api_ex.php';
     $consulta = $busca !== '' ? 'inauthor:' . $busca : (!empty($assunto) ? 'subject:' . $assunto : 'fiction');
-    $google = ['q' => $consulta, 'maxResults' => 20, 'langRestrict' => 'pt'];
+    $google = ['q' => $consulta, 'maxResults' => 20, 'startIndex' => ($pagina - 1) * 20, 'langRestrict' => 'pt'];
     $cacheGoogle = $google;
     if ($chave_api !== '') {
         $google['key'] = $chave_api;
     }
 
-    $gut = ['languages' => 'pt'];
+    $gut = ['languages' => 'pt', 'page' => $pagina];
+    $offsetLocal = 0;
+    $limiteLocal = null;
     if ($busca !== '') {
         $gut['search'] = $busca;
     } elseif (!empty($assunto)) {
@@ -76,6 +87,7 @@ if ($dados === null) {
     }
 
     $alternativas = consultarFontesAutores(['google' => ['cache' => $cacheGoogle, 'url' => 'https://www.googleapis.com/books/v1/volumes?' . http_build_query($google)], 'gutendex' => ['cache' => $gut, 'url' => 'https://gutendex.com/books/?' . http_build_query($gut)]]);
+    $mais = !empty($alternativas['gutendex']['next']) || ($pagina * 20 < (int) ($alternativas['google']['totalItems'] ?? 0));
     $candidatos = [];
     foreach ($alternativas['google']['items'] ?? [] as $item) {
         foreach ($item['volumeInfo']['authors'] ?? [] as $nome) {
@@ -93,9 +105,12 @@ if ($dados === null) {
         require_once __DIR__ . '/conexao.php';
         $conn = (new Database())->conectar();
         $candidatos = autoresLocais($conn, $idUsuario, $busca);
+        $offsetLocal = ($pagina - 1) * 15;
+        $limiteLocal = 15;
+        $mais = count(unirAutores($candidatos, $busca)) > $offsetLocal + 15;
     }
 
-    foreach (array_slice(unirAutores($candidatos, $busca), 0, 15) as $candidato) {
+    foreach (array_slice(unirAutores($candidatos, $busca), $offsetLocal, $limiteLocal) as $candidato) {
         if ($relacionado && chaveNomeAutor($candidato['nome']) === chaveNomeAutor($relacionado['nome'])) {
             continue;
         }
@@ -106,4 +121,4 @@ if ($dados === null) {
 foreach ($autores as &$autor) {
     $autor['token'] = assinarAutor($autor, $segredo);
 }unset($autor);
-echo json_encode(['autores' => $autores, 'relacionado_a' => $relacionado['id'] ?? null], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+echo json_encode(['autores' => $autores, 'mais' => $mais && $pagina < 100, 'relacionado_a' => $relacionado['id'] ?? null], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);

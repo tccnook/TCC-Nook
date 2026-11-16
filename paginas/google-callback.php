@@ -63,10 +63,22 @@ if ($idGoogle === '' || !filter_var($emailGoogle, FILTER_VALIDATE_EMAIL) || !$us
 }
 
 $conn = (new Database())->conectar();
-$stmt = $conn->prepare('SELECT id_user, ativo, excluido_em FROM usuario WHERE google_id = :google_id LIMIT 1');
-$stmt->execute([':google_id' => $idGoogle]);
-$contaGoogle = $stmt->fetch(PDO::FETCH_ASSOC);
-if ($contaGoogle && (!$contaGoogle['ativo'] || $contaGoogle['excluido_em'])) { http_response_code(403); exit('Esta conta está indisponível.'); }
+$emailGoogle = mb_strtolower($emailGoogle);
+try {
+    $contaGoogle = authContaGoogle($conn, $idGoogle, $emailGoogle);
+} catch (DomainException $erro) {
+    http_response_code(409);
+    exit($erro->getMessage());
+} catch (Throwable $erro) {
+    error_log('Falha ao resolver conta do login Google: ' . $erro->getMessage());
+    http_response_code(500);
+    exit('Não foi possível concluir o login Google. Tente novamente.');
+}
+
+if ($contaGoogle && (!$contaGoogle['ativo'] || $contaGoogle['excluido_em'])) {
+    http_response_code(403);
+    exit('Esta conta está indisponível.');
+}
 $idUsuario = $contaGoogle['id_user'] ?? null;
 
 if ($idUsuario) {

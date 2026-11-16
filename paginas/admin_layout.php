@@ -48,6 +48,7 @@ function adminInicio(string $title, string $description): void
         'crud_genero.php' => 'Gêneros',
         'moderacao_obras.php' => 'Obras',
         'denuncia_comentario.php' => 'Denúncias',
+        'denuncia_usuario.php' => 'Usuários denunciados',
         'gerenciar_admins.php' => 'Admins',
         'gerenciar_usuarios.php' => 'Usuários'
     ];
@@ -118,7 +119,7 @@ function adminInicio(string $title, string $description): void
             <a
                 href="<?= $href ?>"
                 <?= $current === $href ? 'aria-current="page"' : '' ?>
-            ><?= adminIcon(['admin.php' => 'grid', 'crud_autores.php' => 'user', 'crud_genero.php' => 'tag', 'moderacao_obras.php' => 'book', 'denuncia_comentario.php' => 'flag', 'gerenciar_admins.php' => 'shield', 'gerenciar_usuarios.php' => 'user'][$href]) ?><span><?= $label ?></span></a>
+            ><?= adminIcon(['admin.php' => 'grid', 'crud_autores.php' => 'user', 'crud_genero.php' => 'tag', 'moderacao_obras.php' => 'book', 'denuncia_comentario.php' => 'flag', 'denuncia_usuario.php' => 'flag', 'gerenciar_admins.php' => 'shield', 'gerenciar_usuarios.php' => 'user'][$href]) ?><span><?= $label ?></span></a>
             <?php endforeach; ?>
             <div class="admin-nav-footer" aria-hidden="true">
                 <div class="admin-library-mark"><?= adminIcon('book') ?></div>

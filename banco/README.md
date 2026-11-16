@@ -13,6 +13,16 @@ Configure `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER` e `DB_PASSWORD` localmente.
 
 Mídia não faz parte do SQL. Preserve os uploads e o armazenamento privado configurado em `NOOK_PRIVATE_STORAGE`, incluindo PDFs e versões publicadas. O dump pode conter dados pessoais de desenvolvimento; não o trate como catálogo público anonimizado.
 
+## Descrição de grupos
+
+Para instalações existentes, aplique a migração aditiva que adiciona `conversa.descricao`:
+
+```sh
+psql -X -U postgres -d testetccdemo -v ON_ERROR_STOP=1 -f banco/migrations/20260420_conversa_descricao.sql
+```
+
+Confirme o banco de destino antes de executar. A coluna é opcional e a migração pode ser aplicada mais de uma vez; ela não altera nem remove conversas. O dump para instalações novas já inclui a coluna. Não remova a coluna em rollback: ela pode conter descrições criadas pelos administradores dos grupos.
+
 ## Complemento necessário: denúncias de comentários
 
 O dump não contém a tabela `denuncia`, consultada pela página administrativa legada. Após importar em uma instalação nova, aplique:
@@ -38,3 +48,13 @@ Em uma instalação nova, importe primeiro `testetccdemo.sql`, aplique `20261031
 A conta `adm@adm.adm` deve existir para configurar o primeiro ADM supremo pelo painel. Se ela não existir, crie-a após a migração com `php scripts/create-admin.php adm@adm.adm "Conta provisória"` (no LAMPP, use `/opt/lampp/bin/php` se necessário); o script solicita a senha no terminal e atribui o nível provisório a esse endereço. A configuração inicial solicita nome, e-mail pessoal e senha no formulário e desativa a conta provisória ao concluir.
 
 Não há rollback físico automático: a remoção de colunas/tabelas poderia apagar estados de acesso e auditoria. Para reverter a aplicação, interrompa o uso do painel novo e planeje uma migração reversa após backup e revisão dos dados; não remova as estruturas manualmente em produção.
+
+## Notificações sociais
+
+Para habilitar as notificações de seguimentos, mensagens, interações em publicações, livros e listas, aplique a migração após importar o dump:
+
+```sh
+psql -X -U postgres -d testetccdemo -v ON_ERROR_STOP=1 -f banco/migrations/20261116_notificacoes_usuario.sql
+```
+
+Em uma instalação existente, faça backup e confirme o banco de destino antes de executar. A migração é aditiva e cria a tabela e os índices de notificações sem remover dados existentes. Não há rollback destrutivo automático; mantenha a tabela para preservar o histórico de notificações.

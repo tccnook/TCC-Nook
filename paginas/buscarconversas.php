@@ -13,6 +13,7 @@ $termo = mb_substr(trim($termo), 0, 100);
 require_once __DIR__ . '/conexao.php';
 try {
     $conn = (new Database())->conectar();
+    session_write_close();
     $user = (int) $_SESSION['id_user'];
     $stmt = $conn->prepare("WITH conversas_usuario AS (
         SELECT c.id_conversa,c.tipo,c.criacao,

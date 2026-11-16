@@ -32,6 +32,7 @@ if (!$id_livro || $nota === false || $texto === '' || mb_strlen($titulo) > 100 |
 }
 
 require_once __DIR__ . '/conexao.php';
+require_once __DIR__ . '/notifications_support.php';
 $db = new Database();
 $conn = $db->conectar();
 require_once __DIR__ . '/privacy_settings.php';
@@ -47,6 +48,9 @@ try {
         responderResenha(404, 'Livro não encontrado.');
     }
 
+    $stmt = $conn->prepare("SELECT id_autor FROM publicacao_obra WHERE id_livro=? AND estado='publicado' AND retirado_em IS NULL");
+    $stmt->execute([$id_livro]);
+    $autorLivro = $stmt->fetchColumn();
 
     $stmt = $conn->prepare('INSERT INTO resenha (titulo_resenha, id_user, sinopse, id_livro) VALUES (:titulo, :id_user, :texto, :id_livro) RETURNING id_resenha');
     $stmt->execute([
@@ -63,6 +67,10 @@ try {
         ':id_resenha' => $id_resenha,
         ':nota' => $nota
     ]);
+
+    if ($autorLivro) {
+        registrarNotificacao($conn, (int) $autorLivro, (int) $_SESSION['id_user'], 'resenha_livro', (int) $id_livro);
+    }
 
     registrarMencoes($conn, $destinos, (int) $_SESSION['id_user'], 'resenha', (int) $id_resenha);
     $conn->commit();

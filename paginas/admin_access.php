@@ -21,6 +21,7 @@ function adminRequestData(string $route, array $post, array $files): array
         'excluir_autor.php'=>['id_autor'], 'excluir_genero.php'=>['id_genero'],
         'moderacao_obras.php'=>['id_livro','acao','motivo'],
         'denuncia_comentario.php'=>['id_denuncia','acao'],
+        'denuncia_usuario.php'=>['id_denuncia','acao'],
         'gerenciar_admins.php'=>['criar_admin','nome_completo','email','nivel','acao','id_alvo'],
         'gerenciar_usuarios.php'=>['acao','id_user','nome_completo','username','email','data_nascimento','nivel'],
     ];
@@ -55,6 +56,10 @@ function adminMayExecute(PDO $c, array $actor, string $route, array $data): bool
         $s=$c->prepare('SELECT a.* FROM admin a JOIN usuario u ON u.id_user=? WHERE (a.id_user=u.id_user OR lower(a.email)=lower(u.email)) AND a.excluido_em IS NULL');$s->execute([(int)($data['id_user'] ?? 0)]);
         foreach ($s->fetchAll() as $target) if (!adminCanManage($actor,$target,$level)) return false;
         return in_array($data['acao'] ?? '',['nivel','ativar','desativar','excluir'],true);
+    }
+    if ($route === 'denuncia_usuario.php') {
+        return filter_var($data['id_denuncia'] ?? null, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]) !== false
+            && in_array($data['acao'] ?? '', ['ignorar', 'resolver'], true);
     }
     return in_array($route,['crud_autores.php','crud_genero.php','excluir_autor.php','excluir_genero.php','moderacao_obras.php','denuncia_comentario.php'],true);
 }

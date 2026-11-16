@@ -32,6 +32,7 @@ if (!$id_seguido || $id_seguido === $id_user) {
 }
 
 require_once __DIR__ . '/conexao.php';
+require_once __DIR__ . '/notifications_support.php';
 $conn = (new Database())->conectar();
 
 try {
@@ -71,9 +72,13 @@ try {
         ':check_follower' => $id_user,
         ':check_following' => $id_seguido
     ]);
+    $novoSeguimento = $stmt->rowCount() > 0;
 
     $conn->prepare("UPDATE follow SET status_follow = 'seguindo' WHERE id_follower = ? AND id_following = ?")
         ->execute([$id_user, $id_seguido]);
+    if ($novoSeguimento) {
+        registrarNotificacao($conn, $id_seguido, $id_user, 'seguir', $id_user);
+    }
 
     $stmt = $conn->prepare("SELECT c.id_conversa FROM conversa c WHERE c.tipo = 'direct' AND EXISTS (SELECT 1 FROM conversa_participante cp WHERE cp.id_conversa = c.id_conversa AND cp.id_user = :me) AND EXISTS (SELECT 1 FROM conversa_participante cp WHERE cp.id_conversa = c.id_conversa AND cp.id_user = :other) AND (SELECT COUNT(DISTINCT cp.id_user) FROM conversa_participante cp WHERE cp.id_conversa = c.id_conversa) = 2 LIMIT 1");
     $stmt->execute([':me' => $id_user, ':other' => $id_seguido]);

@@ -35,6 +35,20 @@ function enviarCodigoRecuperacao(string $email, string $codigo): bool
     require_once __DIR__ . '/runtime.php';
     try {
         $env = static fn ($key) => nookEnv($key);
+        require_once __DIR__ . '/google_mail_support.php';
+        if (nookGoogleMailConfigured()) {
+            $sender = nookGoogleMailSender();
+            nookGmailSendMessage(
+                nookGoogleMailSendingClient(),
+                $sender,
+                $env('MAIL_FROM_NAME') ?: 'Nook',
+                $email,
+                'Seu código de verificação Nook',
+                "Seu código de verificação Nook é: $codigo\n\nEle expira em 10 minutos. Se você não pediu este código, ignore esta mensagem."
+            );
+            return true;
+        }
+
         if (!$env('MAIL_HOST') || !$env('MAIL_USERNAME') || !$env('MAIL_PASSWORD') || !filter_var($env('MAIL_FROM'), FILTER_VALIDATE_EMAIL)) {
             return false;
         }

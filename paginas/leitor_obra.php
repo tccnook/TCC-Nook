@@ -49,13 +49,14 @@ $current = min($current, (int) $p['versao']['paginas']);
         <div class="reader-book-title">
             <h1><?=eObra($p['publicado']['titulo'])?></h1>
             <p>por <?=eObra($p['nome_completo'])?></p>
+            <p class="reader-status" role="status" aria-live="polite" data-reader-status>Carregando página…</p>
         </div>
         <nav class="reader-header-actions" aria-label="Ações do livro">
             <button class="reader-fullscreen" type="button" data-fullscreen aria-pressed="false"><i data-lucide="scan" aria-hidden="true"></i><span>Tela cheia</span></button>
             <?php if ($user): ?><a class="reader-icon-button" data-reader-bookmark href="perfil.php?aba=marcadores&amp;livro=<?=$id?>&amp;pagina=<?=$current?>" aria-label="Criar marcador nesta página" title="Criar marcador nesta página"><i data-lucide="bookmark" aria-hidden="true"></i></a><?php endif; ?>
             <details class="reader-more">
                 <summary class="reader-icon-button" aria-label="Mais opções" title="Mais opções"><i data-lucide="ellipsis" aria-hidden="true"></i></summary>
-                <div class="reader-more-menu"><a href="visao_livro.php?id_livro=<?=$id?>"><i data-lucide="book-open" aria-hidden="true"></i> Detalhes do livro</a><button type="button" data-share-reader><i data-lucide="share" aria-hidden="true"></i> Copiar link da página</button></div>
+                <div class="reader-more-menu"><a href="visao_livro.php?id_livro=<?=$id?>"><i data-lucide="book-open" aria-hidden="true"></i> Detalhes do livro</a><button class="reader-finish-button" type="button" data-finish aria-pressed="<?= $progress && $progress['concluido_em'] ? 'true' : 'false' ?>" <?=$user ? '' : 'hidden'?>><?=$progress && $progress['concluido_em'] ? 'Desmarcar como lido' : 'Marcar livro como concluído'?></button><button type="button" data-share-reader><i data-lucide="share" aria-hidden="true"></i> Copiar link da página</button></div>
             </details>
         </nav>
     </header>
@@ -81,6 +82,10 @@ $current = min($current, (int) $p['versao']['paginas']);
                     <option value="sepia">Sépia</option>
                     <option value="escuro">Escuro</option>
                 </select></label>
+            <label class="reader-theme-control"><span class="sr-only">Modo de leitura</span><select data-reading-mode>
+                <option value="paged">Página por página</option>
+                <option value="continuous">Rolagem contínua</option>
+            </select></label>
         </div>
     </nav>
 
@@ -88,18 +93,11 @@ $current = min($current, (int) $p['versao']['paginas']);
 
     <main class="reader-stage" aria-label="Página do livro">
         <button class="reader-side-control reader-side-prev" type="button" data-prev aria-label="Página anterior"><i data-lucide="chevron-left" aria-hidden="true"></i></button>
+        <button class="reader-retry-button" type="button" data-retry hidden>Tentar novamente</button>
+        <div class="reader-continuous" data-reader-continuous hidden></div>
         <figure class="reader-canvas"><img data-reader-image alt="Página <?=$current?> de <?=eObra($p['publicado']['titulo'])?>" width="1000" height="1414"></figure>
         <button class="reader-side-control reader-side-next" type="button" data-next aria-label="Próxima página"><i data-lucide="chevron-right" aria-hidden="true"></i></button>
     </main>
-
-    <footer class="reader-footer">
-        <div class="reader-save-state"><i data-lucide="save" aria-hidden="true"></i><span class="reader-save-dot" aria-hidden="true"></span>
-            <p role="status" aria-live="polite" data-reader-status>Carregando página…</p>
-        </div>
-        <p class="reader-footer-note">A navegação salva sua página. Só você decide quando terminou a leitura.</p>
-        <button class="reader-finish-button" type="button" data-finish aria-pressed="<?= $progress && $progress['concluido_em'] ? 'true' : 'false' ?>" <?=$user ? '' : 'hidden'?>><?=$progress && $progress['concluido_em'] ? 'Desmarcar como lido' : 'Marcar livro como concluído'?></button>
-        <button class="reader-retry-button" type="button" data-retry hidden>Tentar novamente</button>
-    </footer>
 
     <dialog class="reader-summary-dialog" data-summary-dialog aria-labelledby="reader-summary-title">
         <header>

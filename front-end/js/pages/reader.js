@@ -15,6 +15,15 @@
     const summaryDialog = document.querySelector("[data-summary-dialog]");
     const title = document.querySelector(".reader-book-title h1").textContent.trim();
     let page = Number(root.dataset.pagina);
+    const stage = document.querySelector(".reader-stage");
+    const canvas = image.closest("figure");
+    const continuous = document.querySelector("[data-reader-continuous]");
+    const mode = document.querySelector("select[data-reading-mode]");
+    let observer;
+    let scrollTimer;
+    let scrollFrame;
+    const pageImages = new Map();
+    const pageUrl = (number) => `pagina_obra.php?id_livro=${id}&versao=${version}&pagina=${number}`;
     let generation = 0;
     let saveChain = Promise.resolve();
 
@@ -67,15 +76,26 @@
     function show(nextPage) {
         page = Math.min(total, Math.max(1, Number(nextPage) || 1));
         generation += 1;
+        if (mode.value === "continuous") {
+            updateControls();
+            const target = pageImages.get(page);
+            if (target) {
+                loadContinuousPage(target);
+                stage.scrollTop += target.closest("figure").getBoundingClientRect().top - stage.getBoundingClientRect().top - 12;
+            }
+            return;
+        }
+        stage.scrollTop = 0;
         image.dataset.generation = String(generation);
         status.textContent = "Carregando página…";
         retryButton.hidden = true;
         updateControls();
         image.alt = `Página ${page} de ${title}`;
-        image.src = `pagina_obra.php?id_livro=${id}&versao=${version}&pagina=${page}`;
+        image.src = pageUrl(page);
     }
 
     image.addEventListener("load", () => {
+        if (mode.value !== "paged") return;
         const loadedGeneration = Number(image.dataset.generation);
         if (loadedGeneration !== generation) return;
         save().catch((error) => {
@@ -83,8 +103,91 @@
         });
     });
     image.addEventListener("error", () => {
+        if (mode.value !== "paged") return;
         status.textContent = "Não foi possível carregar esta página.";
         retryButton.hidden = false;
+    });
+
+    function loadContinuousPage(img) {
+        if (img.hasAttribute("src")) return;
+        img.dataset.ready = "false";
+        img.src = pageUrl(Number(img.dataset.readerPage));
+    }
+    function buildContinuous() {
+        if (pageImages.size) return;
+        observer = new IntersectionObserver((entries) => {
+            for (const entry of entries) {
+                const img = entry.target.querySelector("img");
+                if (entry.isIntersecting) loadContinuousPage(img);
+                else { img.removeAttribute("src"); img.dataset.ready = "false"; }
+            }
+        }, { root: stage, rootMargin: "100% 0px" });
+        for (let number = 1; number <= total; number++) {
+            const figure = document.createElement("figure");
+            figure.className = "reader-canvas";
+            const img = document.createElement("img");
+            img.width = 1000; img.height = 1414;
+            img.alt = `Página ${number} de ${title}`;
+            img.dataset.readerPage = String(number);
+            img.decoding = "async";
+            const error = document.createElement("figcaption");
+            error.hidden = true;
+            error.append(`Não foi possível carregar a página ${number}. `);
+            const retry = document.createElement("button");
+            retry.type = "button"; retry.textContent = "Tentar novamente";
+            retry.addEventListener("click", () => { img.removeAttribute("src"); loadContinuousPage(img); });
+            error.append(retry);
+            img.addEventListener("load", () => {
+                img.dataset.ready = "true"; error.hidden = true;
+                if (mode.value === "continuous" && page === number) save().catch(e => { status.textContent = e.message; });
+            });
+            img.addEventListener("error", () => { if (img.hasAttribute("src")) error.hidden = false; });
+            figure.append(img, error); continuous.append(figure);
+            pageImages.set(number, img);
+        }
+    }
+    mode.addEventListener("change", () => {
+        clearTimeout(scrollTimer);
+        root.dataset.readingMode = mode.value;
+        const scrolling = mode.value === "continuous";
+        canvas.hidden = scrolling; continuous.hidden = !scrolling;
+        retryButton.hidden = true;
+        if (scrolling) {
+            buildContinuous();
+            pageImages.forEach(img => observer.observe(img.closest("figure")));
+        } else {
+            observer?.disconnect();
+            pageImages.forEach(img => img.removeAttribute("src"));
+        }
+        show(page);
+    });
+    stage.addEventListener("scroll", () => {
+        if (mode.value !== "continuous") return;
+        cancelAnimationFrame(scrollFrame);
+        scrollFrame = requestAnimationFrame(() => {
+            if (mode.value !== "continuous") return;
+            const marker = stage.getBoundingClientRect().top + Math.min(160, stage.clientHeight / 3);
+            let active = page;
+            for (const [number, img] of pageImages) {
+                const bounds = img.getBoundingClientRect();
+                if (bounds.top <= marker && bounds.bottom > marker) { active = number; break; }
+            }
+            if (active === page) return;
+            page = active; updateControls();
+            clearTimeout(scrollTimer);
+            scrollTimer = setTimeout(() => {
+                if (mode.value === "continuous" && pageImages.get(page)?.dataset.ready === "true") {
+                    save().catch(e => { status.textContent = e.message; });
+                }
+            }, 450);
+        });
+    }, { passive: true });
+
+    window.addEventListener("resize", () => {
+        if (mode.value === "continuous") {
+            cancelAnimationFrame(scrollFrame);
+            show(page);
+        }
     });
 
     prevButtons.forEach((button) => button.addEventListener("click", () => show(page - 1)));
@@ -95,6 +198,8 @@
     function setZoom(value) {
         zoom.value = String(value);
         image.style.width = `${Number(value)}%`;
+        continuous.style.setProperty("--reader-zoom", `${Number(value)}%`);
+        if (mode.value === "continuous") show(page);
     }
     zoom.addEventListener("change", () => setZoom(zoom.value));
     document.querySelector("[data-zoom-out]").addEventListener("click", () => {
@@ -103,7 +208,7 @@
     document.querySelector("[data-zoom-in]").addEventListener("click", () => {
         setZoom(zoom.options[Math.min(zoom.options.length - 1, zoom.selectedIndex + 1)].value);
     });
-    document.querySelector("[data-theme]").addEventListener("change", (event) => {
+    document.querySelector("select[data-theme]").addEventListener("change", (event) => {
         root.dataset.theme = event.currentTarget.value;
     });
 

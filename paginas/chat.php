@@ -47,7 +47,7 @@ $imagemUrl = static function ($caminho) use ($esc) {
     <link href="https://fonts.googleapis.com/css2?family=Lora:wght@400;500;600;700&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
     <title><?= $esc($tituloConversa) ?> · Mensagens Nook</title>
 </head>
-<body>
+<body class="messaging-screen">
     <?php require_once __DIR__ . '/header.php'; ?>
     <main class="chat-page">
         <aside class="chat-sidebar">
@@ -55,7 +55,7 @@ $imagemUrl = static function ($caminho) use ($esc) {
                 <div>
                     <p>NOOK DIRECT</p>
                     <h1>Mensagens</h1>
-                </div><a href="conversas.php" aria-label="Ver todas as conversas"><i data-lucide="square-pen"></i></a>
+                </div><button type="button" class="chat-new-group" data-open-group aria-label="Criar grupo" aria-haspopup="dialog" aria-controls="chat-group-dialog"><i data-lucide="square-pen" aria-hidden="true"></i></button>
             </header>
             <label class="inbox-search"><i data-lucide="search"></i><input type="search" id="busca-conversa-chat" placeholder="Pesquisar conversas"></label>
             <div id="lista-conversas-chat" class="inbox-list"></div>
@@ -63,7 +63,7 @@ $imagemUrl = static function ($caminho) use ($esc) {
 
         <section class="chat-window" data-conversa="<?= $id_conversa ?>" data-user="<?= $id_user ?>">
             <header class="chat-topbar">
-                <a href="<?= $isGrupo ? 'gerenciar_grupo.php?id_conversa=' . $id_conversa : 'perfil_user_terceiro.php?id_user=' . (int) ($participantes[0]['id_user'] ?? 0) ?>" class="chat-contact">
+                <a href="<?= $isGrupo ? 'gerenciar_grupo.php?id_conversa=' . $id_conversa : 'perfil_contato.php?id_conversa=' . $id_conversa ?>" class="chat-contact" data-contact-profile="<?= $isGrupo ? '0' : '1' ?>">
                     <?php if ($fotoConversa): ?><img src="<?= $imagemUrl($fotoConversa) ?>" alt="">
                     <?php else: ?><span class="chat-avatar-fallback"><?= $esc(mb_strtoupper(mb_substr($tituloConversa, 0, 1))) ?></span><?php endif; ?>
                     <span><strong><?= $esc($tituloConversa) ?></strong><small><?= $isGrupo ? count($participantes) + 1 . ' participantes' : 'Conversa direta' ?></small></span>
@@ -81,12 +81,15 @@ $imagemUrl = static function ($caminho) use ($esc) {
             </form>
         </section>
     </main>
+    <?php require __DIR__ . '/chat_group_dialog.php'; ?>
     <?php require_once __DIR__ . '/footer.php'; ?>
+    <script src="../front-end/js/pages/chat-sync.js"></script>
     <script>
     const idConversa = <?= json_encode($id_conversa) ?>;
     const idUsuarioAtual = <?= json_encode($id_user) ?>;
     const chatCsrf = <?= json_encode($chatCsrf) ?>;
     const mensagensContainer = document.getElementById('mensagens-conversa');
+    const scrollStorageKey = `nook-chat-scroll-${idConversa}`;
     const formMensagem = document.getElementById('form-mensagem');
     const campoMensagem = document.getElementById('input-mensagem');
     const statusMensagem = document.getElementById('status-mensagem');
@@ -94,16 +97,24 @@ $imagemUrl = static function ($caminho) use ($esc) {
     let idMensagemEditando = null;
     let assinaturaMensagens = null;
     let carregandoMensagens = false;
+    let erroSincronizacao = false;
 
     async function buscarMensagens() {
         if (carregandoMensagens) return;
         carregandoMensagens = true;
-        const estavaNoFim = mensagensContainer.scrollHeight - mensagensContainer.scrollTop - mensagensContainer.clientHeight < 140;
+
         const dados = new URLSearchParams({ id_conversa: String(idConversa), csrf: chatCsrf });
         try {
-            const resposta = await fetch('buscarmensagens.php', { method: 'POST', body: dados, headers: { Accept: 'application/json' } });
+            const resposta = await nookChatFetch('buscarmensagens.php', { method: 'POST', body: dados, headers: { Accept: 'application/json' } });
             const resultado = await resposta.json();
             if (!resposta.ok || !resultado.sucesso) throw new Error(resultado.mensagem || 'Falha ao buscar mensagens.');
+            if (erroSincronizacao) {
+                if (idMensagemEditando === null) statusMensagem.textContent = '';
+                erroSincronizacao = false;
+            }
+            const estavaNoFim = mensagensContainer.scrollHeight - mensagensContainer.scrollTop - mensagensContainer.clientHeight < 140;
+            const rolagemAnterior = mensagensContainer.scrollTop;
+            const primeiraCarga = assinaturaMensagens === null;
             const novas = resultado.mensagens || [];
             const assinatura = JSON.stringify(novas);
             if (assinatura === assinaturaMensagens) return;
@@ -121,6 +132,7 @@ $imagemUrl = static function ($caminho) use ($esc) {
                 const minha = Number(mensagem.id_envio) === Number(idUsuarioAtual);
                 const item = document.createElement('article');
                 item.className = `chat-message ${minha ? 'is-mine' : 'is-theirs'}`;
+                item.id = `mensagem-${mensagem.id_mensagem}`;
                 item.dataset.id = mensagem.id_mensagem;
                 const bubble = document.createElement('div');
                 bubble.className = 'chat-bubble';
@@ -148,9 +160,18 @@ $imagemUrl = static function ($caminho) use ($esc) {
                 }
                 mensagensContainer.append(item);
             });
-            if (estavaNoFim) mensagensContainer.scrollTop = mensagensContainer.scrollHeight;
+            if (primeiraCarga && location.hash.startsWith('#mensagem-')) {
+                sessionStorage.removeItem(scrollStorageKey);
+                document.getElementById(location.hash.slice(1))?.scrollIntoView({ block: 'center' });
+            } else if (primeiraCarga && sessionStorage.getItem(scrollStorageKey) !== null) {
+                mensagensContainer.scrollTop = Number(sessionStorage.getItem(scrollStorageKey)) || 0;
+                sessionStorage.removeItem(scrollStorageKey);
+            } else {
+                mensagensContainer.scrollTop = primeiraCarga || estavaNoFim ? mensagensContainer.scrollHeight : rolagemAnterior;
+            }
         } catch (erro) {
-            statusMensagem.textContent = erro.message;
+            erroSincronizacao = true;
+            statusMensagem.textContent = erro.name === 'AbortError' ? 'Conexão lenta. Tentando atualizar novamente…' : erro.message;
         } finally { carregandoMensagens = false; }
     }
 
@@ -172,7 +193,7 @@ $imagemUrl = static function ($caminho) use ($esc) {
                 const resposta = await fetch('deletar_mensagem.php', { method: 'POST', body: dados, headers: { Accept: 'application/json' } });
                 const resultado = await resposta.json();
                 if (!resultado.sucesso) throw new Error(resultado.mensagem || 'Não foi possível excluir.');
-                await buscarMensagens();
+                await sincronizacaoMensagens.refresh();
             } catch (erro) { statusMensagem.textContent = erro.message; }
         }
     });
@@ -192,7 +213,7 @@ $imagemUrl = static function ($caminho) use ($esc) {
             campoMensagem.value = '';
             idMensagemEditando = null;
             statusMensagem.textContent = '';
-            await buscarMensagens();
+            await sincronizacaoMensagens.refresh();
         } catch (erro) { statusMensagem.textContent = erro.message; }
         finally { botao.disabled = false; campoMensagem.focus(); }
     });
@@ -201,11 +222,16 @@ $imagemUrl = static function ($caminho) use ($esc) {
 
     const buscaConversaChat = document.getElementById('busca-conversa-chat');
     const listaConversasChat = document.getElementById('lista-conversas-chat');
+    if (document.querySelector('.chat-contact')?.dataset.contactProfile === '1') {
+        document.querySelector('.chat-contact').addEventListener('click', () => {
+            sessionStorage.setItem(scrollStorageKey, String(mensagensContainer.scrollTop));
+        });
+    }
     let temporizadorConversa;
     let pedidoConversas = 0;
     async function carregarListaConversas() {
         const pedido = ++pedidoConversas;
-        const resposta = await fetch(`buscarconversas.php?nome=${encodeURIComponent(buscaConversaChat.value.trim())}`);
+        const resposta = await nookChatFetch(`buscarconversas.php?nome=${encodeURIComponent(buscaConversaChat.value.trim())}`);
         const dados = await resposta.json();
         if (pedido !== pedidoConversas) return;
         if (!resposta.ok || !dados.sucesso) throw new Error(dados.mensagem || 'Não foi possível carregar conversas.');
@@ -226,9 +252,8 @@ $imagemUrl = static function ($caminho) use ($esc) {
         });
     }
     buscaConversaChat.addEventListener('input', () => { clearTimeout(temporizadorConversa); temporizadorConversa = setTimeout(() => carregarListaConversas().catch(erro => { statusMensagem.textContent = erro.message; }), 250); });
-    carregarListaConversas().catch(erro => { statusMensagem.textContent = erro.message; });
-    buscarMensagens();
-    setInterval(buscarMensagens, 5000);
+    const sincronizacaoMensagens = nookChatSync(buscarMensagens, 1500);
+    nookChatSync(() => carregarListaConversas().catch(erro => { statusMensagem.textContent = erro.message; }), 6000);
     if (window.lucide) lucide.createIcons();
 </script>
 </body>

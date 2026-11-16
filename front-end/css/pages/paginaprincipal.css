@@ -20,7 +20,7 @@
 .home-section-heading p,
 .home-reader-card > p {
     color: var(--color-accent2);
-    font-size: 0.65rem;
+    font-size: var(--font-size-caption);
     font-weight: 700;
 }
 
@@ -32,7 +32,7 @@
 
 .home-welcome span {
     color: var(--text-on-dark);
-    font-size: 0.78rem;
+    font-size: var(--font-size-caption);
     opacity: 0.85;
 }
 .home-welcome > button {
@@ -42,9 +42,9 @@
     min-height: 2.5rem;
     padding: 0.55rem 0.8rem;
     border: 1px solid var(--color-accent2);
-    border-radius: 7px;
+    border-radius: var(--radius-control);
     color: var(--text-on-dark);
-    font-size: 0.75rem;
+    font-size: var(--font-size-caption);
 }
 .home-welcome > button svg {
     width: 1rem;
@@ -75,7 +75,7 @@
 .home-section-heading h2 {
     margin-top: 0.15rem;
     color: var(--text-title);
-    font: 500 1.1rem var(--font-secundary);
+    font: 500 var(--font-size-lead) var(--font-secundary);
 }
 .home-section-heading > svg {
     width: 1.3rem;
@@ -86,7 +86,7 @@
     align-items: center;
     gap: 0.25rem;
     color: var(--color-accent);
-    font-size: 0.7rem;
+    font-size: var(--font-size-caption);
 }
 .home-section-heading > a svg {
     width: 0.8rem;
@@ -96,10 +96,10 @@
     flex: none;
     padding: 0 0.7rem;
     border: 1px solid var(--soft-border);
-    border-radius: 7px;
+    border-radius: var(--radius-control);
     background: var(--all-white);
     color: var(--text-title);
-    font-size: 0.67rem;
+    font-size: var(--font-size-caption);
     font-weight: 700;
     transition:
         background-color 0.16s ease,
@@ -151,7 +151,7 @@
     border: 1px solid var(--border-primary);
     border-radius: 99px;
     color: var(--text-secondary);
-    font-size: 0.72rem;
+    font-size: var(--font-size-caption);
     text-align: left;
 }
 .home-composer-image {
@@ -200,20 +200,20 @@
 }
 .post-author strong {
     overflow: hidden;
-    font-size: 0.75rem;
+    font-size: var(--font-size-caption);
     text-overflow: ellipsis;
     white-space: nowrap;
 }
 .post-author small {
     color: var(--text-secondary);
-    font-size: 0.63rem;
+    font-size: var(--font-size-caption);
 }
 .post-private {
     display: inline-flex;
     align-items: center;
     gap: 0.25rem;
     color: var(--text-secondary);
-    font-size: 0.62rem;
+    font-size: var(--font-size-caption);
 }
 .post-private svg {
     width: 0.75rem;
@@ -221,20 +221,20 @@
 .post-card > h3 {
     margin: 0.8rem 0 0.35rem;
     color: var(--text-title);
-    font: 600 0.95rem var(--font-secundary);
+    font: 600 var(--font-size-body) var(--font-secundary);
 }
 .post-image {
     width: 100%;
     max-height: 34rem;
     margin: 0.6rem 0;
-    border-radius: 7px;
+    border-radius: var(--radius-control);
     background: var(--bg-primary);
     object-fit: contain;
 }
 .post-content,
 .post-caption {
     color: var(--text-primary);
-    font-size: 0.78rem;
+    font-size: var(--font-size-caption);
     line-height: 1.5;
     white-space: pre-line;
 }
@@ -256,7 +256,7 @@
     align-items: center;
     gap: 0.35rem;
     color: var(--text-secondary);
-    font-size: 0.7rem;
+    font-size: var(--font-size-caption);
 }
 .post-actions button[aria-pressed="true"] {
     color: var(--color-accent);
@@ -274,7 +274,7 @@
 }
 .post-comments > p {
     color: var(--text-secondary);
-    font-size: 0.68rem;
+    font-size: var(--font-size-caption);
     line-height: 1.4;
 }
 .post-comments > p strong {
@@ -294,16 +294,16 @@
     background: var(--bg-primary);
     color: var(--text-primary);
     font: inherit;
-    font-size: 0.68rem;
+    font-size: var(--font-size-caption);
 }
 .post-comment-form button {
     color: var(--color-accent);
-    font-size: 0.68rem;
+    font-size: var(--font-size-caption);
     font-weight: 700;
 }
 .post-feedback {
     color: var(--danger);
-    font-size: 0.65rem;
+    font-size: var(--font-size-caption);
 }
 
 .home-section.home-people-suggestions,
@@ -331,7 +331,7 @@
     gap: 0.45rem;
     min-width: 0;
     padding: 0.85rem 0.55rem;
-    border-radius: 8px;
+    border-radius: var(--radius-control);
     background: var(--all-white);
     box-shadow: 0 0.15rem 0.6rem var(--shadow-soft);
     text-align: center;
@@ -353,14 +353,14 @@
     background: var(--bg-cards);
     color: var(--text-on-dark);
     object-fit: cover;
-    font-size: 1rem;
+    font-size: var(--font-size-body);
     font-weight: 700;
 }
 .home-person-card-link strong {
     max-width: 100%;
     overflow: hidden;
     color: var(--text-title);
-    font-size: 0.7rem;
+    font-size: var(--font-size-caption);
     text-overflow: ellipsis;
     white-space: nowrap;
 }
@@ -369,14 +369,14 @@
     max-width: 100%;
     overflow: hidden;
     color: var(--text-secondary);
-    font-size: 0.62rem;
+    font-size: var(--font-size-caption);
     line-height: 1.25;
     -webkit-box-orient: vertical;
     -webkit-line-clamp: 1;
 }
 .home-person-card-link small {
     color: var(--text-muted);
-    font-size: 0.56rem;
+    font-size: var(--font-size-caption);
 }
 .home-person-card > button {
     display: inline-flex;
@@ -388,7 +388,7 @@
     border-radius: 6px;
     background: var(--color-accent);
     color: var(--text-on-dark);
-    font-size: 0.59rem;
+    font-size: var(--font-size-caption);
     font-weight: 700;
 }
 .home-person-card > button:disabled {
@@ -430,7 +430,7 @@
     gap: 0.35rem;
     min-width: 0;
     padding: 0.8rem 0.45rem;
-    border-radius: 8px;
+    border-radius: var(--radius-control);
     background: var(--all-white);
     color: var(--text-primary);
     box-shadow: 0 0.15rem 0.6rem var(--shadow-soft);
@@ -453,17 +453,17 @@
     max-width: 100%;
     overflow: hidden;
     color: var(--text-title);
-    font-size: 0.68rem;
+    font-size: var(--font-size-caption);
     text-overflow: ellipsis;
     white-space: nowrap;
 }
 .home-author-card small {
     color: var(--text-secondary);
-    font-size: 0.6rem;
+    font-size: var(--font-size-caption);
 }
 .home-empty {
     color: var(--text-secondary);
-    font-size: 0.75rem;
+    font-size: var(--font-size-caption);
 }
 .home-avatar-fallback {
     display: grid;
@@ -491,7 +491,7 @@
         padding: 1rem;
     }
     .home-welcome h1 {
-        font-size: 1.35rem;
+        font-size: var(--font-size-subtitle);
     }
     .home-people-row,
     .home-authors-row {
@@ -555,23 +555,23 @@
 }
 .home-welcome h1 {
     color: var(--color-primary);
-    font-size: clamp(1.6rem, 3vw, 2rem);
+    font-size: var(--font-size-title);
 }
 .home-welcome p {
     color: var(--text-muted);
-    font-size: 0.75rem;
+    font-size: var(--font-size-caption);
 }
 .home-welcome span {
     color: var(--text-secondary);
-    font-size: 0.95rem;
+    font-size: var(--font-size-body);
     opacity: 1;
 }
 .home-welcome > button {
-    min-height: 44px;
+    min-height: var(--size-control-height);
     padding: 0.75rem 1rem;
     background: var(--color-primary);
     color: white;
-    font-size: 0.875rem;
+    font-size: var(--font-size-small);
     border-color: var(--color-primary);
 }
 .home-columns {
@@ -613,30 +613,30 @@
     height: 44px;
 }
 .home-social-rail .home-person-card-link strong {
-    font-size: 0.875rem;
+    font-size: var(--font-size-small);
 }
 .home-social-rail .home-person-name,
 .home-social-rail .home-person-card-link small {
-    font-size: 0.75rem;
+    font-size: var(--font-size-caption);
 }
 .home-social-rail .home-person-card > button {
-    min-height: 44px;
+    min-height: var(--size-control-height);
     padding: 0.5rem 0.65rem;
     background: transparent;
     color: var(--color-primary);
-    font-size: 0.8rem;
+    font-size: var(--font-size-caption);
 }
 .home-section-heading h2 {
-    font-size: 1.35rem;
+    font-size: var(--font-size-subtitle);
 }
 .home-section-heading p {
     color: var(--text-muted);
-    font-size: 0.75rem;
+    font-size: var(--font-size-caption);
     text-transform: none;
 }
 .home-section-heading > .home-section-more {
-    font-size: 0.8rem;
-    min-height: 44px;
+    font-size: var(--font-size-caption);
+    min-height: var(--size-control-height);
     border: 0;
     padding: 0.25rem;
     background: transparent;
@@ -649,55 +649,55 @@
     padding: 1rem;
 }
 .home-composer > button:nth-child(2) {
-    font-size: 0.875rem;
-    min-height: 44px;
-    border-radius: 8px;
+    font-size: var(--font-size-small);
+    min-height: var(--size-control-height);
+    border-radius: var(--radius-control);
 }
 .home-composer-image {
     min-width: 44px;
-    min-height: 44px;
+    min-height: var(--size-control-height);
 }
 .post-card {
     padding: clamp(1rem, 3vw, 1.5rem);
     margin-bottom: 1.25rem;
 }
 .post-author strong {
-    font-size: 0.95rem;
+    font-size: var(--font-size-body);
 }
 .post-author small {
-    font-size: 0.75rem;
+    font-size: var(--font-size-caption);
 }
 .post-card h3 {
     margin-top: 1rem;
-    font: 500 1.3rem/1.4 var(--font-secundary);
+    font: 500 var(--font-size-subtitle)/1.4 var(--font-secundary);
 }
 .post-content,
 .post-caption {
-    font-size: 1rem;
+    font-size: var(--font-size-body);
     line-height: 1.8;
     overflow-wrap: anywhere;
 }
 .post-actions button,
 .post-comment-form button {
-    min-height: 44px;
-    font-size: 0.875rem;
+    min-height: var(--size-control-height);
+    font-size: var(--font-size-small);
 }
 .post-comments p,
 .post-comment-form input {
-    font-size: 0.875rem;
+    font-size: var(--font-size-small);
     line-height: 1.6;
 }
 .post-comment-form input {
-    min-height: 44px;
-    border-radius: 8px;
+    min-height: var(--size-control-height);
+    border-radius: var(--radius-control);
 }
 .home-author-card strong {
-    font-size: 0.875rem;
+    font-size: var(--font-size-small);
 }
 .home-author-card small,
 .home-empty,
 .post-feedback {
-    font-size: 0.8rem;
+    font-size: var(--font-size-caption);
 }
 @media (max-width: 850px) {
     .home-columns {

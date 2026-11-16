@@ -6,7 +6,7 @@
     padding: 0;
     background: #fff;
     border: 0;
-    border-radius: 12px;
+    border-radius: var(--radius-card);
     color: var(--color-primary);
     overflow: hidden;
     font-family: var(--font-primary);
@@ -47,10 +47,8 @@
 }
 .post-composer-heading h2 {
     font:
-        500 1.5rem Lora,
-        Georgia,
-        serif;
-    color: #2b1f47;
+        500 var(--font-size-heading) var(--font-secondary);
+    color: var(--color-primary);
     margin: 0;
 }
 .post-composer-heading > button {
@@ -58,7 +56,7 @@
     place-items: center;
     min-width: 44px;
     height: 44px;
-    color: #2b1f47;
+    color: var(--color-primary);
     background: transparent;
 }
 .post-composer-columns {
@@ -86,12 +84,12 @@
 }
 .post-draft-author strong {
     display: block;
-    font-size: 0.85rem;
+    font-size: var(--font-size-small);
     font-weight: 700;
 }
 .post-draft-author small {
     display: block;
-    font-size: 0.7rem;
+    font-size: var(--font-size-caption);
     margin-top: 5px;
     color: #706478;
 }
@@ -100,8 +98,8 @@
     border: 1px solid #dcd3e2;
     border-radius: 5px;
     background: #fff;
-    color: #2b1f47;
-    font-size: 0.75rem;
+    color: var(--color-primary);
+    font-size: var(--font-size-caption);
     padding: 3px 8px;
     margin-top: 6px;
 }
@@ -113,21 +111,21 @@
     padding: 8px 0;
     border: 0;
     background: #fff;
-    color: #2b1f47;
+    color: var(--color-primary);
     resize: vertical;
     line-height: 1.7;
-    min-height: 44px;
+    min-height: var(--size-control-height);
     box-shadow: none;
     border-radius: 0;
-    font-size: 0.9rem;
+    font-size: var(--font-size-small);
 }
 .post-composer-dialog .post-draft-content {
     min-height: 180px;
     max-height: 360px;
 }
 .post-composer-dialog .post-draft-title {
-    font-family: Lora, Georgia, serif;
-    font-size: 1.1rem;
+    font-family: var(--font-secondary);
+    font-size: var(--font-size-lead);
 }
 .post-format-tools {
     display: flex;
@@ -142,7 +140,7 @@
     width: 36px;
     height: 44px;
     flex: none;
-    color: #2b1f47;
+    color: var(--color-primary);
 }
 .post-format-tools svg {
     width: 18px;
@@ -150,14 +148,14 @@
 }
 .post-format-tools small {
     margin-left: auto;
-    font-size: 0.7rem;
+    font-size: var(--font-size-caption);
     color: #706478;
 }
 .post-draft-media {
     position: relative;
     margin-top: 10px;
-    background: #f6f2eb;
-    border-radius: 7px;
+    background: var(--color-surface);
+    border-radius: var(--radius-control);
     overflow: hidden;
 }
 .post-draft-media > img {
@@ -180,7 +178,7 @@
     background: #2b1f47dd;
     color: #fff;
     border-radius: 6px;
-    font-size: 0.7rem;
+    font-size: var(--font-size-caption);
 }
 .post-image-thumbnails {
     display: flex;
@@ -197,10 +195,10 @@
     flex: none;
     padding: 2px;
     min-width: 44px;
-    min-height: 44px;
+    min-height: var(--size-control-height);
 }
 .post-image-thumbnails button[aria-pressed="true"] {
-    border-color: #7b6aa8;
+    border-color: var(--color-lavender);
 }
 .post-image-thumbnails img {
     display: block;
@@ -219,9 +217,9 @@
     display: flex;
     align-items: center;
     gap: 8px;
-    min-height: 44px;
-    font-size: 0.8rem;
-    color: #2b1f47;
+    min-height: var(--size-control-height);
+    font-size: var(--font-size-caption);
+    color: var(--color-primary);
 }
 .post-composer-tools svg {
     width: 18px;
@@ -229,7 +227,7 @@
 }
 .post-composer-tools small,
 .post-image-help {
-    font-size: 0.7rem;
+    font-size: var(--font-size-caption);
     color: #706478;
 }
 .post-image-help {
@@ -243,10 +241,10 @@
     opacity: 0;
 }
 .post-extra-fields {
-    font-size: 0.8rem;
+    font-size: var(--font-size-caption);
 }
 .post-extra-fields summary {
-    min-height: 44px;
+    min-height: var(--size-control-height);
     cursor: pointer;
     display: flex;
     align-items: center;
@@ -266,10 +264,8 @@
 }
 .post-preview-heading h3 {
     font:
-        500 1rem Lora,
-        Georgia,
-        serif;
-    color: #2b1f47;
+        500 var(--font-size-body) var(--font-secondary);
+    color: var(--color-primary);
     margin: 0;
 }
 .post-preview-heading > div {
@@ -283,10 +279,10 @@
     height: 44px;
     border-radius: 6px;
     background: #eee8f2;
-    color: #2b1f47;
+    color: var(--color-primary);
 }
 .post-preview-heading button[aria-pressed="true"] {
-    background: #2b1f47;
+    background: var(--color-primary);
     color: white;
 }
 .post-preview-heading svg {
@@ -295,7 +291,7 @@
 }
 .post-preview-card {
     padding: 14px;
-    border-radius: 8px;
+    border-radius: var(--radius-control);
     background: white;
     box-shadow: 0 3px 16px #2b1f470a;
     width: 100%;
@@ -306,21 +302,21 @@
     height: 34px;
 }
 .post-preview-card .post-draft-author strong {
-    font-size: 0.75rem;
+    font-size: var(--font-size-caption);
 }
 .post-preview-card .post-draft-author small {
-    font-size: 0.65rem;
+    font-size: var(--font-size-caption);
 }
 .post-preview-card h4 {
-    font-family: Lora, Georgia, serif;
+    font-family: var(--font-secondary);
     margin: 0 0 10px;
 }
 .post-preview-text,
 #postPreviewCaption {
     line-height: 1.7;
-    font-size: 0.8rem;
+    font-size: var(--font-size-caption);
     overflow-wrap: anywhere;
-    color: #2b1f47;
+    color: var(--color-primary);
 }
 .post-preview-text a {
     color: #6d4a96;
@@ -335,7 +331,7 @@
     max-height: 300px;
     object-fit: contain;
     border-radius: 6px;
-    background: #f6f2eb;
+    background: var(--color-surface);
     display: block;
 }
 .post-preview-card figcaption {
@@ -344,7 +340,7 @@
     bottom: 8px;
     color: white;
     background: #2b1f47dd;
-    font-size: 0.7rem;
+    font-size: var(--font-size-caption);
     border-radius: 5px;
     padding: 4px 7px;
 }
@@ -355,7 +351,7 @@
     display: flex;
     gap: 20px;
     padding-top: 14px;
-    color: #2b1f47;
+    color: var(--color-primary);
 }
 .post-preview-actions svg {
     width: 19px;
@@ -368,10 +364,10 @@
     max-width: 260px;
 }
 .post-preview-phone .post-preview-text {
-    font-size: 0.75rem;
+    font-size: var(--font-size-caption);
 }
 #postPreviewSensitive {
-    font-size: 0.7rem;
+    font-size: var(--font-size-caption);
     background: #eee8f2;
     padding: 10px;
     border-radius: 6px;
@@ -386,7 +382,7 @@
     flex: none;
 }
 .post-content-labels {
-    font-size: 0.75rem;
+    font-size: var(--font-size-caption);
     position: relative;
 }
 .post-content-labels summary {
@@ -394,7 +390,7 @@
     align-items: center;
     gap: 8px;
     cursor: pointer;
-    min-height: 44px;
+    min-height: var(--size-control-height);
 }
 .post-content-labels summary svg {
     width: 18px;
@@ -407,7 +403,7 @@
     min-height: 36px;
 }
 .post-content-labels input {
-    accent-color: #7b6aa8;
+    accent-color: var(--color-lavender);
     width: 16px;
     height: 16px;
 }
@@ -421,15 +417,15 @@
     align-items: center;
     justify-content: center;
     gap: 10px;
-    min-height: 44px;
+    min-height: var(--size-control-height);
     padding: 12px 20px;
-    border-radius: 7px;
+    border-radius: var(--radius-control);
     background: #f1edf4;
-    color: #2b1f47;
-    font-size: 0.85rem;
+    color: var(--color-primary);
+    font-size: var(--font-size-small);
 }
 .post-composer-footer .post-submit {
-    background: #2b1f47;
+    background: var(--color-primary);
     color: #fff;
     min-width: 130px;
 }
@@ -442,8 +438,8 @@
     cursor: wait;
 }
 .modal-post-status {
-    font-size: 0.8rem;
-    color: #2b1f47;
+    font-size: var(--font-size-caption);
+    color: var(--color-primary);
     line-height: 1.5;
     margin: 0;
     padding: 0 24px 12px;
@@ -477,11 +473,11 @@
     border-radius: 5px;
     background: #2b1f47df;
     color: #fff;
-    font-size: 0.75rem;
+    font-size: var(--font-size-caption);
     padding: 6px 10px;
 }
 .post-gallery:focus-visible {
-    outline: 3px solid #7b6aa8;
+    outline: 3px solid var(--color-lavender);
     outline-offset: 3px;
 }
 
@@ -497,7 +493,7 @@
         padding: 12px 16px;
     }
     .post-composer-heading h2 {
-        font-size: 1.3rem;
+        font-size: var(--font-size-subtitle);
     }
     .post-composer-columns {
         grid-template-columns: 1fr;
@@ -541,7 +537,7 @@
         width: 32px;
     }
     .post-format-tools small {
-        font-size: 0.65rem;
+        font-size: var(--font-size-caption);
     }
     .post-preview-phone {
         max-width: 260px;

@@ -18,7 +18,7 @@ if (!isset($_SESSION['id_user'])) {
     <link href="https://fonts.googleapis.com/css2?family=Lora:wght@400;500;600;700&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
     <title>Mensagens | Nook</title>
 </head>
-<body>
+<body class="messaging-screen">
     <?php require_once __DIR__ . '/header.php'; ?>
     <main class="inbox-page">
         <section class="inbox-panel">
@@ -26,7 +26,7 @@ if (!isset($_SESSION['id_user'])) {
                 <div>
                     <p>NOOK DIRECT</p>
                     <h1>Mensagens</h1>
-                </div><a href="perfil.php" aria-label="Abrir perfil"><i data-lucide="square-pen"></i></a>
+                </div><button type="button" class="chat-new-group" data-open-group aria-label="Criar grupo" aria-haspopup="dialog" aria-controls="chat-group-dialog"><i data-lucide="square-pen" aria-hidden="true"></i></button>
             </header>
             <label class="inbox-search"><i data-lucide="search"></i><input type="search" id="busca-conversa" placeholder="Pesquisar conversas" autocomplete="off"></label>
             <div id="lista-conversas" class="inbox-list" aria-live="polite">
@@ -38,7 +38,9 @@ if (!isset($_SESSION['id_user'])) {
             <p>Escolha uma conversa ou siga um leitor para começar a trocar ideias.</p>
         </section>
     </main>
+    <?php require __DIR__ . '/chat_group_dialog.php'; ?>
     <?php require_once __DIR__ . '/footer.php'; ?>
+    <script src="../front-end/js/pages/chat-sync.js"></script>
     <script>
     const campoBuscaConversa = document.getElementById('busca-conversa');
     const listaConversas = document.getElementById('lista-conversas');
@@ -59,7 +61,7 @@ if (!isset($_SESSION['id_user'])) {
         const pedido = ++pedidoConversas;
         listaConversas.setAttribute('aria-busy', 'true');
         try {
-            const resposta = await fetch(`buscarconversas.php?nome=${encodeURIComponent(campoBuscaConversa.value.trim())}`);
+            const resposta = await nookChatFetch(`buscarconversas.php?nome=${encodeURIComponent(campoBuscaConversa.value.trim())}`);
             const dados = await resposta.json();
             if (pedido !== pedidoConversas) return;
             if (!resposta.ok || !dados.sucesso) throw new Error(dados.mensagem || 'Não foi possível carregar as conversas.');
@@ -107,7 +109,7 @@ if (!isset($_SESSION['id_user'])) {
         clearTimeout(timeoutBuscaConversa);
         timeoutBuscaConversa = setTimeout(carregarConversas, 250);
     });
-    carregarConversas();
+    nookChatSync(carregarConversas, 3000);
     if (window.lucide) lucide.createIcons();
 </script>
 </body>

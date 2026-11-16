@@ -11,6 +11,60 @@ function authTokenValido($esperado, $recebido): bool
     return is_string($esperado) && $esperado !== '' && is_string($recebido) && hash_equals($esperado, $recebido);
 }
 
+/** Finds a Google-linked account or links an active account with the same verified email. */
+function authContaGoogle(PDO $conn, string $googleId, string $email): ?array
+{
+    $stmt = $conn->prepare('SELECT id_user, ativo, excluido_em FROM usuario WHERE google_id=:google_id LIMIT 1');
+    $stmt->execute([':google_id' => $googleId]);
+    $account = $stmt->fetch(PDO::FETCH_ASSOC);
+    if ($account) {
+        return $account;
+    }
+
+    $conn->beginTransaction();
+    try {
+        $stmt = $conn->prepare('SELECT id_user, google_id, ativo, excluido_em FROM usuario WHERE LOWER(email)=LOWER(:email) ORDER BY id_user LIMIT 2 FOR UPDATE');
+        $stmt->execute([':email' => $email]);
+        $accounts = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        if (count($accounts) > 1) {
+            throw new DomainException('Há mais de uma conta Nook com este e-mail. Entre em contato com o suporte.');
+        }
+
+        $account = $accounts[0] ?? null;
+        if (!$account || !$account['ativo'] || $account['excluido_em']) {
+            $conn->commit();
+            return $account;
+        }
+
+        if ($account['google_id'] !== null && $account['google_id'] !== $googleId) {
+            throw new DomainException('Esta conta já está vinculada a outra conta Google. Entre com e-mail e senha.');
+        }
+
+        if ($account['google_id'] === null) {
+            $stmt = $conn->prepare('UPDATE usuario SET google_id=:google_id WHERE id_user=:id_user AND google_id IS NULL');
+            $stmt->execute([':google_id' => $googleId, ':id_user' => $account['id_user']]);
+        }
+
+        $conn->commit();
+        return $account;
+    } catch (PDOException $error) {
+        if ($conn->inTransaction()) {
+            $conn->rollBack();
+        }
+        if (($error->errorInfo[0] ?? (string) $error->getCode()) === '23505') {
+            throw new DomainException('Esta conta Google já está vinculada a outro usuário.');
+        }
+
+        throw $error;
+    } catch (Throwable $error) {
+        if ($conn->inTransaction()) {
+            $conn->rollBack();
+        }
+
+        throw $error;
+    }
+}
+
 function authDataNascimentoValida(string $valor): bool
 {
     if (!preg_match('/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/D', $valor)) {

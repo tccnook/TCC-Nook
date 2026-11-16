@@ -221,7 +221,6 @@ if (isset($_POST['logar']) && !hash_equals($_SESSION['login_csrf'], authTexto($_
         </button>
 
         <p>Primeira vez no Nook? <a href="cadastro.php?tipo=normal">Crie sua conta!</a></p>
-        <p><a href="login.php?acesso=admin">Entrar na administração</a></p>
         <?php else: ?>
         <p><a href="login.php">Voltar ao login de leitor</a></p>
         <?php endif; ?>

@@ -1,5 +1,7 @@
 body {
     font-family: var(--font-primary);
+    font-size: var(--font-size-body);
+    line-height: var(--line-height-body);
     background-color: var(--bg-primary);
     color: var(--text-primary);
     min-height: 100vh;
@@ -69,4 +71,19 @@ textarea {
     clip: rect(0, 0, 0, 0) !important;
     white-space: nowrap !important;
     border: 0 !important;
+}
+
+/* Baixa especificidade: componentes e preferências do leitor continuam soberanos. */
+:where(h1, h2, h3, h4, h5, h6) {
+    font-family: var(--font-secondary);
+    line-height: var(--line-height-heading);
+    overflow-wrap: anywhere;
+}
+:where(h1) { font-size: var(--font-size-title); }
+:where(h2) { font-size: var(--font-size-heading); }
+:where(h3) { font-size: var(--font-size-subtitle); }
+:where(h4, h5, h6) { font-size: var(--font-size-lead); }
+:where(small) { font-size: var(--font-size-caption); }
+:where(input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="hidden"]), select, textarea) {
+    font-family: var(--font-primary);
 }

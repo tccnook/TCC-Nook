@@ -1,5 +1,5 @@
 body:has(.home-page) {
-    background: #f6f2eb;
+    background: var(--color-background);
 }
 
 .home-page {
@@ -34,15 +34,14 @@ body:has(.home-page) {
     border-radius: 6px;
     color: #35313b;
     font:
-        500 0.83rem Manrope,
-        sans-serif;
+        500 var(--font-size-small) var(--font-primary);
     text-align: left;
 }
 
 .home-sidebar-link:hover,
 .home-sidebar-link.is-current {
-    background: #e8dfd1;
-    color: #2b1f47;
+    background: var(--color-surface-muted);
+    color: var(--color-primary);
 }
 .home-sidebar-link.is-current {
     font-weight: 700;
@@ -62,7 +61,7 @@ body:has(.home-page) {
 .home-sidebar-extra p {
     margin: 0 0 6px;
     color: #716b75;
-    font-size: 0.72rem;
+    font-size: var(--font-size-caption);
     font-weight: 700;
 }
 .home-sidebar-extra a {
@@ -71,15 +70,15 @@ body:has(.home-page) {
     gap: 9px;
     min-height: 34px;
     color: #514b57;
-    font-size: 0.75rem;
+    font-size: var(--font-size-caption);
 }
 .home-sidebar-extra a:hover {
-    color: #2b1f47;
+    color: var(--color-primary);
 }
 .home-sidebar-extra svg {
     width: 16px;
     height: 16px;
-    color: #7b6aa8;
+    color: var(--color-lavender);
 }
 
 .home-feed-column,
@@ -95,7 +94,7 @@ body:has(.home-page) {
     min-width: 0;
     margin: 0;
     border: 0;
-    border-radius: 8px;
+    border-radius: var(--radius-control);
     background: #fff;
     box-shadow: none;
 }
@@ -122,7 +121,7 @@ body:has(.home-page) {
     border-radius: 22px;
     background: #f6f4f1;
     color: #716b75;
-    font-size: 0.82rem;
+    font-size: var(--font-size-small);
     text-align: left;
 }
 .home-composer-image {
@@ -141,9 +140,9 @@ body:has(.home-page) {
     min-height: 40px;
     padding: 8px 14px;
     border-radius: 6px;
-    background: #2b1f47;
+    background: var(--color-primary);
     color: #fff;
-    font-size: 0.78rem;
+    font-size: var(--font-size-caption);
     font-weight: 700;
 }
 
@@ -171,11 +170,11 @@ body:has(.home-page) {
     padding: 7px 12px;
     border-radius: 6px;
     color: #514b57;
-    font-size: 0.76rem;
+    font-size: var(--font-size-caption);
 }
 .home-feed-tabs button.is-active {
-    background: #e8dfd1;
-    color: #2b1f47;
+    background: var(--color-surface-muted);
+    color: var(--color-primary);
     font-weight: 700;
 }
 .home-feed-tabs svg {
@@ -194,14 +193,14 @@ body:has(.home-page) {
     background: #fff;
     color: #514b57;
     font: inherit;
-    font-size: 0.72rem;
+    font-size: var(--font-size-caption);
 }
 .home-filter-empty {
     padding: 16px;
-    border-radius: 8px;
+    border-radius: var(--radius-control);
     background: #fff;
     color: #716b75;
-    font-size: 0.82rem;
+    font-size: var(--font-size-small);
 }
 
 .post-card {
@@ -221,7 +220,7 @@ body:has(.home-page) {
     align-items: center;
     gap: 9px;
     min-width: 0;
-    color: #252525;
+    color: var(--color-text);
     text-decoration: none;
 }
 .post-author img,
@@ -239,20 +238,20 @@ body:has(.home-page) {
 }
 .post-author strong {
     overflow: hidden;
-    font-size: 0.82rem;
+    font-size: var(--font-size-small);
     text-overflow: ellipsis;
     white-space: nowrap;
 }
 .post-author small {
     color: #7a7480;
-    font-size: 0.7rem;
+    font-size: var(--font-size-caption);
 }
 .post-private {
     display: inline-flex;
     align-items: center;
     gap: 4px;
     color: #716b75;
-    font-size: 0.7rem;
+    font-size: var(--font-size-caption);
 }
 .post-private svg {
     width: 15px;
@@ -289,7 +288,7 @@ body:has(.home-page) {
     right: 0;
     min-width: 150px;
     padding: 5px;
-    border-radius: 7px;
+    border-radius: var(--radius-control);
     background: #fff;
     box-shadow: 0 6px 22px #2b1f471c;
 }
@@ -297,11 +296,11 @@ body:has(.home-page) {
     width: 100%;
     padding: 9px;
     color: #302b36;
-    font-size: 0.75rem;
+    font-size: var(--font-size-caption);
     text-align: left;
 }
 .post-menu button:hover {
-    background: #f6f2eb;
+    background: var(--bg-soft);
 }
 .post-story {
     display: grid;
@@ -314,11 +313,9 @@ body:has(.home-page) {
 }
 .post-story h3 {
     margin: 0 0 5px;
-    color: #2b1f47;
+    color: var(--color-primary);
     font:
-        500 1rem/1.4 Lora,
-        Georgia,
-        serif;
+        500 var(--font-size-body)/1.4 var(--font-secondary);
 }
 .post-story h3:empty {
     display: none;
@@ -327,7 +324,7 @@ body:has(.home-page) {
 .post-caption {
     margin: 0;
     color: #29262d;
-    font-size: 0.85rem;
+    font-size: var(--font-size-small);
     line-height: 1.55;
     white-space: pre-line;
     overflow-wrap: anywhere;
@@ -363,10 +360,10 @@ body:has(.home-page) {
     padding: 6px 9px;
     border-radius: 6px;
     color: #514b57;
-    font-size: 0.76rem;
+    font-size: var(--font-size-caption);
 }
 .post-actions button:hover {
-    background: #f6f2eb;
+    background: var(--bg-soft);
 }
 .post-actions button[aria-pressed="true"] {
     color: #d34a5c;
@@ -381,14 +378,14 @@ body:has(.home-page) {
 .home-avatar-fallback {
     display: grid;
     place-items: center;
-    background: #2b1f47;
+    background: var(--color-primary);
     color: #fff;
     font-weight: 700;
 }
 .home-empty {
     margin: 0;
     color: #706a75;
-    font-size: 0.78rem;
+    font-size: var(--font-size-caption);
     line-height: 1.5;
 }
 
@@ -404,21 +401,19 @@ body:has(.home-page) {
 }
 .home-section-heading h2 {
     margin: 0;
-    color: #2b1f47;
+    color: var(--color-primary);
     font:
-        500 1rem/1.35 Lora,
-        Georgia,
-        serif;
+        500 var(--font-size-body)/1.35 var(--font-secondary);
 }
 .home-section-heading p {
     margin: 3px 0 0;
     color: #77717b;
-    font-size: 0.68rem;
+    font-size: var(--font-size-caption);
 }
 .home-section-heading > a {
     flex: none;
     color: #6a5a84;
-    font-size: 0.7rem;
+    font-size: var(--font-size-caption);
     text-decoration: none;
 }
 .home-social-rail .home-section {
@@ -426,7 +421,7 @@ body:has(.home-page) {
 }
 .home-reading {
     padding: 14px;
-    background: #2b1f47;
+    background: var(--color-primary);
     color: #fff;
 }
 .home-reading .home-section-heading h2,
@@ -464,15 +459,13 @@ body:has(.home-page) {
     display: block;
     color: #fff;
     font:
-        500 0.84rem/1.35 Lora,
-        Georgia,
-        serif;
+        500 var(--font-size-small)/1.35 var(--font-secondary);
 }
 .home-reading .reading-book small {
     display: block;
     margin-top: 3px;
     color: #e0d9e9;
-    font-size: 0.68rem;
+    font-size: var(--font-size-caption);
 }
 .home-reading progress {
     width: 100%;
@@ -505,7 +498,7 @@ body:has(.home-page) {
     row-gap: 2px;
     flex: 1;
     min-width: 0;
-    color: #252525;
+    color: var(--color-text);
     text-decoration: none;
 }
 .home-social-rail .home-person-card-link img,
@@ -518,28 +511,28 @@ body:has(.home-page) {
 }
 .home-social-rail .home-person-card-link strong {
     overflow: hidden;
-    font-size: 0.73rem;
+    font-size: var(--font-size-caption);
     text-overflow: ellipsis;
     white-space: nowrap;
 }
 .home-social-rail .home-person-name {
     overflow: hidden;
     color: #716b75;
-    font-size: 0.66rem;
+    font-size: var(--font-size-caption);
     text-overflow: ellipsis;
     white-space: nowrap;
 }
 .home-social-rail .home-person-card-link small {
     color: #817b86;
-    font-size: 0.61rem;
+    font-size: var(--font-size-caption);
 }
 .home-social-rail .home-person-card > button {
     min-height: 32px;
     padding: 5px 9px;
     border-radius: 5px;
-    background: #2b1f47;
+    background: var(--color-primary);
     color: #fff;
-    font-size: 0.68rem;
+    font-size: var(--font-size-caption);
 }
 .home-social-rail .home-person-card > button svg {
     width: 14px;
@@ -555,7 +548,7 @@ body:has(.home-page) {
     align-items: center;
     gap: 9px;
     min-width: 0;
-    color: #252525;
+    color: var(--color-text);
     text-decoration: none;
 }
 .home-group-row > img,
@@ -568,7 +561,7 @@ body:has(.home-page) {
     place-items: center;
     border-radius: 6px;
     background: #eee8f3;
-    color: #2b1f47;
+    color: var(--color-primary);
     object-fit: cover;
 }
 .home-trending-book > img,
@@ -590,7 +583,7 @@ body:has(.home-page) {
 .home-trending-book strong {
     overflow: hidden;
     color: #2d2932;
-    font-size: 0.72rem;
+    font-size: var(--font-size-caption);
     text-overflow: ellipsis;
     white-space: nowrap;
 }
@@ -598,7 +591,7 @@ body:has(.home-page) {
 .home-trending-book small {
     overflow: hidden;
     color: #77717b;
-    font-size: 0.65rem;
+    font-size: var(--font-size-caption);
     text-overflow: ellipsis;
     white-space: nowrap;
 }
@@ -614,7 +607,7 @@ body:has(.home-page) {
     min-height: 34px;
     margin-top: 8px;
     color: #62517e;
-    font-size: 0.7rem;
+    font-size: var(--font-size-caption);
     text-decoration: none;
 }
 .home-create-group svg {
@@ -639,21 +632,20 @@ body:has(.home-page) {
     grid-template-columns: 66px minmax(0, 1fr);
     gap: 3px 10px;
     padding: 0;
-    color: #252525;
+    color: var(--color-text);
     text-decoration: none;
 }
 .home-social-rail .lista-topo {
     grid-column: 2;
     padding: 0;
     background: transparent;
-    color: #252525;
+    color: var(--color-text);
 }
 .home-social-rail .lista-topo h3 {
     margin: 0 0 3px;
-    color: #2b1f47;
+    color: var(--color-primary);
     font:
-        600 0.74rem/1.35 Manrope,
-        sans-serif;
+        600 var(--font-size-caption)/1.35 var(--font-primary);
 }
 .home-social-rail .lista-topo p,
 .home-social-rail .lista-dono {
@@ -682,7 +674,7 @@ body:has(.home-page) {
     gap: 7px;
     padding: 0;
     color: #77717b;
-    font-size: 0.62rem;
+    font-size: var(--font-size-caption);
 }
 .home-social-rail .lista-info svg {
     display: none;
@@ -700,7 +692,7 @@ body:has(.home-page) {
     padding: 0;
     background: transparent;
     box-shadow: none;
-    color: #252525;
+    color: var(--color-text);
     text-align: center;
     text-decoration: none;
 }
@@ -717,11 +709,11 @@ body:has(.home-page) {
 .home-social-rail .home-author-card strong {
     max-width: 100%;
     overflow-wrap: anywhere;
-    font-size: 0.62rem;
+    font-size: var(--font-size-caption);
 }
 .home-social-rail .home-author-card small {
     color: #77717b;
-    font-size: 0.57rem;
+    font-size: var(--font-size-caption);
 }
 
 .post-comments-dialog {
@@ -732,9 +724,9 @@ body:has(.home-page) {
     padding: 0;
     overflow: hidden;
     border: 0;
-    border-radius: 10px;
+    border-radius: var(--radius-control);
     background: #fff;
-    color: #252525;
+    color: var(--color-text);
     box-shadow: 0 16px 48px #1e192b40;
 }
 .post-comments-dialog::backdrop {
@@ -759,15 +751,13 @@ body:has(.post-comments-dialog[open]) {
 .post-comments-header p {
     margin: 0 0 4px;
     color: #756e7d;
-    font-size: 0.7rem;
+    font-size: var(--font-size-caption);
 }
 .post-comments-header h2 {
     margin: 0;
-    color: #2b1f47;
+    color: var(--color-primary);
     font:
-        500 1.2rem Lora,
-        Georgia,
-        serif;
+        500 var(--font-size-subtitle) var(--font-secondary);
 }
 .post-comments-header button {
     display: grid;
@@ -820,7 +810,7 @@ body:has(.post-comments-dialog[open]) {
 .post-comments-list-heading h3 {
     margin: 0;
     color: #302b36;
-    font-size: 0.9rem;
+    font-size: var(--font-size-small);
 }
 .post-comments-list-heading select {
     min-height: 34px;
@@ -829,7 +819,7 @@ body:has(.post-comments-dialog[open]) {
     background: transparent;
     color: #736d78;
     font: inherit;
-    font-size: 0.68rem;
+    font-size: var(--font-size-caption);
 }
 .post-modal-comment-form {
     display: flex;
@@ -853,11 +843,11 @@ body:has(.post-comments-dialog[open]) {
     resize: vertical;
     padding: 10px 12px;
     border: 0;
-    border-radius: 7px;
+    border-radius: var(--radius-control);
     background: #f5f2ee;
-    color: #252525;
+    color: var(--color-text);
     font: inherit;
-    font-size: 0.78rem;
+    font-size: var(--font-size-caption);
 }
 .post-modal-comment-form button {
     display: grid;
@@ -866,7 +856,7 @@ body:has(.post-comments-dialog[open]) {
     flex: none;
     place-items: center;
     border-radius: 6px;
-    background: #2b1f47;
+    background: var(--color-primary);
     color: #fff;
 }
 .post-modal-comment-form button:disabled {
@@ -881,7 +871,7 @@ body:has(.post-comments-dialog[open]) {
     margin: 0;
     padding: 3px 0 8px;
     color: #756e7d;
-    font-size: 0.72rem;
+    font-size: var(--font-size-caption);
 }
 .post-modal-comment-list {
     min-height: 0;
@@ -904,7 +894,7 @@ body:has(.post-comments-dialog[open]) {
     height: 36px;
     place-items: center;
     border-radius: 50%;
-    background: #2b1f47;
+    background: var(--color-primary);
     color: #fff;
     object-fit: cover;
 }
@@ -926,20 +916,20 @@ body:has(.post-comments-dialog[open]) {
 .post-modal-comment-identity strong {
     overflow: hidden;
     color: #302b36;
-    font-size: 0.76rem;
+    font-size: var(--font-size-caption);
     text-overflow: ellipsis;
     white-space: nowrap;
 }
 .post-modal-comment-identity small,
 .post-modal-comment time {
     color: #827b87;
-    font-size: 0.65rem;
+    font-size: var(--font-size-caption);
     white-space: nowrap;
 }
 .post-modal-comment-body > p {
     margin: 5px 0 0;
     color: #343039;
-    font-size: 0.78rem;
+    font-size: var(--font-size-caption);
     line-height: 1.5;
     white-space: pre-wrap;
     overflow-wrap: anywhere;
@@ -947,7 +937,7 @@ body:has(.post-comments-dialog[open]) {
 .post-modal-comments-empty {
     padding: 20px 0;
     color: #77717b;
-    font-size: 0.8rem;
+    font-size: var(--font-size-caption);
 }
 
 @media (max-width: 1150px) {
@@ -1025,7 +1015,7 @@ body:has(.post-comments-dialog[open]) {
     .home-composer > button:nth-child(2) {
         min-height: 38px;
         padding: 8px 10px;
-        font-size: 0.72rem;
+        font-size: var(--font-size-caption);
     }
     .home-composer-image {
         display: none;
@@ -1033,7 +1023,7 @@ body:has(.post-comments-dialog[open]) {
     .home-composer-publish {
         min-height: 38px;
         padding: 7px 10px;
-        font-size: 0.7rem;
+        font-size: var(--font-size-caption);
     }
     .home-feed-tabs {
         gap: 2px;
@@ -1042,11 +1032,11 @@ body:has(.post-comments-dialog[open]) {
     .home-feed-tabs > a {
         min-height: 36px;
         padding: 6px 9px;
-        font-size: 0.68rem;
+        font-size: var(--font-size-caption);
     }
     .home-feed-tabs select {
         max-width: 110px;
-        font-size: 0.66rem;
+        font-size: var(--font-size-caption);
     }
     .post-card {
         padding: 12px 12px 6px;

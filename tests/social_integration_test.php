@@ -9,10 +9,15 @@ if (!str_starts_with($dsn, 'pgsql:host=/tmp/')) {
     throw new RuntimeException('Use somente PostgreSQL descartável em /tmp.');
 }
 $pdo = new PDO($dsn, getenv('NOOK_TEST_DB_USER') ?: get_current_user(), '', [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);
+$migration = file_get_contents(__DIR__ . '/../banco/migrations/20261116_notificacoes_usuario.sql');
+if ($migration === false) {
+    throw new RuntimeException('Migração de notificações indisponível.');
+}
+$pdo->exec($migration);
 $request = static function (string $path, array $get = [], array $post = [], bool $token = true): array {
     $pipes = [];
     $process = proc_open([PHP_BINARY, __DIR__ . '/endpoint_request.php'], [['pipe', 'r'], ['pipe', 'w'], ['pipe', 'w']], $pipes);
-    fwrite($pipes[0], json_encode(['path' => $path, 'get' => $get, 'post' => $post, 'method' => $post ? 'POST' : 'GET', 'session' => ['id_user' => 900001, 'post_csrf' => 'test-csrf', 'goal_csrf' => 'test-csrf', 'top5_csrf' => 'test-csrf']]));
+    fwrite($pipes[0], json_encode(['path' => $path, 'get' => $get, 'post' => $post, 'method' => $post ? 'POST' : 'GET', 'session' => ['id_user' => 900001, 'post_csrf' => 'test-csrf', 'goal_csrf' => 'test-csrf', 'top5_csrf' => 'test-csrf', 'notification_csrf' => 'test-csrf']]));
     fclose($pipes[0]);
     $out = stream_get_contents($pipes[1]);
     $err = stream_get_contents($pipes[2]);
@@ -39,6 +44,9 @@ try {
     $r = $request('seguir_usuario.php', [], ['id_user' => '900002', 'csrf' => 'test-csrf']);
     $data = json_decode($r['body'], true);
     $check($r['status'] === 200 && is_int($data['id_conversa'] ?? null), 'Seguir retorna identificador da conversa no JSON');
+    $stmt = $pdo->prepare("SELECT COUNT(*) FROM notificacao_usuario WHERE id_destinatario=900002 AND id_remetente=900001 AND tipo='seguir'");
+    $stmt->execute();
+    $check((int) $stmt->fetchColumn() === 1, 'Novo seguimento registra notificação para o usuário seguido');
     $r = $request('seguir_usuario.php', [], ['id_user' => '900003']);
     $check($r['status'] === 403, 'Seguir sem CSRF é recusado');
     $pdo->exec("INSERT INTO bloqueio(id_bloqueador,id_bloqueado,status_bloqueio) VALUES(900002,900001,'bloqueado')");
@@ -58,9 +66,12 @@ try {
     $pdo->exec("CREATE FUNCTION nook_fail_mention_test() RETURNS trigger LANGUAGE plpgsql AS 'BEGIN RAISE EXCEPTION ''simulated mention failure''; END'");
     $pdo->exec('CREATE TRIGGER nook_fail_mention_test BEFORE INSERT ON mencao FOR EACH ROW EXECUTE FUNCTION nook_fail_mention_test()');
     $before = (int) $pdo->query("SELECT COUNT(*) FROM comentario WHERE id_coisocurtido=900001 AND categoria_curtida='post'")->fetchColumn();
+    $notificationsBefore = (int) $pdo->query("SELECT COUNT(*) FROM notificacao_usuario WHERE id_destinatario=900002 AND tipo='comentario_post' AND id_entidade=900001")->fetchColumn();
     $r = $request('acoes_post.php', [], ['id_post' => '900001', 'acao' => 'comentar', 'comentario' => 'Uma leitura com @regressao.outra', 'csrf' => 'test-csrf']);
     $after = (int) $pdo->query("SELECT COUNT(*) FROM comentario WHERE id_coisocurtido=900001 AND categoria_curtida='post'")->fetchColumn();
     $check($r['status'] === 500 && $before === $after, 'Falha na menção reverte comentário inteiro');
+    $notificationsAfter = (int) $pdo->query("SELECT COUNT(*) FROM notificacao_usuario WHERE id_destinatario=900002 AND tipo='comentario_post' AND id_entidade=900001")->fetchColumn();
+    $check($notificationsBefore === $notificationsAfter, 'Falha ao persistir menção também reverte a notificação');
 } finally {
     $pdo->exec('DROP TRIGGER IF EXISTS nook_fail_mention_test ON mencao');
     $pdo->exec('DROP FUNCTION IF EXISTS nook_fail_mention_test()');

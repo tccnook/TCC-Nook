@@ -16,6 +16,7 @@ try {
 require_once __DIR__ . '/conexao.php';
 try {
     $conn = (new Database())->conectar();
+    session_write_close();
     if (!chatConversa($conn, $conversation, (int) $_SESSION['id_user'])) {
         chatResposta(403, ['sucesso' => false, 'mensagem' => 'Você não participa desta conversa.']);
     }

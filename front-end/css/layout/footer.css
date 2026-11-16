@@ -21,7 +21,7 @@
 .footer-contact h2 {
     margin: 0 0 0.7rem;
     color: inherit;
-    font-size: 0.78rem;
+    font-size: var(--font-size-caption);
     font-weight: 700;
 }
 
@@ -78,7 +78,7 @@
     background: #fff;
     color: #211a2e;
     font: inherit;
-    font-size: 0.65rem;
+    font-size: var(--font-size-caption);
 }
 
 .footer-email input::placeholder {
@@ -93,7 +93,7 @@
     background: #f4f3f5;
     color: #211a2e;
     font: inherit;
-    font-size: 0.65rem;
+    font-size: var(--font-size-caption);
     cursor: pointer;
 }
 
@@ -110,7 +110,7 @@
     min-height: 1em;
     margin: 0.35rem 0 0;
     color: rgb(255 255 255 / 85%);
-    font-size: 0.65rem;
+    font-size: var(--font-size-caption);
 }
 
 .footer-links {
@@ -120,13 +120,13 @@
     gap: 0.6rem 1.6rem;
     margin-top: 0.8rem;
     color: rgb(255 255 255 / 88%);
-    font-size: 0.62rem;
+    font-size: var(--font-size-caption);
 }
 
 .footer-copyright {
     margin: 0.65rem 0 0;
     color: rgb(255 255 255 / 65%);
-    font-size: 0.55rem;
+    font-size: var(--font-size-caption);
     text-align: center;
 }
 
@@ -154,6 +154,6 @@
     .footer-links {
         gap: 0.6rem 1rem;
         margin-top: 1.1rem;
-        font-size: 0.6rem;
+        font-size: var(--font-size-caption);
     }
 }

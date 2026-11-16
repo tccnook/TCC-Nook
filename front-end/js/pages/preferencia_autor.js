@@ -25,6 +25,11 @@
     const selected = new Map(items.map((item) => [item.id, item]));
     const nodes = new Map();
     const relatedRequests = new Map();
+    const more = document.getElementById("load-more-authors");
+    let currentPage = 0;
+    let currentQuery = "";
+    let hasMore = true;
+    let loading = false;
     let searchRequest;
     let searchVersion = 0;
     let timer;
@@ -125,7 +130,18 @@
             if (error.name !== "AbortError") status.textContent = error.message;
         }
     }
-    async function search() {
+    async function search(append = false) {
+        if (append && (loading || !hasMore)) return;
+        const query = document.getElementById("author-search").value.trim();
+        if (query !== currentQuery) append = false;
+        const requestedPage = append ? currentPage + 1 : 1;
+        if (!append) {
+            hasMore = true;
+            relatedRequests.forEach(control => control.abort());
+        }
+        loading = true;
+        more.disabled = true;
+        more.textContent = "Buscando autores…";
         searchRequest?.abort();
         searchRequest = new AbortController();
         const version = ++searchVersion;
@@ -133,11 +149,15 @@
         grid.setAttribute("aria-busy", "true");
         try {
             const data = await request(
-                { q: document.getElementById("author-search").value.trim() },
+                { q: query, pagina: requestedPage },
                 searchRequest.signal,
             );
             if (version !== searchVersion) return;
-            const chosen = [...selected.values()];
+            currentPage = requestedPage;
+            currentQuery = query;
+            hasMore = data.mais === true;
+            const before = append ? items.length : 0;
+            const chosen = append ? items : [...selected.values()];
             items = chosen.length
                 ? mergeRelatedAuthors(chosen, chosen[chosen.length - 1].id, data.autores)
                 : data.autores;
@@ -149,16 +169,23 @@
                 }
             });
             render();
-            status.textContent = data.autores.length ? "" : "Nenhum autor encontrado. Tente outro nome.";
+            status.textContent = append
+                ? (items.length > before ? `${items.length - before} novos autores carregados.` : "Nenhum autor novo nesta página. Você pode continuar buscando.")
+                : (data.autores.length ? "" : "Nenhum autor encontrado. Tente outro nome.");
         } catch (error) {
             if (error.name !== "AbortError") status.textContent = error.message;
         } finally {
-            if (version === searchVersion) grid.removeAttribute("aria-busy");
+            if (version === searchVersion) {
+                grid.removeAttribute("aria-busy");
+                loading = false;
+                more.disabled = !hasMore;
+                more.textContent = hasMore ? "Buscar mais autores" : "Todos os autores foram carregados";
+            }
         }
     }
     document.getElementById("author-search").addEventListener("input", () => {
         clearTimeout(timer);
-        timer = setTimeout(search, 350);
+        timer = setTimeout(() => search(), 350);
     });
     document.getElementById("author-search").addEventListener("keydown", (event) => {
         if (event.key === "Enter") {
@@ -167,6 +194,7 @@
             search();
         }
     });
+    more.addEventListener("click", () => search(true));
     render();
     search();
 })();

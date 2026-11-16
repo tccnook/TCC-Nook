@@ -53,7 +53,7 @@
 }
 .profile-page .button-perfil,
 .profile-page .btn-opcoes {
-    min-height: 44px;
+    min-height: var(--size-control-height);
     height: auto;
     box-shadow: 0 3px 8px #0002;
 }
@@ -63,7 +63,7 @@
     border-bottom: 1px solid #aaa;
 }
 .profile-page .perfil-nav a {
-    min-height: 44px;
+    min-height: var(--size-control-height);
     display: flex;
     align-items: center;
 }
@@ -85,7 +85,7 @@
 }
 .profile-page .card {
     border: 0;
-    border-radius: 12px;
+    border-radius: var(--radius-card);
     box-shadow: 0 5px 12px #0002;
     padding: 1rem;
 }
@@ -99,7 +99,7 @@
 .profile-page .mini-card {
     border-color: #dfc9fa;
     background: #f6effc;
-    border-radius: 8px;
+    border-radius: var(--radius-control);
 }
 .profile-page .mini-card strong {
     color: #9b5bd4;
@@ -111,7 +111,7 @@
 .profile-page .lista-card {
     --lista-cor: #b8a0de;
     --lista-texto: var(--color-text);
-    border-radius: 12px;
+    border-radius: var(--radius-card);
     box-shadow: 0 4px 10px #0003;
 }
 .profile-page .lista-card--outro {
@@ -123,10 +123,10 @@
     padding: 1rem;
 }
 .profile-page .lista-topo h3 {
-    font: 500 1.15rem/1.4 var(--font-secundary);
+    font: 500 var(--font-size-lead)/1.4 var(--font-secundary);
 }
 .profile-page .lista-topo p {
-    font-size: 0.85rem;
+    font-size: var(--font-size-small);
 }
 .profile-page .capas {
     gap: 0.5rem;
@@ -142,7 +142,7 @@
     background: white;
     padding: 0.85rem 1rem;
     color: var(--color-text);
-    font-size: 0.8rem;
+    font-size: var(--font-size-caption);
 }
 .profile-page .livros-grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -153,7 +153,7 @@
     padding: 1rem;
     background: var(--color-primary);
     color: white;
-    border-radius: 8px;
+    border-radius: var(--radius-control);
     box-shadow: none;
     min-height: 240px;
 }
@@ -166,7 +166,7 @@
 .profile-page .livro-lido .sem-resenha {
     color: white;
     background: #5d467c;
-    border-radius: 7px;
+    border-radius: var(--radius-control);
 }
 .profile-page .livro-lido .livro-capa img {
     object-fit: contain;
@@ -179,7 +179,7 @@
 }
 .profile-review-card {
     padding: 1.25rem;
-    border-radius: 12px;
+    border-radius: var(--radius-card);
     background: white;
     box-shadow: 0 5px 12px #0002;
     min-width: 0;
@@ -201,10 +201,10 @@
     object-fit: contain;
 }
 .profile-review-body h2 {
-    font-size: 1rem;
+    font-size: var(--font-size-body);
 }
 .profile-review-body h3 {
-    font-size: 0.9rem;
+    font-size: var(--font-size-small);
     margin-bottom: 0.5rem;
 }
 .profile-review-body svg {
@@ -215,7 +215,7 @@
 }
 .profile-review-text {
     line-height: 1.6;
-    font-size: 0.85rem;
+    font-size: var(--font-size-small);
     overflow-wrap: anywhere;
 }
 .profile-review-card footer {
@@ -227,7 +227,7 @@
     border-top: 1px solid #ccc;
     padding-top: 0.75rem;
     margin-top: 1rem;
-    font-size: 0.8rem;
+    font-size: var(--font-size-caption);
 }
 .profile-review-card footer a,
 .profile-review-card footer span,
@@ -235,7 +235,7 @@
     display: inline-flex;
     align-items: center;
     gap: 0.25rem;
-    min-height: 44px;
+    min-height: var(--size-control-height);
     color: var(--color-primary);
 }
 .profile-review-card footer svg {
@@ -286,13 +286,13 @@
         padding-top: 44px;
     }
     .profile-page .user-names h1 {
-        font-size: 1.3rem;
+        font-size: var(--font-size-subtitle);
     }
     .profile-page .bio {
         grid-column: 1/-1;
     }
     .profile-page .info-usuario {
-        font-size: 0.75rem;
+        font-size: var(--font-size-caption);
     }
     .profile-page .perfil-nav {
         justify-content: flex-start;
@@ -326,16 +326,16 @@
 .bookmark-form label {
     display: grid;
     gap: 0.5rem;
-    font-size: 0.85rem;
+    font-size: var(--font-size-small);
 }
 .bookmark-form input,
 .bookmark-form select,
 .bookmark-form textarea {
     width: 100%;
-    min-height: 44px;
+    min-height: var(--size-control-height);
     padding: 0.6rem;
     border: 1px solid #ccc;
-    border-radius: 7px;
+    border-radius: var(--radius-control);
 }
 .bookmark-form .bookmark-text {
     grid-column: 1/-1;
@@ -351,20 +351,20 @@
 }
 .bookmark-grid blockquote {
     margin: 1rem 0;
-    font: 400 1.15rem/1.8 var(--font-secundary);
+    font: 400 var(--font-size-lead)/1.8 var(--font-secundary);
     overflow-wrap: anywhere;
 }
 .bookmark-grid p {
     margin-top: 0.5rem;
-    font-size: 0.85rem;
+    font-size: var(--font-size-small);
     color: var(--text-muted);
 }
 .bookmark-grid svg {
     color: var(--profile-highlight);
 }
 .bookmark-remove {
-    min-height: 44px;
-    font-size: 0.8rem;
+    min-height: var(--size-control-height);
+    font-size: var(--font-size-caption);
     text-decoration: underline;
 }
 @media (max-width: 600px) {
@@ -382,18 +382,18 @@
 .published-book-grid article {
     padding: 22px;
     background: white;
-    border-radius: 8px;
+    border-radius: var(--radius-control);
 }
 .published-book-grid img {
     object-fit: cover;
     border-radius: 4px;
 }
 .published-book-grid h3 {
-    font-family: Lora, Georgia, serif;
+    font-family: var(--font-secondary);
     margin: 12px 0;
 }
 .published-book-grid p {
-    font-size: 0.9rem;
+    font-size: var(--font-size-small);
     line-height: 1.6;
 }
 .published-book-grid small {
@@ -415,7 +415,7 @@
     --profile-panel: #302448;
     --profile-panel-soft: #44385d;
     --profile-highlight: #c184ff;
-    background: #f6f2eb;
+    background: var(--color-background);
 }
 .profile-page .sem-banner {
     background: #271e38;
@@ -524,7 +524,7 @@
 .public-profile-stats {
     background: #302448;
     color: #fff;
-    border-radius: 12px;
+    border-radius: var(--radius-card);
     padding: 24px;
 }
 .public-profile > section:not(.public-profile-identity) :is(h2, h3, strong),
@@ -537,7 +537,7 @@
 }
 .public-profile .public-profile-identity {
     overflow: hidden;
-    border-radius: 12px;
+    border-radius: var(--radius-card);
 }
 .public-profile .public-profile-banner {
     height: clamp(160px, 20vw, 250px);

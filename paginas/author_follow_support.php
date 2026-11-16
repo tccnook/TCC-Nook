@@ -2,6 +2,7 @@
 
 require_once __DIR__ . '/author_discovery.php';
 require_once __DIR__ . '/schema_support.php';
+require_once __DIR__ . '/notifications_support.php';
 
 /** Chamado dentro da transação de seguir; o nome e a identidade vêm do provedor. */
 function registrarAutorExterno(PDO $conn, array $autor): int
@@ -43,4 +44,7 @@ function alterarSeguimentoAutor(PDO $conn, int $usuario, int $destino, bool $mem
     $valorStatus = $status ? ", 'seguindo'" : '';
     $stmt = $conn->prepare("INSERT INTO $tabela(id_follower,$coluna$colunaStatus) SELECT ?,?$valorStatus WHERE NOT EXISTS(SELECT 1 FROM $tabela WHERE id_follower=? AND $coluna=?)");
     $stmt->execute([$usuario, $destino, $usuario, $destino]);
+    if ($membro && $stmt->rowCount() > 0) {
+        registrarNotificacao($conn, $destino, $usuario, 'seguir', $usuario);
+    }
 }

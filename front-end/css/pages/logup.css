@@ -81,7 +81,7 @@ form label {
 h1 {
     margin: 0;
     color: var(--text-title);
-    font-size: clamp(1.5rem, 2.2vw, 2.2rem);
+    font-size: var(--font-size-title);
     text-align: center;
 }
 
@@ -89,7 +89,7 @@ h1 {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    min-height: 3.2rem;
+    min-height: var(--size-button-height);
     padding: 0 var(--space-6);
     border: none;
     border-radius: var(--radius-sm);
@@ -136,7 +136,7 @@ h1,
 
 .division-google-area span {
     color: var(--text-secondary);
-    font-size: 0.8rem;
+    font-size: var(--font-size-caption);
     letter-spacing: 0.12em;
     text-transform: uppercase;
 }
@@ -147,7 +147,7 @@ h1,
     justify-content: center;
     gap: var(--space-3);
     width: 100%;
-    min-height: 3.2rem;
+    min-height: var(--size-button-height);
     border: 1px solid var(--soft-border);
     border-radius: var(--radius-sm);
     background: var(--all-white);

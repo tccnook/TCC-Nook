@@ -51,7 +51,7 @@
 }
 
 .livro-info h3 {
-    font-size: 1rem;
+    font-size: var(--font-size-body);
     line-height: 1.25;
     color: var(--text-title);
 }
@@ -68,7 +68,7 @@
     line-clamp: 4;
     -webkit-box-orient: vertical;
     overflow: hidden;
-    font-size: 0.75rem;
+    font-size: var(--font-size-caption);
     line-height: 1.4;
     color: var(--text-secondary);
 }
@@ -76,15 +76,15 @@
 .sem-resenha {
     display: block;
     padding: 0.75rem;
-    border-radius: 12px;
+    border-radius: var(--radius-card);
     background: var(--bg-soft-strong);
     color: var(--text-secondary);
-    font-size: 0.8rem;
+    font-size: var(--font-size-caption);
 }
 
 .lido-em {
     margin-top: auto;
-    font-size: 0.75rem;
+    font-size: var(--font-size-caption);
     color: var(--text-secondary);
 }
 
@@ -103,10 +103,10 @@
     gap: 0.35rem;
     padding: 0.75rem 0.5rem;
     border: 1px solid var(--soft-border);
-    border-radius: 10px;
+    border-radius: var(--radius-control);
     background: var(--bg-soft);
     text-align: center;
-    font-size: 0.7rem;
+    font-size: var(--font-size-caption);
     overflow-wrap: anywhere;
 }
 
@@ -118,18 +118,18 @@
 
 .mini-card strong {
     font-family: var(--font-secundary);
-    font-size: 1.5rem;
+    font-size: var(--font-size-heading);
     font-weight: 500;
     color: var(--color-accent);
 }
 
 .mini-card strong.texto {
-    font-size: 1rem;
+    font-size: var(--font-size-body);
     line-height: 1.2;
 }
 
 .mini-card small {
-    font-size: 0.65rem;
+    font-size: var(--font-size-caption);
     color: var(--text-muted);
 }
 
@@ -140,18 +140,18 @@
 }
 
 .meta h3 {
-    font-size: 0.9rem;
+    font-size: var(--font-size-small);
     color: var(--text-title);
 }
 
 .meta-periodo {
-    font-size: 0.75rem;
+    font-size: var(--font-size-caption);
     color: var(--text-muted);
 }
 
 .meta-numeros {
     margin: 0.5rem 0;
-    font-size: 0.85rem;
+    font-size: var(--font-size-small);
     color: var(--text-secondary);
 }
 
@@ -194,7 +194,7 @@
 
 .meta-mensagem {
     margin-top: 0.5rem;
-    font-size: 0.75rem;
+    font-size: var(--font-size-caption);
     color: var(--warning);
 }
 
@@ -204,7 +204,7 @@
 
 .meta-status {
     margin-top: 0.25rem;
-    font-size: 0.7rem;
+    font-size: var(--font-size-caption);
     color: var(--text-muted);
 }
 

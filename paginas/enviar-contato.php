@@ -34,6 +34,25 @@ require_once $autoload;
 
 try {
     require_once __DIR__ . '/runtime.php';
+    require_once __DIR__ . '/google_mail_support.php';
+    if (nookGoogleMailConfigured()) {
+        $senderEmail = nookGoogleMailSender();
+        if (!filter_var($senderEmail, FILTER_VALIDATE_EMAIL)) {
+            responderContato(500, 'O serviço de email está indisponível no momento.');
+        }
+
+        nookGmailSendMessage(
+            nookGoogleMailSendingClient(),
+            $senderEmail,
+            nookEnv('MAIL_FROM_NAME') ?: 'Nook',
+            'tccnook@gmail.com',
+            'Contato pelo site Nook',
+            "Um visitante deseja entrar em contato pelo site Nook.\n\nEmail informado: " . trim($email),
+            trim($email)
+        );
+        responderContato(200, 'Email enviado com sucesso!');
+    }
+
     $config = [];
 
     $configuracaoObrigatoria = [

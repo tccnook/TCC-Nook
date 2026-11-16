@@ -31,13 +31,13 @@
 .inbox-heading p,
 .chat-topbar p {
     color: var(--color-accent);
-    font-size: 0.65rem;
+    font-size: var(--font-size-caption);
     font-weight: 700;
 }
 
 .inbox-heading h1 {
     color: var(--text-title);
-    font: 500 1.4rem var(--font-secundary);
+    font: 500 var(--font-size-heading) var(--font-secundary);
 }
 
 .inbox-heading > a {
@@ -64,7 +64,7 @@
     height: 2.5rem;
     margin-bottom: 0.7rem;
     padding: 0 0.7rem;
-    border-radius: 7px;
+    border-radius: var(--radius-control);
     background: var(--bg-primary);
 }
 
@@ -80,7 +80,7 @@
     background: transparent;
     color: var(--text-primary);
     font: inherit;
-    font-size: 0.75rem;
+    font-size: var(--font-size-caption);
 }
 
 .inbox-list {
@@ -91,7 +91,7 @@
 .inbox-loading {
     padding: 1rem 0.25rem;
     color: var(--text-secondary);
-    font-size: 0.75rem;
+    font-size: var(--font-size-caption);
 }
 
 .inbox-conversation {
@@ -132,7 +132,7 @@
 .inbox-conversation-details strong {
     overflow: hidden;
     color: var(--text-title);
-    font-size: 0.75rem;
+    font-size: var(--font-size-caption);
     text-overflow: ellipsis;
     white-space: nowrap;
 }
@@ -140,14 +140,14 @@
 .inbox-conversation-details small {
     overflow: hidden;
     color: var(--text-secondary);
-    font-size: 0.67rem;
+    font-size: var(--font-size-caption);
     text-overflow: ellipsis;
     white-space: nowrap;
 }
 
 .inbox-conversation time {
     color: var(--text-secondary);
-    font-size: 0.6rem;
+    font-size: var(--font-size-caption);
 }
 
 .inbox-empty-state {
@@ -168,12 +168,12 @@
 
 .inbox-empty-state h2 {
     color: var(--text-title);
-    font: 500 1.1rem var(--font-secundary);
+    font: 500 var(--font-size-lead) var(--font-secundary);
 }
 
 .inbox-empty-state p {
     max-width: 32ch;
-    font-size: 0.75rem;
+    font-size: var(--font-size-caption);
     line-height: 1.5;
 }
 
@@ -198,13 +198,13 @@
 
 .chat-sidebar > header p {
     color: var(--color-accent);
-    font-size: 0.6rem;
+    font-size: var(--font-size-caption);
     font-weight: 700;
 }
 
 .chat-sidebar > header h1 {
     color: var(--text-title);
-    font: 500 1.15rem var(--font-secundary);
+    font: 500 var(--font-size-lead) var(--font-secundary);
 }
 
 .chat-window {
@@ -253,12 +253,12 @@
 
 .chat-contact strong {
     color: var(--text-title);
-    font-size: 0.78rem;
+    font-size: var(--font-size-caption);
 }
 
 .chat-contact small {
     color: var(--text-secondary);
-    font-size: 0.65rem;
+    font-size: var(--font-size-caption);
 }
 
 .chat-info-button {
@@ -293,7 +293,7 @@
     align-self: center;
     margin: auto;
     color: var(--text-secondary);
-    font-size: 0.75rem;
+    font-size: var(--font-size-caption);
 }
 
 .chat-message {
@@ -329,12 +329,12 @@
 }
 
 .chat-bubble strong {
-    font-size: 0.62rem;
+    font-size: var(--font-size-caption);
 }
 
 .chat-bubble p {
     overflow-wrap: anywhere;
-    font-size: 0.78rem;
+    font-size: var(--font-size-caption);
     line-height: 1.45;
     white-space: pre-wrap;
 }
@@ -342,7 +342,7 @@
 .chat-bubble time {
     justify-self: end;
     color: var(--text-secondary);
-    font-size: 0.57rem;
+    font-size: var(--font-size-caption);
 }
 
 .chat-message.is-mine .chat-bubble time {
@@ -364,14 +364,14 @@
 
 .chat-message-actions button {
     color: var(--text-secondary);
-    font-size: 0.6rem;
+    font-size: var(--font-size-caption);
 }
 
 .chat-status {
     min-height: 1rem;
     padding: 0 1rem;
     color: var(--danger);
-    font-size: 0.65rem;
+    font-size: var(--font-size-caption);
 }
 
 .chat-composer {
@@ -393,7 +393,7 @@
     background: var(--all-white);
     color: var(--text-primary);
     font: inherit;
-    font-size: 0.75rem;
+    font-size: var(--font-size-caption);
 }
 
 .chat-composer button {
@@ -471,4 +471,86 @@
     .chat-window {
         min-height: 65vh;
     }
+}
+
+.chat-new-group { display: grid; place-items: center; width: 44px; height: 44px; padding: 10px; border: 1px solid var(--color-primary); border-radius: 50%; background: transparent; color: var(--color-primary); cursor: pointer; }
+.chat-new-group:hover { background: var(--color-background); }
+.chat-group-dialog { width: min(540px, calc(100% - 32px)); max-height: calc(100dvh - 32px); margin: auto; padding: 24px; overflow: auto; border: 1px solid var(--border-primary); border-radius: var(--radius-md); background: var(--color-surface, #fff); color: var(--color-text); box-shadow: 0 16px 48px #2b1f4726; }
+.chat-group-dialog::backdrop { background: #21172e88; }
+.chat-group-dialog form { display: grid; gap: 12px; }
+.chat-group-dialog header { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.chat-group-dialog h2 { margin: 0; color: var(--color-primary); font-family: var(--font-secondary, Lora, serif); }
+.chat-group-dialog header p, .chat-group-dialog [role="status"] { margin: 6px 0; font-size: .875rem; }
+.chat-group-dialog input:not([type="checkbox"]):not([type="hidden"]) { width: 100%; min-height: 44px; padding: 10px 12px; border: 1px solid var(--border-primary); border-radius: var(--radius-control); font: inherit; }
+.chat-group-results { max-height: 240px; overflow-y: auto; }
+.chat-group-results label { display: flex; gap: 12px; align-items: center; min-height: 44px; padding: 8px; cursor: pointer; }
+.chat-group-results input { accent-color: var(--color-primary); width: 18px; height: 18px; }
+.chat-group-dialog button { min-height: 44px; padding: 8px 14px; border: 0; border-radius: var(--radius-control); background: var(--color-background); color: var(--color-primary); font: inherit; cursor: pointer; }
+.chat-group-dialog button:disabled { opacity: .55; cursor: default; }
+.chat-group-dialog footer { display: flex; justify-content: flex-end; gap: 8px; }
+.chat-group-dialog [data-create-group] { background: var(--color-primary); color: #fff; }
+.chat-group-selected { display: flex; flex-wrap: wrap; gap: 6px; }
+.chat-group-dialog :focus-visible, .chat-new-group:focus-visible { outline: 2px solid var(--color-lavender); outline-offset: 3px; }
+@media (max-width: 480px) { .chat-group-dialog { padding: 16px; } }
+
+/* A tela ocupa o viewport; apenas as listas rolam. */
+body.messaging-screen {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    height: 100dvh;
+    min-height: 0;
+    overflow: hidden;
+    padding: 0;
+}
+.messaging-screen > .header-global { flex: none; }
+.messaging-screen > .site-footer { display: none; }
+.messaging-screen > .chat-page,
+.messaging-screen > .inbox-page {
+    width: 100%;
+    flex: 1;
+    min-height: 0;
+    margin: 0;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+    grid-template-rows: minmax(0, 1fr);
+}
+.messaging-screen .chat-sidebar,
+.messaging-screen .inbox-panel {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    overflow: hidden;
+}
+.messaging-screen .inbox-search,
+.messaging-screen .inbox-heading,
+.messaging-screen .chat-sidebar > header { flex: none; }
+.messaging-screen .inbox-list {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+}
+.messaging-screen .chat-window { min-height: 0; overflow: hidden; }
+.messaging-screen .chat-messages {
+    min-height: 0;
+    overscroll-behavior: contain;
+    scrollbar-gutter: stable;
+}
+.messaging-screen .chat-message,
+.messaging-screen .chat-topbar,
+.messaging-screen .chat-status,
+.messaging-screen .chat-composer { flex-shrink: 0; }
+.messaging-screen .chat-composer textarea { min-width: 0; }
+.messaging-screen .chat-contact strong { overflow-wrap: anywhere; }
+@media (max-width: 760px) {
+    .messaging-screen > .chat-page { grid-template-rows: auto minmax(0, 1fr); }
+    .messaging-screen .chat-sidebar { max-height: 24dvh; padding: .4rem .75rem; }
+    .messaging-screen .chat-sidebar .inbox-search { display: none; }
+    .messaging-screen .chat-sidebar .inbox-list { flex: 0 1 auto; }
+}
+@media (max-width: 600px) {
+    body.messaging-screen:has(.mobile-navigation) { padding-bottom: 0; }
+    .messaging-screen > .mobile-navigation { position: static; order: 2; flex: none; }
 }

@@ -23,4 +23,13 @@ $helpWorld = mundoDisponivel($c) ? carregarMundo($c, $id, $user) : null;
     <p data-help-empty <?=$helpCount ? 'hidden' : ''?>>Nenhum elemento por aqui. Comece com um personagem ou um lugar.</p>
     <?php else:?><p>Aguardando a atualização do banco para disponibilizar suas fichas.</p><?php endif;?>
     <a data-save-navigation href="worldbuilding.php?id_livro=<?=$id?>">Ver todos os elementos →</a>
+
+    <div class="world-pdf-cta" data-pdf-cta>
+        <h2>já tem um livro pronto?</h2>
+        <p>suba o pdf do seu livro agora!</p>
+        <label class="world-pdf-upload-button" aria-label="Adicionar PDF do livro">
+            <input type="file" data-upload="pdf" accept="application/pdf,.pdf" aria-label="Adicionar PDF do livro">
+            <span>Adicionar PDF</span>
+        </label>
+    </div>
 </aside>

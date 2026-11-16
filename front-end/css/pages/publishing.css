@@ -1,14 +1,14 @@
 /* Espaço do autor — referência visual de 20/10/2026.
    Base → apresentação → biblioteca → formulário → editor → prévia → responsividade. */
 :root {
-    --writing-ink: #2b1f47;
+    --writing-ink: var(--color-primary);
     --writing-muted: #777087;
     --writing-lavender: #967dc9;
     --writing-tint: #eee8f6;
     --writing-warm: #faf5ed;
 }
 .author-shell {
-    background: #f6f2eb;
+    background: var(--color-background);
     color: var(--writing-ink);
 }
 .writing-page {
@@ -28,7 +28,7 @@
 .writing-page h3,
 .writing-preview h1,
 .writing-preview h2 {
-    font-family: Lora, Georgia, serif;
+    font-family: var(--font-secondary);
     font-weight: 500;
 }
 .writing-page h1 {
@@ -85,14 +85,14 @@
     align-items: center;
     justify-content: center;
     gap: 12px;
-    min-height: 48px;
+    min-height: var(--size-button-height);
     padding: 12px 22px;
     border: 0;
-    border-radius: 8px;
+    border-radius: var(--radius-control);
     cursor: pointer;
     line-height: 1.35;
     text-align: center;
-    font-size: 0.94rem;
+    font-size: var(--font-size-body);
 }
 .writing-primary {
     color: white;
@@ -135,14 +135,13 @@
 .writing-heading .writing-eyebrow,
 .writing-eyebrow {
     font:
-        700 0.75rem/1.5 Manrope,
-        sans-serif;
+        700 var(--font-size-caption)/1.5 var(--font-primary);
     letter-spacing: 0.19em;
     color: var(--writing-lavender);
     text-transform: uppercase;
 }
 .writing-intro {
-    font-size: 1.12rem;
+    font-size: var(--font-size-lead);
 }
 .writing-profile-link,
 .writing-back {
@@ -162,7 +161,7 @@
     flex-wrap: wrap;
 }
 .writing-status {
-    font-size: 0.85rem;
+    font-size: var(--font-size-small);
     color: var(--writing-muted);
     margin: 0;
 }
@@ -249,15 +248,15 @@
 }
 .writer-benefit h2,
 .writer-values h2 {
-    font-family: Manrope, sans-serif;
-    font-size: 0.96rem;
+    font-family: var(--font-primary);
+    font-size: var(--font-size-body);
     font-weight: 700;
     margin: 0 0 4px;
 }
 .writer-benefit p {
     color: #6a617e;
     margin: 0;
-    font-size: 0.9rem;
+    font-size: var(--font-size-small);
 }
 .writer-activation {
     display: flex;
@@ -268,11 +267,11 @@
 }
 .writer-activation h2 {
     margin: 14px 0 8px;
-    font-size: 1.5rem;
+    font-size: var(--font-size-heading);
     letter-spacing: -0.025em;
 }
 .writer-activation > p {
-    font-size: 0.92rem;
+    font-size: var(--font-size-small);
     color: #6a617e;
     line-height: 1.5;
     margin: 0 0 14px;
@@ -288,7 +287,7 @@
     align-items: flex-start;
     gap: 12px !important;
     line-height: 1.45;
-    font-size: 0.8rem !important;
+    font-size: var(--font-size-caption) !important;
 }
 .writing-consent input {
     width: 16px;
@@ -309,7 +308,7 @@
     gap: 14px;
     padding: 22px 16px;
     background: #fff9f2;
-    border-radius: 12px;
+    border-radius: var(--radius-card);
 }
 .writer-values article:nth-child(even) {
     background: #f4f0fa;
@@ -327,11 +326,11 @@
     height: 22px;
 }
 .writer-values h2 {
-    font-size: 0.77rem;
+    font-size: var(--font-size-caption);
 }
 .writer-values p {
     margin: 4px 0 0;
-    font-size: 0.72rem;
+    font-size: var(--font-size-caption);
     color: #797087;
 }
 /* Biblioteca e criação. */
@@ -345,7 +344,7 @@
 }
 .writing-start {
     background: #ffffffed;
-    border-radius: 16px;
+    border-radius: var(--radius-card);
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 14px;
@@ -355,8 +354,7 @@
     grid-column: 1/-1;
     margin: 0 0 2px;
     font:
-        700 0.75rem Manrope,
-        sans-serif;
+        700 var(--font-size-caption) var(--font-primary);
     color: #aba0b7;
     letter-spacing: 0.12em;
     text-transform: uppercase;
@@ -381,14 +379,14 @@
     background: #f0e3d1;
 }
 .writing-start h3 {
-    font-size: 1.45rem;
+    font-size: var(--font-size-heading);
     margin: 0 0 6px;
     letter-spacing: -0.025em;
 }
 .writing-start p {
     margin: 0 0 18px;
     color: #7a6f89;
-    font-size: 0.9rem;
+    font-size: var(--font-size-small);
     line-height: 1.5;
 }
 .writing-start form > img {
@@ -411,7 +409,7 @@
 .writing-page label {
     display: grid;
     gap: 8px;
-    font-size: 0.9rem;
+    font-size: var(--font-size-small);
 }
 .writing-page input:not([type="checkbox"]):not([type="file"]),
 .writing-page textarea,
@@ -419,12 +417,12 @@
     width: 100%;
     min-width: 0;
     border: 1px solid #d8cfe5;
-    border-radius: 7px;
+    border-radius: var(--radius-control);
     padding: 11px 14px;
     background: white;
     color: var(--writing-ink);
     font: inherit;
-    min-height: 44px;
+    min-height: var(--size-control-height);
 }
 .writing-page textarea {
     resize: vertical;
@@ -460,7 +458,7 @@
     gap: 22px;
     padding: 24px;
     background: #ffffffed;
-    border-radius: 12px;
+    border-radius: var(--radius-card);
 }
 .writing-book > img {
     width: 100px;
@@ -471,16 +469,16 @@
     box-shadow: 0 4px 12px #2b1f4710;
 }
 .writing-book h2 {
-    font-size: 1.4rem;
+    font-size: var(--font-size-heading);
     margin: 6px 0;
     overflow-wrap: anywhere;
 }
 .writing-book p {
-    font-size: 0.8rem;
+    font-size: var(--font-size-caption);
 }
 .writing-book .writing-actions {
     justify-content: flex-start;
-    font-size: 0.85rem;
+    font-size: var(--font-size-small);
 }
 .writing-empty {
     display: grid;
@@ -496,13 +494,13 @@
     height: 82px;
 }
 .writing-empty h2 {
-    font-size: 1.5rem;
+    font-size: var(--font-size-heading);
     margin: 0;
     color: #34303a;
 }
 .writing-empty p {
     color: #8a7f91;
-    font-size: 0.9rem;
+    font-size: var(--font-size-small);
     margin: 0 0 10px;
 }
 /* Metadados e arquivos. */
@@ -525,7 +523,7 @@
     align-items: center;
     gap: 8px;
     color: #9b8eae;
-    font-size: 0.8rem;
+    font-size: var(--font-size-caption);
     margin: -6px 0 24px;
     flex-wrap: wrap;
 }
@@ -537,7 +535,7 @@
     padding: 5px 10px;
     background: white;
     color: #4f4267;
-    font-size: 0.75rem;
+    font-size: var(--font-size-caption);
     line-height: 1.4;
 }
 .writing-save-badge::before {
@@ -550,7 +548,7 @@
 .writing-metadata {
     padding: 28px;
     background: #fcfaff;
-    border-radius: 16px;
+    border-radius: var(--radius-card);
     margin-bottom: 24px;
 }
 .writing-metadata[hidden] {
@@ -569,13 +567,11 @@
 .writing-metadata summary strong {
     display: block;
     font:
-        500 1.55rem Lora,
-        Georgia,
-        serif;
+        500 1.55rem var(--font-secondary);
 }
 .writing-metadata summary small {
     display: block;
-    font-size: 0.95rem;
+    font-size: var(--font-size-body);
     color: #9b86b4;
     margin-top: 4px;
 }
@@ -596,7 +592,7 @@
     grid-column: 1/-1;
 }
 .writing-fields small {
-    font-size: 0.78rem;
+    font-size: var(--font-size-caption);
     color: #a091b4;
     line-height: 1.4;
 }
@@ -609,7 +605,7 @@
 .writing-field-label {
     display: block;
     margin-bottom: 10px;
-    font-size: 0.9rem;
+    font-size: var(--font-size-small);
 }
 .writing-cover-control {
     display: grid;
@@ -632,7 +628,7 @@
     min-height: 115px;
     padding: 24px;
     border: 1px dashed #cbb9e9;
-    border-radius: 10px;
+    border-radius: var(--radius-control);
     cursor: pointer;
 }
 .writing-upload-target .writing-icon {
@@ -645,7 +641,7 @@
     gap: 4px;
 }
 .writing-upload-target strong {
-    font-size: 0.9rem;
+    font-size: var(--font-size-small);
     font-weight: 600;
 }
 .writing-upload-target input {
@@ -664,14 +660,14 @@
     display: flex;
     gap: 16px;
     padding: 22px;
-    border-radius: 10px;
+    border-radius: var(--radius-control);
     background: #eee7f7;
     color: #8d78ac;
-    font-size: 0.84rem;
+    font-size: var(--font-size-small);
 }
 .writing-cover-note strong {
     display: block;
-    font-size: 0.95rem;
+    font-size: var(--font-size-body);
     font-weight: 600;
 }
 .writing-cover-note p {
@@ -698,7 +694,7 @@
 .writing-pdf {
     padding: 28px;
     background: white;
-    border-radius: 16px;
+    border-radius: var(--radius-card);
 }
 .writing-section-heading {
     display: flex;
@@ -712,12 +708,26 @@
 .writing-section-heading p {
     margin: 0;
     color: #9b86b4;
-    font-size: 0.9rem;
+    font-size: var(--font-size-small);
 }
 .writing-pdf-grid {
     display: grid;
     grid-template-columns: 1.6fr 1fr;
     gap: 22px;
+}
+.writing-pdf-preview {
+    margin: 0 0 20px;
+    border: 1px solid #e1d6f3;
+    border-radius: 14px;
+    overflow: hidden;
+    background: #f7f4fb;
+}
+.writing-pdf-preview iframe {
+    display: block;
+    width: 100%;
+    min-height: 780px;
+    border: 0;
+    background: white;
 }
 .writing-pdf-upload {
     display: flex !important;
@@ -725,7 +735,7 @@
     gap: 24px !important;
     padding: 28px;
     border: 1px dashed #cbb9e9;
-    border-radius: 12px;
+    border-radius: var(--radius-card);
 }
 .writing-pdf-upload > span:last-child {
     display: grid;
@@ -734,7 +744,7 @@
 .writing-pdf-upload input {
     width: 100%;
     max-width: 100%;
-    font-size: 0.8rem;
+    font-size: var(--font-size-caption);
 }
 .writing-pdf-upload input::file-selector-button {
     padding: 6px 10px;
@@ -746,13 +756,13 @@
     margin-right: 8px;
 }
 .writing-pdf-upload small {
-    font-size: 0.8rem;
+    font-size: var(--font-size-caption);
     color: #9b86b4;
 }
 .writing-pdf-notes {
     padding: 16px;
     background: #f4effa;
-    border-radius: 10px;
+    border-radius: var(--radius-control);
     display: grid;
     gap: 12px;
 }
@@ -772,7 +782,7 @@
 .writing-pdf-notes strong,
 .writing-pdf-notes small {
     display: block;
-    font-size: 0.78rem;
+    font-size: var(--font-size-caption);
 }
 .writing-pdf-notes small {
     margin-top: 3px;
@@ -780,6 +790,52 @@
 }
 .writing-pdf-view {
     margin-top: 20px;
+}
+.world-pdf-cta {
+    margin-top: 20px;
+    background: #f4effa;
+    border: 1px solid rgba(76, 57, 98, 0.12);
+    border-radius: 18px;
+    padding: 18px 16px;
+    display: grid;
+    gap: 10px;
+}
+.world-panel .world-pdf-cta h2 {
+    margin: 0;
+    font-size: 1.25rem;
+    line-height: 1.2;
+    color: #2b1f47;
+}
+.world-panel .world-pdf-cta p {
+    margin: 0;
+    color: #49355f;
+    font-size: 0.95rem;
+}
+.world-pdf-upload-button {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 42px;
+    border: 0;
+    border-radius: 12px;
+    background: #2b1f47;
+    color: white;
+    font-weight: 700;
+    cursor: pointer;
+    transition: filter 0.2s ease;
+    overflow: hidden;
+}
+.world-pdf-upload-button:hover,
+.world-pdf-upload-button:focus-within {
+    filter: brightness(0.98);
+}
+.world-pdf-upload-button input {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    opacity: 0;
+    pointer-events: none;
 }
 /* Área de escrita. */
 .writing-editor-focus {
@@ -830,8 +886,7 @@
 }
 .writing-sidebar-book h2 {
     font:
-        500 1rem Manrope,
-        sans-serif;
+        500 var(--font-size-body) var(--font-primary);
     margin: 3px 0 8px;
     overflow-wrap: anywhere;
 }
@@ -840,11 +895,11 @@
 }
 .writing-sidebar-book p {
     margin: 6px 0;
-    font-size: 0.75rem;
+    font-size: var(--font-size-caption);
     color: #8c7e9b;
 }
 .writing-sidebar-book a {
-    font-size: 0.75rem;
+    font-size: var(--font-size-caption);
     color: #8d77b1;
 }
 .writing-chapter-panel summary {
@@ -853,7 +908,7 @@
     justify-content: space-between;
     list-style: none;
     cursor: pointer;
-    min-height: 44px;
+    min-height: var(--size-control-height);
 }
 .writing-chapter-panel summary::-webkit-details-marker {
     display: none;
@@ -872,13 +927,13 @@
     display: flex;
     gap: 1px;
     align-items: center;
-    border-radius: 7px;
+    border-radius: var(--radius-control);
 }
 .writing-chapters li:has([aria-current="true"]) {
     background: #ede5f6;
 }
 .writing-chapters li button {
-    min-height: 44px;
+    min-height: var(--size-control-height);
     border: 0;
     background: transparent;
     color: #8f7fa4;
@@ -895,7 +950,7 @@
     overflow: hidden;
     white-space: nowrap;
     color: #554167;
-    font-size: 0.85rem;
+    font-size: var(--font-size-small);
 }
 .writing-chapters li button[aria-current="true"] {
     color: #4b2e72;
@@ -912,7 +967,7 @@
     align-items: center;
     margin-top: auto;
     padding-top: 36px;
-    font-size: 0.8rem;
+    font-size: var(--font-size-caption);
 }
 .writing-sidebar-status > .writing-icon {
     color: #64ac7d;
@@ -937,13 +992,13 @@
 }
 .writing-paper {
     padding: 24px;
-    border-radius: 12px;
+    border-radius: var(--radius-card);
     background: white;
 }
 .writing-page .writing-chapter-title {
     display: block;
     margin-bottom: 10px;
-    font-size: 1rem;
+    font-size: var(--font-size-body);
     color: #6d637d;
 }
 .writing-chapter-title-row {
@@ -951,7 +1006,7 @@
     gap: 12px;
 }
 .writing-chapter-title-row > input {
-    font-family: Lora, Georgia, serif !important;
+    font-family: var(--font-secondary) !important;
     font-size: 2rem !important;
     padding: 8px 16px !important;
 }
@@ -964,7 +1019,7 @@
     margin: 4px 62px 18px 0;
     text-align: right;
     color: #9b8eae;
-    font-size: 0.75rem;
+    font-size: var(--font-size-caption);
 }
 .writing-toolbar {
     display: flex;
@@ -973,7 +1028,7 @@
     padding: 8px 10px;
     margin-bottom: 18px;
     background: #f7f4fa;
-    border-radius: 8px;
+    border-radius: var(--radius-control);
     flex-wrap: wrap;
 }
 .writing-toolbar button {
@@ -1002,20 +1057,20 @@
     padding: 7px 10px !important;
     min-height: 40px;
     width: 130px;
-    font-size: 0.8rem;
+    font-size: var(--font-size-caption);
 }
 .writing-type-bold {
     font-family: Georgia, serif !important;
-    font-size: 1.3rem !important;
+    font-size: var(--font-size-subtitle) !important;
     font-weight: 700 !important;
 }
 .writing-type-italic {
     font-family: Georgia, serif !important;
-    font-size: 1.3rem !important;
+    font-size: var(--font-size-subtitle) !important;
     font-style: italic;
 }
 .writing-type-underline {
-    font-size: 1.1rem !important;
+    font-size: var(--font-size-lead) !important;
     text-decoration: underline;
 }
 .writing-content {
@@ -1025,9 +1080,7 @@
     border-bottom: 0;
     border-radius: 8px 8px 0 0;
     font:
-        400 1.08rem/1.9 Lora,
-        Georgia,
-        serif;
+        400 var(--font-size-lead)/1.9 var(--font-secondary);
     overflow-wrap: anywhere;
     outline: none;
 }
@@ -1037,8 +1090,7 @@
     color: #aca2b9;
     pointer-events: none;
     font:
-        400 1rem Manrope,
-        sans-serif;
+        400 var(--font-size-body) var(--font-primary);
 }
 .writing-content h2,
 .writing-content h3 {
@@ -1059,7 +1111,7 @@
     background: #f9f7fb;
     border-radius: 0 0 8px 8px;
     color: #9b8eae;
-    font-size: 0.75rem;
+    font-size: var(--font-size-caption);
 }
 .writing-editor-bottom {
     padding-right: 0;
@@ -1092,9 +1144,142 @@
     padding: 22px;
     margin: 16px 0;
     background: white;
-    border-radius: 10px;
+    border-radius: var(--radius-control);
+}
+.book-page .writing-comments {
+    display: grid;
+    gap: 12px;
+    margin: 32px 0 0;
+    padding: clamp(18px, 3vw, 28px);
+    border: 1px solid #e6dfeb;
+    border-radius: var(--radius-card);
+    background: #fff;
+    color: #25212b;
+}
+.book-page .writing-comments h2 {
+    margin: 0;
+    color: #2b1f47;
+    font: 500 var(--font-size-heading) var(--font-secondary, Lora, Georgia, serif);
+}
+.book-page .writing-comments > p {
+    margin: 0;
+    color: #625c69;
+    line-height: 1.55;
+}
+.book-page .writing-comments > p[role="status"]:empty {
+    display: none;
+}
+.book-page .writing-comments > form {
+    display: grid;
+    justify-items: start;
+    gap: 10px;
+    margin-top: 4px;
+}
+.book-page .writing-comments label {
+    display: grid;
+    gap: 7px;
+    color: #332a40;
+    font-size: var(--font-size-small);
+    font-weight: 600;
+}
+.book-page .writing-comments > form > label {
+    width: 100%;
+}
+.book-page .writing-comments textarea,
+.book-page .writing-comments select {
+    box-sizing: border-box;
+    width: 100%;
+    min-height: 112px;
+    padding: 12px 14px;
+    border: 1px solid #d8cfe2;
+    border-radius: var(--radius-control);
+    background: #fff;
+    color: #25212b;
+    font: inherit;
+    line-height: 1.5;
+}
+.book-page .writing-comments textarea {
+    resize: vertical;
+}
+.book-page .writing-comments textarea:focus-visible,
+.book-page .writing-comments select:focus-visible {
+    outline: 3px solid #8b75b8;
+    outline-offset: 2px;
+}
+.book-page .writing-comments > form > button {
+    min-width: 128px;
+}
+.book-page .writing-comments > article {
+    display: grid;
+    gap: 8px;
+    margin: 4px 0 0;
+    padding: 16px;
+    border: 1px solid #ece7f0;
+    border-radius: var(--radius-control);
+    background: #faf8fc;
+}
+.book-page .writing-comments > article > p {
+    margin: 0;
+    color: #393341;
+    line-height: 1.55;
+    overflow-wrap: anywhere;
+}
+.book-page .writing-comments > article > p:first-child {
+    color: #625c69;
+    font-size: var(--font-size-caption);
+}
+.book-page .writing-comments > article > p:first-child a {
+    color: #49355f;
+    font-weight: 700;
+}
+.book-page .writing-comments details {
+    margin-top: 8px;
+}
+.book-page .writing-comments details > summary {
+    color: #49355f;
+    cursor: pointer;
+    font-size: var(--font-size-small);
+    font-weight: 600;
+}
+.book-page .writing-comments details > p {
+    color: #625c69;
+    line-height: 1.5;
+}
+.book-page .writing-comments details form {
+    display: grid;
+    justify-items: start;
+    gap: 10px;
+    margin-top: 10px;
+}
+.book-page .writing-comments details form label {
+    width: 100%;
+}
+.book-page .writing-comments details form textarea,
+.book-page .writing-comments details form select {
+    min-height: 96px;
+}
+.book-page .writing-comments .writing-report {
+    margin-top: 8px;
+    padding-top: 14px;
+    border-top: 1px solid #e9e3ee;
+}
+.book-page .writing-comments .writing-report > summary {
+    color: #49355f;
+    cursor: pointer;
+    font-size: var(--font-size-small);
+    font-weight: 600;
+}
+.book-page .writing-comments .writing-report form > label {
+    width: 100%;
+}
+.book-page .writing-comments .writing-report select {
+    min-height: var(--size-control-height);
 }
 .writing-dialog {
+    position: fixed;
+    inset: 50% auto auto 50%;
+    transform: translate(-50%, -50%);
+    margin: 0;
     width: min(540px, calc(100% - 32px));
     max-height: 90dvh;
     overflow-y: auto;
@@ -1119,7 +1304,7 @@
     font-size: 1.8rem;
     cursor: pointer;
     min-width: 44px;
-    min-height: 44px;
+    min-height: var(--size-control-height);
 }
 .writing-dialog label:has([type="checkbox"]) {
     display: flex;
@@ -1139,14 +1324,14 @@
 }
 .writing-preview-sidebar .writing-back {
     margin-bottom: 26px;
-    font-size: 0.85rem;
+    font-size: var(--font-size-small);
 }
 .writing-preview-book {
     padding: 20px 26px;
     display: grid;
     justify-items: center;
     background: #efeaf3;
-    border-radius: 12px;
+    border-radius: var(--radius-card);
 }
 .writing-preview-book > img {
     width: 168px;
@@ -1159,7 +1344,7 @@
     background: #e7ddf5;
     padding: 8px 18px;
     border-radius: 24px;
-    font-size: 0.75rem;
+    font-size: var(--font-size-caption);
     margin-top: 14px;
 }
 .writing-preview-book dl {
@@ -1175,12 +1360,12 @@
     color: #8971b1;
 }
 .writing-preview-book dt {
-    font-size: 0.75rem;
+    font-size: var(--font-size-caption);
     color: #6b548d;
 }
 .writing-preview-book dd {
     margin: 6px 0 0;
-    font-size: 0.85rem;
+    font-size: var(--font-size-small);
     color: #8f7da5;
     overflow-wrap: anywhere;
 }
@@ -1190,13 +1375,13 @@
     padding: 18px;
     margin-top: 18px;
     background: #eee7f5;
-    border-radius: 12px;
+    border-radius: var(--radius-card);
     color: #8f77b2;
-    font-size: 0.75rem;
+    font-size: var(--font-size-caption);
 }
 .writing-preview-note strong {
     font-weight: 700;
-    font-size: 0.73rem;
+    font-size: var(--font-size-caption);
 }
 .writing-preview-note p {
     margin: 4px 0 0;
@@ -1207,7 +1392,7 @@
     overflow: hidden;
     min-height: calc(100dvh - 140px);
     background: #ffffffb5;
-    border-radius: 16px;
+    border-radius: var(--radius-card);
     padding: 28px 36px 90px;
 }
 .writing-preview-paper::after {
@@ -1250,16 +1435,14 @@
 }
 .writing-preview-paper .writing-actions a,
 .writing-preview-paper .writing-actions button {
-    font-size: 0.78rem;
+    font-size: var(--font-size-caption);
     padding: 10px 16px;
-    min-height: 44px;
+    min-height: var(--size-control-height);
 }
 .writing-preview-paper article {
     margin-top: 28px;
     font:
-        400 1.06rem/1.9 Lora,
-        Georgia,
-        serif;
+        400 var(--font-size-body)/1.9 var(--font-secondary);
     overflow-wrap: anywhere;
 }
 .writing-preview-paper article h2 {
@@ -1274,7 +1457,7 @@
     width: 100%;
     max-width: 100%;
     border: 0;
-    border-radius: 8px;
+    border-radius: var(--radius-control);
 }
 .writing-preview-empty {
     padding: 36px 0;
@@ -1426,7 +1609,7 @@
         gap: 16px;
     }
     .writing-intro {
-        font-size: 0.94rem;
+        font-size: var(--font-size-body);
     }
     .writing-onboarding {
         padding-top: 0;
@@ -1440,7 +1623,7 @@
     }
     .writing-onboarding .writing-intro {
         max-width: 100%;
-        font-size: 0.94rem;
+        font-size: var(--font-size-body);
     }
     .writing-onboarding .writing-heading {
         margin-bottom: 20px;
@@ -1459,7 +1642,7 @@
         grid-template-columns: 1fr;
         padding: 22px;
         gap: 24px;
-        border-radius: 16px;
+        border-radius: var(--radius-card);
     }
     .writer-benefits {
         gap: 22px;
@@ -1476,10 +1659,10 @@
         height: 24px;
     }
     .writer-benefit h2 {
-        font-size: 0.84rem;
+        font-size: var(--font-size-small);
     }
     .writer-benefit p {
-        font-size: 0.78rem;
+        font-size: var(--font-size-caption);
     }
     .writer-activation {
         display: grid;
@@ -1488,7 +1671,7 @@
         border-left: 0;
         padding: 20px 16px;
         background: #f7f4fa;
-        border-radius: 12px;
+        border-radius: var(--radius-card);
     }
     .writer-activation > .writing-icon-circle {
         width: 44px;
@@ -1501,19 +1684,19 @@
     }
     .writer-activation h2 {
         margin: 0;
-        font-size: 1.25rem;
+        font-size: var(--font-size-subtitle);
     }
     .writer-activation > p {
         grid-column: 2;
         margin: 0;
-        font-size: 0.85rem;
+        font-size: var(--font-size-small);
     }
     .writer-activation form {
         grid-column: 1/-1;
         margin-top: 6px;
     }
     .writing-consent {
-        font-size: 0.75rem !important;
+        font-size: var(--font-size-caption) !important;
     }
     .writer-values {
         gap: 10px;
@@ -1524,10 +1707,10 @@
         padding: 20px 14px;
     }
     .writer-values h2 {
-        font-size: 0.75rem;
+        font-size: var(--font-size-caption);
     }
     .writer-values p {
-        font-size: 0.7rem;
+        font-size: var(--font-size-caption);
     }
     .writing-dashboard .writing-heading {
         flex-direction: column;
@@ -1541,10 +1724,10 @@
         padding: 22px 18px;
     }
     .writing-start h3 {
-        font-size: 1.3rem;
+        font-size: var(--font-size-subtitle);
     }
     .writing-start p {
-        font-size: 0.85rem;
+        font-size: var(--font-size-small);
         max-width: 90%;
     }
     .writing-start form > img {
@@ -1570,7 +1753,7 @@
         height: 120px;
     }
     .writing-book h2 {
-        font-size: 1.25rem;
+        font-size: var(--font-size-subtitle);
     }
     .writing-editor-heading {
         gap: 20px;
@@ -1582,7 +1765,7 @@
     .writing-editor-heading .writing-actions > * {
         flex: 1;
         padding: 10px 12px;
-        font-size: 0.78rem;
+        font-size: var(--font-size-caption);
         gap: 8px;
     }
     .writing-editor-heading .writing-actions .writing-icon {
@@ -1600,10 +1783,10 @@
         height: 48px;
     }
     .writing-metadata summary strong {
-        font-size: 1.3rem;
+        font-size: var(--font-size-subtitle);
     }
     .writing-metadata summary small {
-        font-size: 0.8rem;
+        font-size: var(--font-size-caption);
     }
     .writing-fields {
         grid-template-columns: 1fr;
@@ -1630,11 +1813,11 @@
         height: 22px;
     }
     .writing-upload-target strong {
-        font-size: 0.8rem;
+        font-size: var(--font-size-caption);
     }
     .writing-cover-note {
         padding: 18px;
-        font-size: 0.8rem;
+        font-size: var(--font-size-caption);
     }
     .writing-continue {
         flex-wrap: wrap;
@@ -1645,10 +1828,10 @@
         flex: 1;
     }
     .writing-continue h2 {
-        font-size: 1.3rem;
+        font-size: var(--font-size-subtitle);
     }
     .writing-continue p {
-        font-size: 0.85rem;
+        font-size: var(--font-size-small);
     }
     .writing-continue > a {
         width: 100%;
@@ -1666,10 +1849,10 @@
         height: 48px;
     }
     .writing-section-heading h2 {
-        font-size: 1.35rem;
+        font-size: var(--font-size-subtitle);
     }
     .writing-section-heading p {
-        font-size: 0.82rem;
+        font-size: var(--font-size-small);
     }
     .writing-pdf-upload {
         flex-direction: column;
@@ -1724,10 +1907,10 @@
         padding: 18px 14px;
     }
     .writing-page .writing-chapter-title {
-        font-size: 0.9rem;
+        font-size: var(--font-size-small);
     }
     .writing-chapter-title-row > input {
-        font-size: 1.5rem !important;
+        font-size: var(--font-size-heading) !important;
     }
     .writing-chapter-count {
         margin-bottom: 12px;
@@ -1754,7 +1937,7 @@
     .writing-content {
         min-height: 52dvh;
         padding: 20px 16px;
-        font-size: 1rem;
+        font-size: var(--font-size-body);
     }
     .writing-editor-bottom {
         display: grid;
@@ -1762,7 +1945,7 @@
         gap: 8px;
     }
     .writing-editor-bottom > * {
-        font-size: 0.75rem;
+        font-size: var(--font-size-caption);
         gap: 6px;
         padding: 12px 8px;
     }
@@ -1805,7 +1988,7 @@
     .writing-preview-badge {
         grid-column: 2;
         margin: 0;
-        font-size: 0.7rem;
+        font-size: var(--font-size-caption);
         padding: 5px 12px;
     }
     .writing-preview-book dl {
@@ -1821,10 +2004,10 @@
         height: 18px;
     }
     .writing-preview-book dt {
-        font-size: 0.68rem;
+        font-size: var(--font-size-caption);
     }
     .writing-preview-book dd {
-        font-size: 0.75rem;
+        font-size: var(--font-size-caption);
         margin-top: 3px;
     }
     .writing-preview-note {
@@ -1842,7 +2025,7 @@
         margin-bottom: 20px;
     }
     .writing-preview-paper .writing-actions > * {
-        font-size: 0.75rem;
+        font-size: var(--font-size-caption);
         padding: 9px 12px;
     }
     .writing-preview-paper h1 {
@@ -1850,7 +2033,7 @@
         font-size: 2rem;
     }
     .writing-preview-paper article {
-        font-size: 1rem;
+        font-size: var(--font-size-body);
         margin-top: 10px;
     }
     .writing-preview-paper article h2 {
@@ -1867,7 +2050,7 @@
         display: inline-grid;
         place-items: center;
         width: 36px;
-        min-height: 44px;
+        min-height: var(--size-control-height);
         flex: none;
     }
     .author-shell .header-global .logo-header {
@@ -1884,7 +2067,7 @@
         min-width: 50px;
     }
     .author-shell .header-global .header-pesquisa input {
-        font-size: 0.65rem;
+        font-size: var(--font-size-caption);
         padding-left: 28px;
     }
     .author-shell .header-global .header-nav {
@@ -1924,7 +2107,7 @@
         font-size: 2.2rem;
     }
     .writing-onboarding .writing-intro {
-        font-size: 0.85rem;
+        font-size: var(--font-size-small);
     }
     .writer-welcome {
         padding: 18px 14px;
@@ -1942,10 +2125,10 @@
         height: 44px;
     }
     .writer-benefit h2 {
-        font-size: 0.78rem;
+        font-size: var(--font-size-caption);
     }
     .writer-benefit p {
-        font-size: 0.73rem;
+        font-size: var(--font-size-caption);
         line-height: 1.5;
     }
     .writer-activation {
@@ -1958,10 +2141,10 @@
         height: 36px;
     }
     .writer-activation h2 {
-        font-size: 1.1rem;
+        font-size: var(--font-size-lead);
     }
     .writer-activation > p {
-        font-size: 0.75rem;
+        font-size: var(--font-size-caption);
     }
     .writer-values {
         grid-template-columns: 1fr;
@@ -1993,7 +2176,7 @@
         gap: 8px;
     }
     .writing-editor-heading .writing-actions > * {
-        font-size: 0.72rem;
+        font-size: var(--font-size-caption);
         padding: 10px 8px;
     }
     .writing-editor-heading .writing-actions .writing-icon {
@@ -2006,10 +2189,10 @@
         gap: 12px;
     }
     .writing-metadata summary strong {
-        font-size: 1.15rem;
+        font-size: var(--font-size-lead);
     }
     .writing-metadata summary small {
-        font-size: 0.75rem;
+        font-size: var(--font-size-caption);
     }
     .writing-metadata summary .writing-icon-circle {
         width: 40px;
@@ -2032,7 +2215,7 @@
         display: none;
     }
     .writing-upload-target small {
-        font-size: 0.68rem;
+        font-size: var(--font-size-caption);
     }
     .writing-editor-focus {
         width: calc(100% - 20px);
@@ -2056,7 +2239,7 @@
         display: inline-grid;
         place-items: center;
         width: 36px;
-        min-height: 44px;
+        min-height: var(--size-control-height);
         margin-left: auto;
     }
     .author-shell.writing-search-open .header-global .header-pesquisa {
@@ -2071,8 +2254,8 @@
         box-shadow: 0 5px 20px #2b1f4730;
     }
     .author-shell.writing-search-open .header-global .header-pesquisa input {
-        font-size: 0.85rem;
-        min-height: 44px;
+        font-size: var(--font-size-small);
+        min-height: var(--size-control-height);
     }
 }
 @media (prefers-reduced-motion: reduce) {

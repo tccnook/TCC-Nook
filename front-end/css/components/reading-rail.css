@@ -44,11 +44,11 @@
     overflow: hidden;
     white-space: nowrap;
     text-overflow: ellipsis;
-    font-size: 0.9rem;
+    font-size: var(--font-size-small);
 }
 .reading-book small {
     color: var(--text-muted);
-    font-size: 0.75rem;
+    font-size: var(--font-size-caption);
 }
 .reading-book progress {
     width: 100%;

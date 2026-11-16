@@ -10,7 +10,7 @@
     gap: 0.4rem;
     margin-bottom: 1.1rem;
     color: var(--text-title);
-    font-size: 0.75rem;
+    font-size: var(--font-size-caption);
 }
 
 .community-back svg {
@@ -21,7 +21,7 @@
 }
 .community-heading > p {
     color: var(--color-accent);
-    font-size: 0.65rem;
+    font-size: var(--font-size-caption);
     font-weight: 700;
 }
 .community-heading h1 {
@@ -31,7 +31,7 @@
 }
 .community-heading > span {
     color: var(--text-secondary);
-    font-size: 0.72rem;
+    font-size: var(--font-size-caption);
 }
 
 .community-search {
@@ -43,7 +43,7 @@
     margin-bottom: 1.2rem;
     padding: 0.35rem 0.45rem 0.35rem 0.8rem;
     border: 1px solid var(--soft-border);
-    border-radius: 8px;
+    border-radius: var(--radius-control);
     background: var(--all-white);
 }
 
@@ -60,7 +60,7 @@
     background: transparent;
     color: var(--text-primary);
     font: inherit;
-    font-size: 0.75rem;
+    font-size: var(--font-size-caption);
 }
 .community-search button,
 .community-follow {
@@ -73,7 +73,7 @@
     border-radius: 6px;
     background: var(--bg-cards);
     color: var(--text-on-dark);
-    font-size: 0.68rem;
+    font-size: var(--font-size-caption);
     font-weight: 700;
 }
 .community-search button:hover,
@@ -84,7 +84,7 @@
     min-height: 1.85rem;
     padding: 0 0.55rem;
     background: var(--color-accent);
-    font-size: 0.62rem;
+    font-size: var(--font-size-caption);
 }
 .community-follow svg {
     width: 0.8rem;
@@ -105,7 +105,7 @@
     gap: 0.7rem;
     min-width: 0;
     padding: 0.7rem;
-    border-radius: 8px;
+    border-radius: var(--radius-control);
     background: var(--all-white);
     color: var(--text-primary);
     box-shadow: 0 0.15rem 0.6rem var(--shadow-soft);
@@ -144,7 +144,7 @@
 .community-author strong {
     overflow: hidden;
     color: var(--text-title);
-    font-size: 0.72rem;
+    font-size: var(--font-size-caption);
     text-overflow: ellipsis;
     white-space: nowrap;
 }
@@ -152,14 +152,14 @@
 .community-author small {
     overflow: hidden;
     color: var(--text-secondary);
-    font-size: 0.62rem;
+    font-size: var(--font-size-caption);
     text-overflow: ellipsis;
     white-space: nowrap;
 }
 .community-empty {
     padding: 2rem 1rem;
     color: var(--text-secondary);
-    font-size: 0.8rem;
+    font-size: var(--font-size-caption);
     text-align: center;
 }
 
@@ -177,16 +177,16 @@
 .community-results-title {
     margin: 0 0 0.75rem;
     color: var(--text-title);
-    font: 500 1rem var(--font-secundary);
+    font: 500 var(--font-size-body) var(--font-secundary);
 }
 .community-google-heading span {
     color: var(--text-secondary);
-    font-size: 0.65rem;
+    font-size: var(--font-size-caption);
 }
 .community-api-notice {
     margin: 0 0 0.75rem;
     color: var(--text-secondary);
-    font-size: 0.7rem;
+    font-size: var(--font-size-caption);
 }
 .community-google-author {
     box-shadow: none;
@@ -201,7 +201,7 @@
     border-radius: 6px;
     background: var(--all-white);
     color: var(--text-title);
-    font-size: 0.7rem;
+    font-size: var(--font-size-caption);
     font-weight: 700;
 }
 .community-load-more:hover {
@@ -228,7 +228,7 @@
     border-radius: 6px;
     background: var(--all-white);
     color: var(--text-title);
-    font-size: 0.65rem;
+    font-size: var(--font-size-caption);
     font-weight: 700;
 }
 .community-pagination a:hover {
@@ -239,7 +239,7 @@
 }
 .community-pagination > span {
     color: var(--text-secondary);
-    font-size: 0.65rem;
+    font-size: var(--font-size-caption);
 }
 
 .explore-list-grid {
@@ -252,7 +252,7 @@
         padding-top: 0.7rem;
     }
     .community-heading h1 {
-        font-size: 1.35rem;
+        font-size: var(--font-size-subtitle);
     }
     .community-search {
         gap: 0.4rem;
@@ -269,7 +269,7 @@
 }
 #authors-results .community-author {
     border: 1px solid var(--color-surface-muted);
-    border-radius: 12px;
+    border-radius: var(--radius-card);
     background: white;
     box-shadow: none;
 }
@@ -290,16 +290,16 @@
     flex: none;
 }
 #authors-results .community-author strong {
-    font: 500 1.1rem/1.4 var(--font-secundary);
+    font: 500 var(--font-size-lead)/1.4 var(--font-secundary);
 }
 #authors-results .community-author small {
     display: block;
     margin-top: 0.4rem;
-    font-size: 0.8rem;
+    font-size: var(--font-size-caption);
     color: var(--text-muted);
 }
 #authors-status {
     min-height: 1.5em;
     margin: 1rem 0;
-    font-size: 0.85rem;
+    font-size: var(--font-size-small);
 }

@@ -12,6 +12,7 @@ if (!is_string($busca)) {
 require_once __DIR__ . '/conexao.php';
 try {
     $conn = (new Database())->conectar();
+    session_write_close();
     $stmt = $conn->prepare('SELECT DISTINCT f.id_following,u.username,c.foto_perfil_url FROM follow f INNER JOIN usuario u ON u.id_user=f.id_following LEFT JOIN conta c ON c.id_user=u.id_user WHERE f.id_follower=:usuario AND u.id_user<>:proprio AND u.username ILIKE :busca ORDER BY u.username');
     $stmt->execute([':usuario' => (int) $_SESSION['id_user'], ':proprio' => (int) $_SESSION['id_user'], ':busca' => '%' . mb_substr(trim($busca), 0, 100) . '%']);
     chatResposta(200, ['sucesso' => true, 'amigos' => $stmt->fetchAll(PDO::FETCH_ASSOC)]);

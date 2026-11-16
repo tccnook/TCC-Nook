@@ -33,6 +33,7 @@ require_once __DIR__ . '/conexao.php';
 $conn = (new Database())->conectar();
 require_once __DIR__ . '/schema_support.php';
 require_once __DIR__ . '/list_view_support.php';
+require_once __DIR__ . '/notifications_support.php';
 $schema = schemaProjeto($conn);
 require_once __DIR__ . '/privacy_settings.php';
 $colunaVisibilidade = isset($schema['whishlist']['visibilidade']) ? 'visibilidade' : "'privada' AS visibilidade";
@@ -72,6 +73,9 @@ try {
 
         $stmt = $conn->prepare('INSERT INTO whishlist_seguida (id_user, id_whishlist) VALUES (:id_user, :id_lista) ON CONFLICT DO NOTHING');
         $stmt->execute([':id_user' => $id_user, ':id_lista' => $id_lista]);
+        if ($stmt->rowCount() > 0) {
+            registrarNotificacao($conn, $dono, $id_user, 'lista_seguida', $id_lista);
+        }
         $conn->commit();
         responderLista(200, 'Lista adicionada ao seu perfil.');
     }
@@ -97,6 +101,7 @@ try {
         $destinos = destinosMencoes($conn, $comentario, $id_user);
         $stmt = $conn->prepare("INSERT INTO comentario (id_user, categoria_curtida, id_coisocurtido, comentario) VALUES (:id_user, 'whishlist', :id_lista, :comentario)");
         $stmt->execute([':id_user' => $id_user, ':id_lista' => $id_lista, ':comentario' => $comentario]);
+        registrarNotificacao($conn, $dono, $id_user, 'comentario_lista', $id_lista);
         registrarMencoes($conn, $destinos, $id_user, 'whishlist', $id_lista);
         $conn->commit();
         responderLista(201, 'Comentário publicado.');

@@ -20,7 +20,7 @@
     gap: 0.4rem;
     margin-bottom: 1rem;
     color: var(--text-title);
-    font-size: 0.85rem;
+    font-size: var(--font-size-small);
 }
 
 .book-back svg {
@@ -61,7 +61,7 @@
 
 .book-eyebrow {
     color: var(--color-accent);
-    font-size: 0.75rem;
+    font-size: var(--font-size-caption);
     font-weight: 700;
 }
 
@@ -78,7 +78,7 @@
 .book-subtitle {
     margin-top: 0.2rem;
     color: var(--text-secondary);
-    font: italic 0.9rem var(--font-secundary);
+    font: italic var(--font-size-small) var(--font-secundary);
 }
 
 .book-rating {
@@ -86,11 +86,11 @@
     gap: 0.55rem;
     margin: 0.75rem 0 1rem;
     color: var(--text-secondary);
-    font-size: 0.8rem;
+    font-size: var(--font-size-caption);
 }
 
 .star-display {
-    color: var(--color-accent);
+    color: var(--color-accent2);
     white-space: nowrap;
     letter-spacing: 0;
 }
@@ -116,9 +116,9 @@
     min-height: 2.6rem;
     padding: 0.55rem 0.8rem;
     border: 1px solid var(--color-accent);
-    border-radius: 8px;
+    border-radius: var(--radius-control);
     color: var(--color-accent);
-    font-size: 0.8rem;
+    font-size: var(--font-size-caption);
     font-weight: 600;
     text-decoration: none;
     white-space: nowrap;
@@ -168,7 +168,7 @@
     min-height: 1.3em;
     margin-top: 0.5rem;
     color: var(--text-title);
-    font-size: 0.8rem;
+    font-size: var(--font-size-caption);
 }
 
 .book-add-wrap {
@@ -184,7 +184,7 @@
     width: max-content;
     min-width: 13rem;
     padding: 0.35rem;
-    border-radius: 8px;
+    border-radius: var(--radius-control);
     background: var(--all-white);
     box-shadow: 0 0.75rem 1.5rem var(--border-primary);
 }
@@ -221,7 +221,7 @@
     padding: 0.65rem 0.1rem;
     border-bottom: 2px solid var(--bg-primary);
     color: var(--text-secondary);
-    font-size: 0.9rem;
+    font-size: var(--font-size-small);
 }
 
 .book-tab.is-active {
@@ -256,7 +256,7 @@
 
 .review-score h2 {
     color: var(--color-accent2);
-    font: 500 1.15rem var(--font-secundary);
+    font: 500 var(--font-size-lead) var(--font-secundary);
 }
 
 .review-score strong {
@@ -266,7 +266,7 @@
 }
 
 .review-score .star-display {
-    font-size: 1.15rem;
+    font-size: var(--font-size-lead);
 }
 
 .review-filters {
@@ -283,11 +283,11 @@
     border-radius: 6px;
     background: var(--bg-cards);
     color: var(--text-on-dark);
-    font-size: 0.8rem;
+    font-size: var(--font-size-caption);
 }
 
 .review-filter .star-display {
-    font-size: 0.85rem;
+    font-size: var(--font-size-small);
 }
 
 .review-filter.is-active {
@@ -320,13 +320,13 @@
 
 .review-author strong {
     color: var(--text-primary);
-    font-size: 0.85rem;
+    font-size: var(--font-size-small);
 }
 
 .review-author small,
 .comment-card small {
     color: var(--text-secondary);
-    font-size: 0.72rem;
+    font-size: var(--font-size-caption);
 }
 
 .review-avatar {
@@ -346,13 +346,13 @@
 
 .review-card-stars {
     margin-left: auto;
-    font-size: 0.9rem;
+    font-size: var(--font-size-small);
 }
 
 .review-card h3 {
     margin: 0.8rem 0 0.35rem;
     color: var(--text-title);
-    font: 600 1.15rem var(--font-secundary);
+    font: 600 var(--font-size-lead) var(--font-secundary);
 }
 
 .review-card p {
@@ -374,7 +374,7 @@
 .book-info-panel > h2 {
     margin-bottom: 0.75rem;
     color: var(--color-accent);
-    font: 500 1.4rem var(--font-secundary);
+    font: 500 var(--font-size-heading) var(--font-secundary);
 }
 
 .book-info-grid {
@@ -395,20 +395,20 @@
 .book-facts > div {
     min-width: 0;
     padding: 0.75rem;
-    border-radius: 8px;
+    border-radius: var(--radius-control);
     background: var(--all-white);
 }
 
 .book-facts dt {
     color: var(--text-secondary);
-    font-size: 0.68rem;
+    font-size: var(--font-size-caption);
 }
 
 .book-facts dd {
     overflow-wrap: anywhere;
     margin-top: 0.3rem;
     color: var(--color-accent);
-    font: 500 1rem var(--font-secundary);
+    font: 500 var(--font-size-body) var(--font-secundary);
 }
 
 .book-text-details {
@@ -418,7 +418,7 @@
 
 .book-text-details article {
     padding: 0.8rem;
-    border-radius: 8px;
+    border-radius: var(--radius-control);
     background: var(--all-white);
 }
 
@@ -428,7 +428,7 @@
     gap: 0.45rem;
     margin-bottom: 0.45rem;
     color: var(--color-accent);
-    font: 500 1rem var(--font-secundary);
+    font: 500 var(--font-size-body) var(--font-secundary);
 }
 
 .book-text-details h3 svg {
@@ -436,7 +436,7 @@
 }
 
 .book-text-details p {
-    font-size: 0.8rem;
+    font-size: var(--font-size-caption);
     line-height: 1.5;
 }
 
@@ -446,10 +446,10 @@
     gap: 0.4rem;
     width: fit-content;
     padding: 0.55rem 0.7rem;
-    border-radius: 7px;
+    border-radius: var(--radius-control);
     background: var(--bg-soft-strong);
     color: var(--text-title);
-    font-size: 0.68rem;
+    font-size: var(--font-size-caption);
     font-weight: 700;
 }
 .book-google-source svg {
@@ -468,12 +468,12 @@
 
 .comments-heading h2 {
     color: var(--text-title);
-    font: 500 1.45rem var(--font-secundary);
+    font: 500 var(--font-size-heading) var(--font-secundary);
 }
 
 .comments-toggle {
     color: var(--color-accent);
-    font-size: 0.8rem;
+    font-size: var(--font-size-caption);
 }
 
 .comment-form {
@@ -490,7 +490,7 @@
     width: 100%;
     padding: 0.7rem 0.8rem;
     border: 1px solid var(--border-primary);
-    border-radius: 8px;
+    border-radius: var(--radius-control);
     background: var(--all-white);
     color: var(--text-primary);
     font: inherit;
@@ -534,7 +534,7 @@
 
 .comment-card strong {
     color: var(--text-title);
-    font-size: 0.85rem;
+    font-size: var(--font-size-small);
 }
 
 .comment-card p {
@@ -571,7 +571,7 @@
 
 .dialog-heading h2 {
     color: var(--text-title);
-    font: 500 1.4rem var(--font-secundary);
+    font: 500 var(--font-size-heading) var(--font-secundary);
 }
 
 .dialog-close {
@@ -590,7 +590,7 @@
 .dialog-form > label,
 .review-rating-picker legend {
     color: var(--text-title);
-    font-size: 0.8rem;
+    font-size: var(--font-size-caption);
     font-weight: 700;
 }
 
@@ -618,7 +618,7 @@
     min-width: 2.4rem;
     min-height: 2.4rem;
     place-items: center;
-    border-radius: 8px;
+    border-radius: var(--radius-control);
     color: var(--rating-empty);
     cursor: pointer;
 }
@@ -635,7 +635,7 @@
 .dialog-status {
     min-height: 1.2em;
     color: var(--text-title);
-    font-size: 0.8rem;
+    font-size: var(--font-size-caption);
 }
 
 .dialog-actions {
@@ -651,7 +651,7 @@
     }
 
     .book-summary h1 {
-        font-size: 1.5rem;
+        font-size: var(--font-size-heading);
     }
 
     .book-actions {
@@ -661,7 +661,7 @@
     .book-action {
         min-height: 2.35rem;
         padding: 0.45rem 0.6rem;
-        font-size: 0.72rem;
+        font-size: var(--font-size-caption);
     }
 
     .book-info-grid {
@@ -681,18 +681,18 @@
     }
 
     .book-summary h1 {
-        font-size: 1.25rem;
+        font-size: var(--font-size-subtitle);
     }
 
     .book-rating {
         gap: 0.35rem;
         margin: 0.5rem 0;
-        font-size: 0.7rem;
+        font-size: var(--font-size-caption);
     }
 
     .book-synopsis {
         grid-column: 1 / -1;
-        font-size: 0.82rem;
+        font-size: var(--font-size-small);
     }
 
     .book-actions {
@@ -716,6 +716,6 @@
     }
 
     .review-card-stars {
-        font-size: 0.75rem;
+        font-size: var(--font-size-caption);
     }
 }

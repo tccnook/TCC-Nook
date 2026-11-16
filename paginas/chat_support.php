@@ -14,6 +14,20 @@ function chatId($value): int
 
     return $id;
 }
+/** Participantes escolhidos no modal; o criador é adicionado separadamente. */
+function chatParticipantesGrupo($values, int $user): array
+{
+    if (!is_array($values) || !$values || count($values) > 100) {
+        throw new InvalidArgumentException('Selecione de 1 a 100 leitores para o grupo.');
+    }
+    $ids = [];
+    foreach ($values as $value) {
+        $id = chatId($value);
+        if ($id === $user) throw new InvalidArgumentException('Você já participa como criador do grupo.');
+        $ids[$id] = $id;
+    }
+    return array_values($ids);
+}
 function chatMensagem(array $input): array
 {
     $id = chatId($input['id_conversa'] ?? null);

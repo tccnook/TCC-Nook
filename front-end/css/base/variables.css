@@ -16,7 +16,29 @@
     --space-10: 2.5rem;
     --space-12: 3rem;
 
-    --size-input-height: clamp(2.8rem, 3vw, 3.5rem);
+    /* Escala baseada no login e no onboarding; valores em rem respeitam o zoom. */
+    --font-size-caption: 0.75rem;
+    --font-size-small: 0.875rem;
+    --font-size-body: 1rem;
+    --font-size-lead: 1.125rem;
+    --font-size-subtitle: 1.25rem;
+    --font-size-heading: 1.5rem;
+    --font-size-title: clamp(1.5rem, 3vw, 2.2rem);
+    --font-size-display: clamp(2rem, 4vw, 3rem);
+    --font-size-card-title: clamp(1rem, 1.6vw, 1.35rem);
+    --font-size-genre-title: clamp(1.1rem, 2.2vw, 1.8rem);
+    --font-size-selection-count: clamp(0.95rem, 1.8vw, 1.2rem);
+    --line-height-heading: 1.25;
+    --line-height-body: 1.5;
+    --line-height-reading: 1.7;
+    --size-control-height: 2.75rem;
+    --size-input-height: 3rem;
+    --size-button-height: 3rem;
+    --radius-control: 0.625rem;
+    --radius-card: 0.9375rem;
+    --color-selection: #b46dff;
+    --color-selection-surface: #ede3ff;
+    --color-selection-border: #d9c4fb;
     --size-auth-panel: min(100%, 34rem);
 
     --bg-primary: var(--color-background);
@@ -53,15 +75,16 @@
     --shadow-card: #00000040;
 
     --font-primary: "Manrope", sans-serif;
-    --font-secundary: "Lora", sans-serif;
-    --radius-sm: 10px;
-    --radius-md: 15px;
+    --font-secondary: "Lora", Georgia, serif;
+    --font-secundary: var(--font-secondary); /* Compatibilidade com páginas existentes. */
+    --radius-sm: var(--radius-control);
+    --radius-md: var(--radius-card);
     --radius-lg: 30px;
 
     --shadow-elevated: 0 18px 45px rgba(43, 31, 71, 0.12);
 
     --border-primary: #c0c0c0;
-    --bg-gradient: linear-gradient(0deg, rgba(123, 106, 168, 1) 0%, rgba(246, 242, 235, 1) 100%);
+    --bg-gradient: linear-gradient(0deg, rgba(123, 106, 168, 1) 0%, var(--color-background) 100%);
     --width-login: 45vw;
     --ball-width: 15px;
 }

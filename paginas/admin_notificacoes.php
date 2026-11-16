@@ -8,7 +8,7 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
 }
 $isSuperior=in_array($administradorAtual['nivel'],['supremo','gestor'],true);
 $s=$adminConnection->prepare('SELECT r.*,a.nome_completo AS solicitante_nome,d.nome_completo AS decisor_nome FROM admin_solicitacao r JOIN admin a ON a.id_admin=r.solicitante LEFT JOIN admin d ON d.id_admin=r.decidido_por WHERE (r.solicitante=? OR ?=1) ORDER BY (r.estado=\'pendente\') DESC,r.criado_em DESC LIMIT 200');$s->execute([$administradorAtual['id_admin'],$isSuperior?1:0]);$requests=$s->fetchAll();
-$routes=['crud_autores.php'=>'Autores','crud_genero.php'=>'Gêneros','excluir_autor.php'=>'Excluir autor','excluir_genero.php'=>'Excluir gênero','moderacao_obras.php'=>'Moderação de obras','denuncia_comentario.php'=>'Denúncias','gerenciar_admins.php'=>'Administradores','gerenciar_usuarios.php'=>'Usuários'];
+$routes=['crud_autores.php'=>'Autores','crud_genero.php'=>'Gêneros','excluir_autor.php'=>'Excluir autor','excluir_genero.php'=>'Excluir gênero','moderacao_obras.php'=>'Moderação de obras','denuncia_comentario.php'=>'Denúncias','denuncia_usuario.php'=>'Denúncias de usuários','gerenciar_admins.php'=>'Administradores','gerenciar_usuarios.php'=>'Usuários'];
 adminInicio('Notificações','Acompanhe solicitações de permissão e decisões administrativas.');
 ?>
 <?php if($error): ?><p class="admin-notice admin-error" role="alert"><?= adminEscape($error) ?></p><?php endif; ?>

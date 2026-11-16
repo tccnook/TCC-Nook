@@ -15,4 +15,6 @@ $a=adminRequestData('crud_genero.php',['nome_genero'=>'Fantasia','cadastrar'=>''
 demand(!isset($a['csrf_token']), 'Fila não armazena CSRF');
 $a=adminRequestData('gerenciar_admins.php',['nome_completo'=>'Pessoa','email'=>'p@example.test','senha'=>'segredo','confirmar_senha'=>'segredo','nivel'=>'gestor','criar_admin'=>''],[]);
 demand(!isset($a['senha']) && !isset($a['confirmar_senha']), 'Fila não armazena senhas');
+$a=adminRequestData('denuncia_usuario.php',['id_denuncia'=>'12','acao'=>'resolver','csrf_token'=>'secret'],[]);
+demand($a===['acao'=>'resolver','id_denuncia'=>'12'], 'Fila de análise de denúncias mantém apenas os dados necessários');
 echo "PASS política de níveis e minimização de dados\n";

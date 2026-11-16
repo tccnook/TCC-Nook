@@ -6,7 +6,7 @@
     margin: auto;
     padding: 1.5rem;
     border: 0;
-    border-radius: 12px;
+    border-radius: var(--radius-card);
     background: var(--bg-primary);
     color: var(--text-primary);
 }
@@ -41,12 +41,12 @@
 }
 .top5-modal-header h2 {
     color: var(--text-on-dark);
-    font: 500 1.4rem var(--font-secundary);
+    font: 500 var(--font-size-heading) var(--font-secundary);
 }
 .top5-modal-header p {
     margin-top: 0.25rem;
     color: var(--text-on-dark);
-    font-size: 0.8rem;
+    font-size: var(--font-size-caption);
     opacity: 0.8;
 }
 .top5-modal-close {
@@ -72,7 +72,7 @@
 .top5-modal-section > h3 {
     margin-bottom: 0.65rem;
     color: var(--text-title);
-    font: 600 0.95rem var(--font-secundary);
+    font: 600 var(--font-size-body) var(--font-secundary);
 }
 .top5-modal-ranking {
     display: grid;
@@ -92,7 +92,7 @@
     min-height: 12rem;
     padding: 0.6rem;
     border: 1px solid var(--border-primary);
-    border-radius: 8px;
+    border-radius: var(--radius-control);
     background: var(--bg-primary);
 }
 .top5-modal-position {
@@ -107,7 +107,7 @@
     border-radius: 50%;
     background: var(--bg-cards);
     color: var(--text-on-dark);
-    font-size: 0.75rem;
+    font-size: var(--font-size-caption);
 }
 .top5-modal-ranking li:nth-child(1) .top5-modal-position {
     background: var(--rating-one);
@@ -133,12 +133,12 @@
     align-self: start;
     overflow-wrap: anywhere;
     color: var(--text-title);
-    font-size: 0.75rem;
+    font-size: var(--font-size-caption);
 }
 .top5-modal-empty {
     align-self: center;
     color: var(--text-secondary);
-    font-size: 0.75rem;
+    font-size: var(--font-size-caption);
 }
 .top5-modal-ranking li > button {
     position: absolute;
@@ -168,7 +168,7 @@
     min-width: 0;
     overflow: hidden;
     border: 1px solid var(--border-primary);
-    border-radius: 8px;
+    border-radius: var(--radius-control);
     background: var(--all-white);
     transition:
         border-color 0.15s ease,
@@ -199,12 +199,12 @@
     overflow: hidden;
     -webkit-box-orient: vertical;
     -webkit-line-clamp: 2;
-    font-size: 0.72rem;
+    font-size: var(--font-size-caption);
     line-height: 1.3;
 }
 .top5-read-select small {
     color: var(--color-accent);
-    font-size: 0.65rem;
+    font-size: var(--font-size-caption);
 }
 .top5-position-picker {
     display: flex;
@@ -213,7 +213,7 @@
     gap: 0.35rem;
     padding: 0 0.55rem 0.55rem;
     color: var(--text-secondary);
-    font-size: 0.68rem;
+    font-size: var(--font-size-caption);
 }
 .top5-position-picker[hidden] {
     display: none;
@@ -226,7 +226,7 @@
     border-radius: 50%;
     background: var(--color-accent2);
     color: var(--text-on-dark);
-    font-size: 0.7rem;
+    font-size: var(--font-size-caption);
 }
 .top5-position-picker button[data-posicao="1"] {
     background: var(--rating-one);
@@ -242,7 +242,7 @@
     min-height: 1.2em;
     margin-top: 0.6rem;
     color: var(--text-title);
-    font-size: 0.8rem;
+    font-size: var(--font-size-caption);
 }
 .visao-listas {
     margin-bottom: 1.5rem;
@@ -262,7 +262,7 @@
 }
 .modal-topo h2 {
     color: var(--text-title);
-    font: 500 1.5rem var(--font-secundary);
+    font: 500 var(--font-size-heading) var(--font-secundary);
 }
 .modal-topo .subtitulo {
     margin: 0.25rem 0 1rem;
@@ -284,7 +284,7 @@
     width: 100%;
     padding: 0.65rem 0.8rem;
     border: 1px solid var(--border-primary);
-    border-radius: 8px;
+    border-radius: var(--radius-control);
     background: var(--all-white);
     font: inherit;
 }
@@ -315,7 +315,7 @@
 }
 .meta-card {
     padding: 1rem;
-    border-radius: 10px;
+    border-radius: var(--radius-control);
     background: var(--all-white);
 }
 .meta-card-topo,
@@ -339,14 +339,14 @@
 }
 .meta-topo h3 {
     color: var(--text-title);
-    font-size: 0.9rem;
+    font-size: var(--font-size-small);
 }
 .meta-concluir {
     padding: 0.3rem 0.5rem;
     border: 1px solid var(--danger);
     border-radius: 6px;
     color: var(--danger);
-    font-size: 0.62rem;
+    font-size: var(--font-size-caption);
     white-space: nowrap;
 }
 .meta-concluir:hover {
@@ -355,12 +355,12 @@
 }
 .meta-card h3 {
     color: var(--text-title);
-    font-size: 1rem;
+    font-size: var(--font-size-body);
 }
 .meta-periodo,
 .meta-mensagem {
     margin: 0.5rem 0;
-    font-size: 0.85rem;
+    font-size: var(--font-size-small);
 }
 .meta-barra progress {
     flex: 1;
@@ -378,10 +378,10 @@
     min-height: 2.15rem;
     padding: 0 0.7rem;
     border: 1px solid var(--soft-border);
-    border-radius: 7px;
+    border-radius: var(--radius-control);
     background: var(--all-white);
     color: var(--text-title);
-    font-size: 0.68rem;
+    font-size: var(--font-size-caption);
     font-weight: 700;
     white-space: nowrap;
     transition:
@@ -409,13 +409,13 @@
     display: grid;
     gap: 0.55rem;
     padding: 1rem;
-    border-radius: 10px;
+    border-radius: var(--radius-control);
     background: var(--all-white);
 }
 .meta-criar-form label,
 .meta-periodos legend {
     color: var(--text-title);
-    font-size: 0.85rem;
+    font-size: var(--font-size-small);
     font-weight: 600;
 }
 .meta-periodos {
@@ -425,7 +425,7 @@
     justify-self: start;
     padding: 0.6rem 0.9rem;
     border: 0;
-    border-radius: 8px;
+    border-radius: var(--radius-control);
     background: var(--color-accent);
     color: var(--text-on-dark);
     cursor: pointer;
@@ -433,7 +433,7 @@
 .meta-feedback {
     margin: 0.5rem 0;
     color: var(--text-title);
-    font-size: 0.9rem;
+    font-size: var(--font-size-small);
 }
 #gerenciarMetas .form-acoes {
     margin-top: 1rem;
@@ -477,7 +477,7 @@
 /* Organizar favoritos: prévia local, posições fixas e confirmação única. */
 .top5-help {
     margin: 0 0 1rem;
-    font-size: 0.85rem;
+    font-size: var(--font-size-small);
     line-height: 1.6;
     color: var(--text-muted);
 }
@@ -498,7 +498,7 @@
     background: transparent;
     color: var(--text-title);
     text-align: left;
-    font-size: 0.85rem;
+    font-size: var(--font-size-small);
 }
 .top5-slot > span:not(.top5-modal-empty) {
     overflow-wrap: anywhere;
@@ -513,7 +513,7 @@
 .top5-modal-ranking li > .top5-remove {
     width: 44px;
     height: 44px;
-    font-size: 1.5rem;
+    font-size: var(--font-size-heading);
 }
 .top5-modal-ranking li:has([aria-pressed="true"]),
 .top5-read-book:has([aria-pressed="true"]) {
@@ -560,9 +560,9 @@
     margin-left: auto;
 }
 .top5-modal-footer button {
-    min-height: 44px;
+    min-height: var(--size-control-height);
     padding: 0.6rem 1.2rem;
-    border-radius: 7px;
+    border-radius: var(--radius-control);
     font: inherit;
 }
 .top5-confirm {
@@ -607,7 +607,7 @@
     }
     .top5-modal-ranking li > .top5-slot {
         min-height: 9rem;
-        font-size: 0.75rem;
+        font-size: var(--font-size-caption);
     }
     .top5-modal-ranking img {
         height: 6rem;

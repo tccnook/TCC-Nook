@@ -101,6 +101,11 @@ require __DIR__ . '/header.php';?>
                     <p>As páginas do arquivo original são preservadas. Novas páginas são acrescentadas ao final; o PDF não pode ser editado no editor.</p>
                 </div>
             </header>
+            <?php if ($obra['pdf_rascunho']):?>
+            <div class="writing-pdf-preview">
+                <iframe title="PDF do rascunho" src="arquivo_obra.php?id_livro=<?=$id?>&amp;rascunho=1" loading="lazy"></iframe>
+            </div>
+            <?php endif;?>
             <div class="writing-pdf-grid"><label class="writing-pdf-upload"><span class="writing-icon-circle"><?=iconeEscrita('file')?></span><span><strong><?=$obra['pdf_rascunho'] ? 'Adicionar páginas ao final' : 'Enviar livro completo (PDF)'?></strong><input type="file" data-upload="<?=$obra['pdf_rascunho'] ? 'anexar_pdf' : 'pdf'?>" accept="application/pdf,.pdf"><small>Até 30 MB e 2.000 páginas. PDFs protegidos por senha não são aceitos.</small></span></label>
                 <aside class="writing-pdf-notes"><?php foreach ([['file', 'O arquivo é mantido em sua forma original', 'Suas páginas não serão alteradas.'], ['plus', 'Adicionar novas páginas', 'Você poderá enviar outro PDF para anexar novas páginas ao final.'], ['lock', 'Arquivo seguro', 'PDFs protegidos por senha não são aceitos.']] as [$icon,$title,$text]):?><div><?=iconeEscrita($icon)?><span><strong><?=eObra($title)?></strong><small><?=eObra($text)?></small></span></div><?php endforeach;?></aside>
             </div><?php if ($obra['pdf_rascunho']):?><a class="writing-secondary writing-pdf-view" href="arquivo_obra.php?id_livro=<?=$id?>&amp;rascunho=1" target="_blank" rel="noopener"><?=iconeEscrita('eye')?> Visualizar PDF do rascunho</a><?php endif;?>

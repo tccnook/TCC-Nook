@@ -6,6 +6,7 @@ header('Cache-Control: no-store');
 require_once __DIR__ . '/conexao.php';
 require_once __DIR__ . '/publishing_service.php';
 require_once __DIR__ . '/privacy_settings.php';
+require_once __DIR__ . '/notifications_support.php';
 function responderObra(int $status, array $data): never
 {
     http_response_code($status);
@@ -95,6 +96,7 @@ try {
                 }
                 $s = $c->prepare('INSERT INTO comentario_obra(id_livro,id_user,texto) VALUES(?,?,?)');
                 $s->execute([$id, $user, $texto]);
+                registrarNotificacao($c, (int) $p['id_autor'], $user, 'comentario_obra', (int) $id);
             } else {
                 $s = $c->prepare("UPDATE comentario_obra SET texto=?,editado_em=now() WHERE id=? AND id_user=? AND id_livro=? AND estado='visivel'");
                 $s->execute([$texto, (int) ($body['comentario'] ?? 0), $user, $id]);
@@ -150,7 +152,7 @@ try {
                 throw new ConflitoObra('Outra aba alterou a obra. Recarregue antes de enviar arquivos.');
             }
 
-            if ($action !== 'capa' && $p['modalidade'] !== 'pdf') {
+            if ($action !== 'capa' && $p['modalidade'] !== 'pdf' && !($action === 'pdf' && $p['modalidade'] === 'editor')) {
                 throw new InvalidArgumentException('Obras do editor geram seu próprio PDF.');
             }
 
@@ -172,6 +174,11 @@ try {
                 $obsolete[] = caminhoPublicacao($p['pdf_rascunho']);
             }
 
+            if ($action === 'pdf' && $p['modalidade'] === 'editor') {
+                $c->prepare('UPDATE publicacao_obra SET modalidade=?,revisao=revisao+1,atualizado_em=now() WHERE id_livro=?')->execute(['pdf', $id]);
+                $p['modalidade'] = 'pdf';
+            }
+
             if ($action === 'capa' && $p['capa_url']) {
                 $s = $c->prepare("SELECT 1 FROM versao_publicacao v JOIN edicao_livro e ON e.id=v.id_edicao WHERE e.id_livro=? AND v.snapshot->>'capa'=? LIMIT 1");
                 $s->execute([$id, $p['capa_url']]);
@@ -181,7 +188,12 @@ try {
             }
 
             $field = $action === 'capa' ? 'capa_url' : 'pdf_rascunho';
-            $s = $c->prepare("UPDATE publicacao_obra SET $field=?,revisao=revisao+1,atualizado_em=now() WHERE id_livro=?");
+            $query = "UPDATE publicacao_obra SET $field=?,revisao=revisao+1,atualizado_em=now()";
+            if ($action === 'pdf' && $p['modalidade'] === 'editor') {
+                $query .= ", modalidade='pdf'";
+            }
+            $query .= ' WHERE id_livro=?';
+            $s = $c->prepare($query);
             $s->execute([$key, $id]);
             $out = ['revisao' => (int) $p['revisao'] + 1, 'mensagem' => 'Arquivo salvo no rascunho.', 'arquivo' => $key];
         } elseif (in_array($action, ['arquivar', 'excluir', 'restaurar'], true)) {

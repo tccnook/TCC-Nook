@@ -390,7 +390,8 @@ CREATE TABLE public.conversa (
     nome_conversa character varying(80),
     foto_conversa_url character varying(250),
     id_dono integer,
-    criacao timestamp without time zone DEFAULT CURRENT_TIMESTAMP
+    criacao timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
+    descricao text
 );
 
 

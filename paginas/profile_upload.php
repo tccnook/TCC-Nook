@@ -1,5 +1,24 @@
 <?php
 
+/** Usa operações de filesystem do PHP, tanto em Windows quanto em Unix. */
+function prepararPastaImagemPerfil(string $destino): void
+{
+    if (!is_dir($destino) && !@mkdir($destino, 0755, true) && !is_dir($destino)) {
+        throw new RuntimeException('Não foi possível criar a pasta de fotos. Verifique a permissão de gravação do PHP na pasta img.');
+    }
+
+    // Testa a gravação real: permissões Unix e ACLs do Windows são diferentes.
+    $probe = $destino . DIRECTORY_SEPARATOR . '.nook-write-' . bin2hex(random_bytes(12));
+    $handle = @fopen($probe, 'x+b');
+    if ($handle === false) {
+        throw new RuntimeException('O PHP não tem acesso de gravação à pasta de fotos. Configure a permissão de modificar essa pasta para o usuário do servidor.');
+    }
+    fclose($handle);
+    if (!@unlink($probe)) {
+        throw new RuntimeException('O PHP pode criar arquivos, mas não removê-los da pasta de fotos. Verifique as permissões dessa pasta.');
+    }
+}
+
 /** Salva imagens do perfil sem mudar os caminhos públicos já usados pelo Nook. */
 function receberImagemPerfil(?array $arquivo, string $pasta): ?string
 {
@@ -22,16 +41,17 @@ function receberImagemPerfil(?array $arquivo, string $pasta): ?string
     }
 
     $destino = dirname(__DIR__) . '/' . $pasta;
-    if (!is_dir($destino) || !is_writable($destino)) {
-        throw new RuntimeException('O armazenamento de fotos não está disponível para gravação. Tente novamente após corrigir a configuração do servidor.');
-    }
+    prepararPastaImagemPerfil($destino);
 
     $path = $pasta . bin2hex(random_bytes(16)) . '.' . $tipos[$info['mime']];
     if (!@move_uploaded_file($arquivo['tmp_name'], dirname(__DIR__) . '/' . $path)) {
         throw new RuntimeException('Não foi possível salvar a imagem. Sua foto anterior foi preservada.');
     }
 
-    chmod(dirname(__DIR__) . '/' . $path, 0644);
+    // No Windows, o acesso é controlado pelas ACLs herdadas da pasta.
+    if (PHP_OS_FAMILY !== 'Windows') {
+        @chmod(dirname(__DIR__) . '/' . $path, 0644);
+    }
     return $path;
 }
 function removerNovaImagemPerfil(?string $path): void

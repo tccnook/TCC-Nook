@@ -3,10 +3,10 @@
     width: min(1060px, calc(100% - 40px));
     max-height: 90dvh;
     padding: 30px;
-    background: #f6f2eb;
+    background: var(--color-surface);
     border: 0;
-    border-radius: 16px;
-    color: #2b1f47;
+    border-radius: var(--radius-card);
+    color: var(--color-primary);
 }
 #gerenciarMetas::backdrop {
     background: #211a35aa;
@@ -21,15 +21,13 @@
 }
 #gerenciarMetas .modal-topo h2 {
     font:
-        500 clamp(1.8rem, 3.7vw, 2.75rem) / 1.15 Lora,
-        Georgia,
-        serif;
+        500 var(--font-size-title) / 1.15 var(--font-secondary);
     letter-spacing: -0.035em;
     margin: 0 0 10px;
 }
 #gerenciarMetas .subtitulo {
     color: #83778f;
-    font-size: 1.05rem;
+    font-size: var(--font-size-body);
     line-height: 1.5;
 }
 #gerenciarMetas .btn-fechar {
@@ -41,7 +39,7 @@
     width: 44px;
     height: 44px;
     border: 1px solid #ded7df;
-    border-radius: 7px;
+    border-radius: var(--radius-control);
     background: #eee9e3;
     color: #766681;
 }
@@ -67,7 +65,7 @@
     width: 100%;
     min-height: 52px;
     border: 1px solid #d8cfdf;
-    border-radius: 8px;
+    border-radius: var(--radius-control);
     background: white;
     padding: 12px 16px 12px 52px;
     font: inherit;
@@ -81,20 +79,19 @@
     margin: 0;
 }
 #gerenciarMetas .periodos label {
-    min-height: 44px;
+    min-height: var(--size-control-height);
     padding: 10px 22px;
     border: 1px solid #ded6df;
     background: transparent;
-    border-radius: 7px;
+    border-radius: var(--radius-control);
     font:
-        400 0.95rem Manrope,
-        sans-serif;
+        400 var(--font-size-body) var(--font-primary);
     color: #41324e;
     cursor: pointer;
 }
 #gerenciarMetas .periodos label:has(:checked) {
-    background: #2b1f47;
-    border-color: #2b1f47;
+    background: var(--color-primary);
+    border-color: var(--color-primary);
     color: white;
 }
 #gerenciarMetas .periodos label:focus-within {
@@ -107,14 +104,12 @@
     gap: 6px;
     text-align: center;
     padding: 24px;
-    border-radius: 12px;
+    border-radius: var(--radius-card);
     background: #ece5dc88;
 }
 #gerenciarMetas .goal-empty h3 {
     font:
-        500 1.6rem Lora,
-        Georgia,
-        serif;
+        500 1.6rem var(--font-secondary);
     margin: 0;
 }
 #gerenciarMetas .goal-empty p {
@@ -129,8 +124,8 @@
     gap: 10px;
     min-height: 46px;
     border: 0;
-    border-radius: 8px;
-    background: #2b1f47;
+    border-radius: var(--radius-control);
+    background: var(--color-primary);
     color: white;
     padding: 12px 22px;
     font: inherit;
@@ -147,16 +142,14 @@
     border: 0;
     padding: 22px;
     background: #ffffffd9;
-    border-radius: 10px;
+    border-radius: var(--radius-control);
 }
 #gerenciarMetas .meta-card[hidden] {
     display: none;
 }
 #gerenciarMetas .meta-card h3 {
     font:
-        500 1.15rem Lora,
-        Georgia,
-        serif;
+        500 var(--font-size-lead) var(--font-secondary);
 }
 #gerenciarMetas .meta-card-topo {
     flex-wrap: wrap;
@@ -171,7 +164,7 @@
 }
 #gerenciarMetas .meta-acoes button,
 #gerenciarMetas .meta-acoes a {
-    min-height: 44px;
+    min-height: var(--size-control-height);
 }
 #gerenciarMetas .meta-criar-trigger {
     margin-top: 18px;
@@ -184,12 +177,12 @@
     border-top: 1px solid #e0d8e4;
 }
 #gerenciarMetas .btn-cancelar {
-    min-height: 44px;
+    min-height: var(--size-control-height);
     padding: 10px 24px;
     border: 0;
     background: #eee5f6;
-    color: #2b1f47;
-    border-radius: 8px;
+    color: var(--color-primary);
+    border-radius: var(--radius-control);
     font: inherit;
 }
 .meta-concluir {
@@ -215,7 +208,7 @@
         padding-bottom: 22px;
     }
     #gerenciarMetas .subtitulo {
-        font-size: 0.9rem;
+        font-size: var(--font-size-small);
     }
     #gerenciarMetas .metas-lista {
         grid-template-columns: 1fr;
@@ -225,15 +218,15 @@
     }
     #gerenciarMetas .periodos label {
         padding: 10px 14px;
-        font-size: 0.8rem;
+        font-size: var(--font-size-caption);
     }
     #gerenciarMetas .goal-empty {
         padding: 24px 16px;
     }
     #gerenciarMetas .goal-empty h3 {
-        font-size: 1.35rem;
+        font-size: var(--font-size-subtitle);
     }
     #gerenciarMetas .goal-empty p {
-        font-size: 0.85rem;
+        font-size: var(--font-size-small);
     }
 }

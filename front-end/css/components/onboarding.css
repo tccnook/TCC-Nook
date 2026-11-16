@@ -1,7 +1,7 @@
 /* Referências Nook: etapas compactas, seleção lavanda e cinco colunas. */
 .onboarding-page {
-    --selection-color: #b46dff;
-    --selection-surface: #ede3ff;
+    --selection-color: var(--color-selection);
+    --selection-surface: var(--color-selection-surface);
     background: var(--color-background);
     padding: 1rem clamp(1rem, 2.7vw, 2.5rem) 8rem;
     font-family: var(--font-primary);
@@ -11,7 +11,7 @@
     display: flex;
     justify-content: center;
     align-items: center;
-    min-height: 48px;
+    min-height: var(--size-button-height);
     margin-bottom: 0.5rem;
 }
 .onboarding-header .logo {
@@ -43,13 +43,13 @@
     margin: 0.5rem auto 1rem;
 }
 .onboarding-page .page-header h1 {
-    font: 500 clamp(1.5rem, 3vw, 2.2rem) / 1.25 var(--font-secundary);
+    font: 500 var(--font-size-title) / 1.25 var(--font-secundary);
     color: var(--color-text);
 }
 .onboarding-page .page-header p {
     max-width: 34ch;
     margin: 0.65rem auto 0;
-    font: 400 0.9rem/1.45 var(--font-secundary);
+    font: 400 var(--font-size-small)/var(--line-height-body) var(--font-primary);
 }
 .onboarding-page .highlight {
     color: var(--selection-color);
@@ -59,11 +59,11 @@
     align-items: center;
     gap: 0.65rem;
     width: min(100%, 520px);
-    min-height: 44px;
+    min-height: var(--size-control-height);
     margin: 1rem auto 1.5rem;
     padding: 0.25rem 0.75rem;
     background: white;
-    border-radius: 8px;
+    border-radius: var(--radius-control);
     box-shadow: 0 4px 14px #0002;
 }
 .onboarding-search input {
@@ -87,8 +87,8 @@
     align-items: center;
     gap: 1rem;
     padding: 0.85rem 1rem;
-    border: 1px solid #d9c4fb;
-    border-radius: 12px;
+    border: 1px solid var(--color-selection-border);
+    border-radius: var(--radius-card);
     background: var(--selection-surface);
     z-index: 20;
 }
@@ -99,7 +99,7 @@
     gap: 0.75rem;
 }
 .onboarding-page .selected-count {
-    font: 400 clamp(0.95rem, 1.8vw, 1.2rem) var(--font-secundary);
+    font: 400 var(--font-size-selection-count) var(--font-secundary);
 }
 .onboarding-page .check-icon {
     display: grid;
@@ -112,12 +112,12 @@
 }
 .onboarding-page .button-action,
 .onboarding-page .btn {
-    min-height: 44px;
+    min-height: var(--size-control-height);
     border: 0;
     padding: 0.65rem 1.75rem;
-    border-radius: 7px;
+    border-radius: var(--radius-control);
     cursor: pointer;
-    font: 400 1rem var(--font-secundary);
+    font: 400 var(--font-size-body) var(--font-primary);
 }
 .onboarding-page .button-action {
     background: var(--color-primary);
@@ -161,7 +161,7 @@
     margin: 0.25rem auto 0.5rem;
 }
 .onboarding-page .page-header p {
-    font-size: 0.8rem;
+    font-size: var(--font-size-small);
     line-height: 1.4;
     margin-top: 0.5rem;
 }
