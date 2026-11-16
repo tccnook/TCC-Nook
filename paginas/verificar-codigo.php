@@ -57,7 +57,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <body class="recovery-page">
     <main class="recovery-card"><a class="recovery-brand" href="login.php"><img src="../img/logos/logo-deitada.png" alt="Nook" width="76" height="30"></a>
         <h1>Digite o código de verificação</h1>
-        <p>Se o e-mail estiver cadastrado, enviaremos um código para:<br><?= htmlspecialchars($fluxo['email'], ENT_QUOTES, 'UTF-8') ?></p><?php if ($erro): ?><p role="alert"><?= htmlspecialchars($erro, ENT_QUOTES, 'UTF-8') ?></p><?php endif; ?><form method="POST"><input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['codigo_csrf'], ENT_QUOTES, 'UTF-8') ?>">
+        <p>Se o e-mail estiver cadastrado, enviaremos um código para:<br><?= htmlspecialchars($fluxo['email'], ENT_QUOTES, 'UTF-8') ?></p>
+        <p>Se o código não chegar em alguns minutos, confira o spam e tente novamente após um minuto.</p><?php if ($erro): ?><p role="alert"><?= htmlspecialchars($erro, ENT_QUOTES, 'UTF-8') ?></p><?php endif; ?><form method="POST"><input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['codigo_csrf'], ENT_QUOTES, 'UTF-8') ?>">
             <fieldset class="recovery-code">
                 <legend>Código de seis dígitos</legend><?php for ($i = 1;$i <= 6;$i++): ?><input type="text" name="codigo[]" inputmode="numeric" pattern="[0-9]" maxlength="1" aria-label="Dígito <?= $i ?>" <?= $i === 1 ? 'autocomplete="one-time-code"' : 'autocomplete="off"' ?> required><?php endfor; ?>
             </fieldset><a href="esqueceu-senha.php" class="recovery-button secondary">Voltar</a><button class="recovery-button" type="submit">Continuar</button>

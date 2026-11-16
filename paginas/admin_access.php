@@ -127,8 +127,15 @@ function adminCreateAccount(PDO $c,array $actor,array $data,bool $bootstrap=fals
         if ($bootstrap) {
             if ($actor['nivel']!=='provisorio' || strtolower($actor['email'])!=='adm@adm.adm' || $c->query("SELECT 1 FROM admin WHERE nivel='supremo' AND ativo AND excluido_em IS NULL")->fetchColumn()) throw new DomainException('A configuração inicial já foi concluída.');
         } elseif (!adminMayExecute($c,$actor,'gerenciar_admins.php',['criar_admin'=>'1','nivel'=>$level,'email'=>$email])) throw new DomainException('Nível não permitido.');
-        $s=$c->prepare('SELECT 1 FROM admin WHERE lower(email)=? AND excluido_em IS NULL');$s->execute([$email]);if($s->fetchColumn())throw new InvalidArgumentException('Já existe um administrador com este e-mail.');
-        $c->prepare('INSERT INTO admin(nome_completo,email,senha,nivel) VALUES(?,?,?,?)')->execute([$name,$email,$hash,$level]);
+        $s=$c->prepare('SELECT 1 FROM admin WHERE lower(email)=? LIMIT 1');$s->execute([$email]);if($s->fetchColumn())throw new InvalidArgumentException('Este e-mail já está vinculado a uma conta administrativa. Use outro e-mail.');
+        try {
+            $c->prepare('INSERT INTO admin(nome_completo,email,senha,nivel) VALUES(?,?,?,?)')->execute([$name,$email,$hash,$level]);
+        } catch (PDOException $error) {
+            if (($error->errorInfo[0] ?? (string)$error->getCode()) === '23505' && str_contains((string)($error->errorInfo[2] ?? $error->getMessage()), 'admin_email_key')) {
+                throw new InvalidArgumentException('Este e-mail já está vinculado a uma conta administrativa. Use outro e-mail.', 0, $error);
+            }
+            throw $error;
+        }
         if ($bootstrap) $c->exec("UPDATE admin SET ativo=false WHERE nivel='provisorio'");
         adminAudit($c,(int)$actor['id_admin'],$bootstrap?'configurar_supremo':'criar_admin',$email);$c->commit();
     }catch(Throwable $e){if($c->inTransaction())$c->rollBack();throw $e;}

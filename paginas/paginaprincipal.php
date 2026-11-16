@@ -228,7 +228,7 @@ $fotoFallback = mb_strtoupper(mb_substr($usuario['username'] ?? 'N', 0, 1));
                         <?php endforeach; ?>
                     </div>
                     <?php else: ?><p class="home-empty">Você ainda não participa de grupos.</p><?php endif; ?>
-                    <a class="home-create-group" href="criar_conversa.php"><i data-lucide="plus" aria-hidden="true"></i> Criar grupo de leitura</a>
+                    <a class="home-create-group" href="conversas.php?criar_grupo=1"><i data-lucide="plus" aria-hidden="true"></i> Criar grupo de leitura</a>
                 </section>
 
                 <section class="home-section home-trending-books" aria-labelledby="livros-em-alta-title">

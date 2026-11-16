@@ -2,6 +2,7 @@
 
 require_once __DIR__ . '/../vendor/autoload.php';
 require_once __DIR__ . '/../paginas/google_mail_support.php';
+require_once __DIR__ . '/../paginas/recovery_support.php';
 
 $check = static function (bool $condition, string $message): void {
     if (!$condition) {
@@ -91,6 +92,37 @@ try {
     $check(!nookGoogleMailConfigured(), 'Application mail retains SMTP before Gmail setup begins');
 } finally {
     foreach ($savedConfig as $name => $value) {
+        if ($value === false) {
+            putenv($name);
+        } else {
+            putenv($name . '=' . $value);
+        }
+    }
+}
+
+$savedDeliveryConfig = [];
+foreach (['GOOGLE_MAIL_CLIENT_ID', 'GOOGLE_MAIL_CLIENT_SECRET', 'GOOGLE_MAIL_REFRESH_TOKEN', 'MAIL_HOST', 'MAIL_PORT', 'MAIL_USERNAME', 'MAIL_PASSWORD', 'MAIL_FROM'] as $name) {
+    $savedDeliveryConfig[$name] = getenv($name);
+}
+foreach ([
+    'GOOGLE_MAIL_CLIENT_ID' => 'test-client-id',
+    'GOOGLE_MAIL_CLIENT_SECRET' => 'test-client-secret',
+    'GOOGLE_MAIL_REFRESH_TOKEN' => '',
+    'MAIL_HOST' => 'smtp.example.test',
+    'MAIL_PORT' => '587',
+    'MAIL_USERNAME' => 'test-user',
+    'MAIL_PASSWORD' => 'test-password',
+    'MAIL_FROM' => 'sender@example.test',
+] as $name => $value) {
+    putenv($name . '=' . $value);
+}
+try {
+    $check(
+        enviarCodigoRecuperacao('reader@example.test', '123456') === false,
+        'Recovery does not report delivery or silently switch to SMTP before Gmail authorization'
+    );
+} finally {
+    foreach ($savedDeliveryConfig as $name => $value) {
         if ($value === false) {
             putenv($name);
         } else {

@@ -62,7 +62,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
         $erro = 'Não foi possível atualizar a conversa.';
     }
 }
-$stmt = $conn->prepare('SELECT u.username,u.nome_completo,c.foto_perfil_url FROM conversa_participante cp INNER JOIN usuario u ON u.id_user=cp.id_user LEFT JOIN conta c ON c.id_user=u.id_user WHERE cp.id_conversa=:conversa AND cp.id_user<>:usuario ORDER BY u.id_user LIMIT 1');
+$stmt = $conn->prepare('SELECT u.id_user,u.username,u.nome_completo,c.foto_perfil_url FROM conversa_participante cp INNER JOIN usuario u ON u.id_user=cp.id_user LEFT JOIN conta c ON c.id_user=u.id_user WHERE cp.id_conversa=:conversa AND cp.id_user<>:usuario ORDER BY u.id_user LIMIT 1');
 $stmt->execute([':conversa' => $id_conversa, ':usuario' => $id_user]);
 $info_pessoa = $stmt->fetch(PDO::FETCH_ASSOC) ?: [];
 $esc = static fn ($value) => htmlspecialchars((string) ($value ?? ''), ENT_QUOTES, 'UTF-8');
@@ -73,11 +73,12 @@ $esc = static fn ($value) => htmlspecialchars((string) ($value ?? ''), ENT_QUOTE
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <link rel="stylesheet" href="../front-end/css/main.css">
+    <link rel="stylesheet" href="../front-end/css/pages/chat.css">
     <title>Conversa | Nook</title>
 </head>
 <body>
     <main>
-        <h1><?=$esc($info_pessoa['username'] ?? 'Conversa direta')?></h1>
+        <h1><?php if (isset($info_pessoa['id_user'], $info_pessoa['username'])): ?><a class="conversation-profile-link" href="perfil_user_terceiro.php?id_user=<?=(int) $info_pessoa['id_user']?>">@<?=$esc($info_pessoa['username'])?></a><?php else: ?>Conversa direta<?php endif; ?></h1>
         <p><?=$esc($info_pessoa['nome_completo'] ?? '')?></p><?php if ($erro):?><p role="alert"><?=$esc($erro)?></p><?php endif;?><?php if ($sucesso):?><p role="status"><?=$esc($sucesso)?></p><?php endif;?>
         <?php if ((int) $conversa['id_dono'] === $id_user):foreach (['limpar' => 'Limpar mensagens para todos', 'excluir' => 'Excluir conversa para todos'] as $action => $label):?><form method="post" data-confirm="<?=$esc($label)?>?"><input type="hidden" name="csrf" value="<?=$esc($csrf)?>"><input type="hidden" name="id_conversa" value="<?=$id_conversa?>"><button name="acao" value="<?=$action?>"><?=$label?></button></form><?php endforeach;endif;?><a href="chat.php?id_conversa=<?=$id_conversa?>">Voltar à conversa</a>
     </main>

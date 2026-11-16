@@ -275,6 +275,144 @@ div.avatar-previa {
     height: 1.75rem;
 }
 
+.profile-relations-dialog {
+    width: min(30rem, calc(100% - 2rem));
+    max-height: calc(100dvh - 2rem);
+    margin: auto;
+    padding: 1.5rem;
+    border: 1px solid var(--soft-border);
+    border-radius: var(--radius-card);
+    background: var(--bg-primary);
+    color: var(--text-primary);
+}
+
+.profile-relations-dialog::backdrop {
+    background: var(--overlay-dark);
+}
+
+.profile-relations-dialog > header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
+.profile-relations-dialog h2 {
+    margin: 0;
+    color: var(--text-title);
+    font-family: var(--font-secondary);
+    font-size: var(--font-size-heading);
+}
+
+.profile-relations-dialog [data-relations-count] {
+    margin: 0.25rem 0 0;
+    color: var(--text-muted);
+    font-size: var(--font-size-small);
+}
+
+.profile-relations-dialog [data-close-relations] {
+    display: grid;
+    width: var(--size-control-height);
+    height: var(--size-control-height);
+    flex: 0 0 auto;
+    place-items: center;
+    border: 1px solid var(--soft-border);
+    border-radius: var(--radius-control);
+    background: var(--all-white);
+    color: var(--text-title);
+    cursor: pointer;
+}
+
+.profile-relations-dialog [data-close-relations] svg {
+    width: 1.25rem;
+    height: 1.25rem;
+}
+
+.profile-relations-dialog [data-relations-list] {
+    display: grid;
+    max-height: min(55dvh, 30rem);
+    margin: 1.25rem 0 0;
+    padding: 0;
+    overflow-y: auto;
+    list-style: none;
+}
+
+.profile-relations-dialog [data-relations-list] li + li {
+    border-top: 1px solid var(--soft-border);
+}
+
+.profile-relations-dialog [data-relations-list] a {
+    display: flex;
+    min-height: 4.25rem;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.5rem 0.25rem;
+    border-radius: var(--radius-control);
+    color: var(--text-primary);
+    text-decoration: none;
+}
+
+.profile-relations-dialog [data-relations-list] a:hover {
+    background: var(--bg-soft);
+}
+
+.profile-relations-avatar {
+    display: grid;
+    width: 3rem;
+    height: 3rem;
+    flex: 0 0 auto;
+    place-items: center;
+    overflow: hidden;
+    border-radius: 50%;
+    background: var(--bg-cards);
+    color: var(--text-on-dark);
+    font-size: var(--font-size-subtitle);
+}
+
+.profile-relations-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.profile-relations-identity {
+    display: grid;
+    gap: 0.15rem;
+    min-width: 0;
+}
+
+.profile-relations-identity strong,
+.profile-relations-identity span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.profile-relations-identity span,
+.profile-relations-dialog [data-relations-status] {
+    color: var(--text-muted);
+    font-size: var(--font-size-small);
+}
+
+.profile-relations-dialog [data-relations-status] {
+    margin: 1rem 0;
+}
+
+.profile-relations-dialog [data-relations-more] {
+    min-height: var(--size-button-height);
+    padding: 0.5rem 1rem;
+    border: 1px solid var(--soft-border);
+    border-radius: var(--radius-control);
+    background: var(--all-white);
+    color: var(--text-title);
+    font: inherit;
+    cursor: pointer;
+}
+
+.profile-relations-dialog [data-relations-more]:disabled {
+    cursor: wait;
+}
+
 .form-perfil {
     display: grid;
     grid-template-columns: minmax(0, 1fr) minmax(0, 1.8fr);
@@ -426,6 +564,29 @@ div.avatar-previa {
     border-radius: 50%;
     background: var(--bg-soft-strong);
     color: var(--color-accent);
+}
+
+.info-usuario .profile-relation-trigger {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    cursor: pointer;
+}
+
+.profile-relation-trigger:hover {
+    color: var(--color-accent2);
+}
+
+.profile-relation-trigger:focus-visible,
+.profile-relations-dialog button:focus-visible,
+.profile-relations-dialog a:focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 3px;
 }
 
 .previa-visib strong {

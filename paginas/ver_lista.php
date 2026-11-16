@@ -69,7 +69,11 @@ if (!$ehDono) {
     $stmt->execute([':atual' => $id_lista, ':base' => $id_lista]);
     $listasRelacionadas = $stmt->fetchAll(PDO::FETCH_ASSOC);
 }
-$capasHero = array_slice(array_filter(array_column($livros, 'capa_url')), 0, 4);
+if (count($livros) < 4) {
+    $capasHero = !empty($livros[0]['capa_url']) ? [$livros[0]['capa_url']] : [];
+} else {
+    $capasHero = array_slice(array_filter(array_column($livros, 'capa_url')), 0, 4);
+}
 if (!$capasHero && !empty($lista['capa_url'])) {
     $capasHero = [$lista['capa_url']];
 }

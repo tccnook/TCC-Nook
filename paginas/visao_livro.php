@@ -426,7 +426,7 @@ $estrelasMedia = estrelasLivro($notaMedia);
     >
     <link
         rel="stylesheet"
-        href="../front-end/css/pages/visao-livro.css"
+        href="../front-end/css/pages/visao-livro.css?v=<?= substr(hash_file('sha256', __DIR__ . '/../front-end/css/pages/visao-livro.css'), 0, 12) ?>"
     >
     <link
         rel="preconnect"
@@ -884,7 +884,7 @@ $estrelasMedia = estrelasLivro($notaMedia);
                     class="dialog-close"
                     data-fechar-dialog
                     aria-label="Fechar"
-                ><i data-lucide="x"></i></button>
+                ><span aria-hidden="true">×</span></button>
             </header>
             <input
                 type="hidden"
@@ -957,7 +957,7 @@ $estrelasMedia = estrelasLivro($notaMedia);
                     class="dialog-close"
                     data-fechar-dialog
                     aria-label="Fechar"
-                ><i data-lucide="x"></i></button>
+                ><span aria-hidden="true">×</span></button>
             </header>
             <input
                 type="hidden"

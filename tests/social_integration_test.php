@@ -57,6 +57,15 @@ try {
     $r = $request('acoes_post.php', [], ['id_post' => '900001', 'acao' => 'curtir', 'csrf' => 'test-csrf']);
     $check($r['status'] === 404, 'Curtida em post de autor bloqueado é recusada');
     $pdo->exec('DELETE FROM bloqueio WHERE id_bloqueador=900002 AND id_bloqueado=900001');
+    $pdo->exec("INSERT INTO follow(id_follower,id_following,status_follow) VALUES(900002,900001,'seguindo')");
+    $r = $request('perfil_relacoes_api.php', ['tipo' => 'seguidores']);
+    $data = json_decode($r['body'], true);
+    $followerIds = array_map('intval', array_column($data['pessoas'] ?? [], 'id_user'));
+    $check($r['status'] === 200 && in_array(900002, $followerIds, true), 'Modal de seguidores lista quem segue o usuário autenticado');
+    $r = $request('perfil_relacoes_api.php', ['tipo' => 'seguindo']);
+    $data = json_decode($r['body'], true);
+    $followingIds = array_map('intval', array_column($data['pessoas'] ?? [], 'id_user'));
+    $check($r['status'] === 200 && in_array(900002, $followingIds, true), 'Modal de seguindo lista quem o usuário autenticado segue');
     $r = $request('perfil.php', ['aba' => ['invalida']]);
     $check($r['status'] === 200 && !str_contains($r['body'], 'TypeError'), 'Perfil trata parâmetro aba em array sem erro fatal');
     $r = $request('buscar_geral.php', ['q' => ['invalida']]);

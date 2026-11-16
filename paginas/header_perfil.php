@@ -27,8 +27,8 @@ $stmt = $conn->prepare($select_conta);
 $stmt->execute([":id_user" => $id_user]);
 $conta = $stmt->fetch(PDO::FETCH_ASSOC) ?: [];
 
-$seguidores = contar($conn, "select COUNT(*) from follow where id_following = :id_user;", $id_user);
-$seguindo = contar($conn, "select COUNT(*) from follow where id_follower = :id_user;", $id_user);
+$seguidores = contar($conn, "select COUNT(DISTINCT f.id_follower) from follow f JOIN usuario u ON u.id_user = f.id_follower where f.id_following = :id_user AND f.status_follow = 'seguindo' AND u.ativo IS TRUE AND u.excluido_em IS NULL;", $id_user);
+$seguindo = contar($conn, "select COUNT(DISTINCT f.id_following) from follow f JOIN usuario u ON u.id_user = f.id_following where f.id_follower = :id_user AND f.status_follow = 'seguindo' AND u.ativo IS TRUE AND u.excluido_em IS NULL;", $id_user);
 $resenhas = contar($conn, "select COUNT(*) from resenha where id_user = :id_user;", $id_user);
 require_once __DIR__ . '/reading_library.php';
 $lidos = count(livrosLidosUsuario($conn, (int) $id_user));
@@ -135,8 +135,8 @@ $publico = ($conta['visibilidade'] ?? 'publico') === 'publico';
             </section>
 
             <ul class="info-usuario">
-                <li><i data-lucide="users"></i> <strong><?= $seguidores ?></strong> Seguidores</li>
-                <li><i data-lucide="user-check"></i> <strong><?= $seguindo ?></strong> Seguindo</li>
+                <li><button type="button" class="profile-relation-trigger" data-profile-relation="seguidores" data-profile-count="<?= (int) $seguidores ?>" aria-haspopup="dialog" aria-controls="modalRelacoesPerfil"><i data-lucide="users" aria-hidden="true"></i> <strong><?= $seguidores ?></strong> Seguidores</button></li>
+                <li><button type="button" class="profile-relation-trigger" data-profile-relation="seguindo" data-profile-count="<?= (int) $seguindo ?>" aria-haspopup="dialog" aria-controls="modalRelacoesPerfil"><i data-lucide="user-check" aria-hidden="true"></i> <strong><?= $seguindo ?></strong> Seguindo</button></li>
                 <li><i data-lucide="square-pen"></i> <strong><?= $resenhas ?></strong> Resenhas</li>
                 <li><i data-lucide="library"></i> <strong><?= $lidos ?></strong> Livros lidos</li>
             </ul>
@@ -242,6 +242,20 @@ $publico = ($conta['visibilidade'] ?? 'publico') === 'publico';
     </dialog>
 
 </section>
+
+<dialog id="modalRelacoesPerfil" class="profile-relations-dialog" aria-labelledby="modalRelacoesTitulo">
+    <header>
+        <div>
+            <h2 id="modalRelacoesTitulo">Seguidores</h2>
+            <p data-relations-count></p>
+        </div>
+        <button type="button" data-close-relations aria-label="Fechar lista de relações"><i data-lucide="x"></i></button>
+    </header>
+    <ul data-relations-list aria-label="Pessoas"></ul>
+    <p data-relations-status role="status" aria-live="polite"></p>
+    <button type="button" data-relations-more hidden>Carregar mais</button>
+</dialog>
+<script src="../front-end/js/pages/profile-relations.js" defer></script>
 
 <dialog id="compartilharPerfil" aria-labelledby="tituloCompartilhar">
     <h2 id="tituloCompartilhar">Compartilhar perfil</h2>

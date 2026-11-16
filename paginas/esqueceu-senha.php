@@ -19,36 +19,46 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $erro = 'Aguarde um minuto antes de pedir outro código.';
     } else {
         $email = trim($_POST['email']);
-        $token = bin2hex(random_bytes(32));
+        $tokenFluxo = bin2hex(random_bytes(32));
         $codigo = str_pad((string) random_int(0, 999999), 6, '0', STR_PAD_LEFT);
         $hash = password_hash($codigo, PASSWORD_DEFAULT);
-        $conn = (new Database())->conectar();
-        $stmt = $conn->prepare('SELECT id_user FROM usuario WHERE LOWER(email)=LOWER(:email) LIMIT 1');
-        $stmt->execute([':email' => $email]);
-        $id = $stmt->fetchColumn();
-        if ($id) {
-            $stmt = $conn->prepare("SELECT COUNT(*) FROM recuperacao_senha WHERE id_user=:id AND expira_em>CURRENT_TIMESTAMP-INTERVAL '50 minutes'");
-            $stmt->execute([':id' => $id]);
-            if ((int) $stmt->fetchColumn() < 5) {
-                try {
+        $conn = null;
+        $tokenParaVerificar = $tokenFluxo;
+
+        try {
+            $conn = (new Database())->conectar();
+            $stmt = $conn->prepare('SELECT id_user FROM usuario WHERE LOWER(email)=LOWER(:email) AND ativo IS TRUE AND excluido_em IS NULL LIMIT 1');
+            $stmt->execute([':email' => $email]);
+            $id = $stmt->fetchColumn();
+            if ($id) {
+                $stmt = $conn->prepare("SELECT COUNT(*) FROM recuperacao_senha WHERE id_user=:id AND expira_em>CURRENT_TIMESTAMP-INTERVAL '50 minutes'");
+                $stmt->execute([':id' => $id]);
+                if ((int) $stmt->fetchColumn() < 5) {
+                    $token = bin2hex(random_bytes(32));
                     $conn->beginTransaction();
                     $stmt = $conn->prepare('UPDATE recuperacao_senha SET usado=true WHERE id_user=:id AND usado=false');
                     $stmt->execute([':id' => $id]);
                     $stmt = $conn->prepare("INSERT INTO recuperacao_senha (id_user,token,expira_em,codigo_hash) VALUES (:id,:token,CURRENT_TIMESTAMP+INTERVAL '10 minutes',:hash)");
                     $stmt->execute([':id' => $id, ':token' => $token, ':hash' => $hash]);
                     $conn->commit();
-                    enviarCodigoRecuperacao($email, $codigo);
-                } catch (Throwable $e) {
-                    if ($conn->inTransaction()) {
-                        $conn->rollBack();
+
+                    if (enviarCodigoRecuperacao($email, $codigo)) {
+                        $tokenParaVerificar = $token;
+                    } else {
+                        $stmt = $conn->prepare('UPDATE recuperacao_senha SET usado=true WHERE token=:token AND usado=false');
+                        $stmt->execute([':token' => $token]);
                     }
-                    error_log('Não foi possível preparar a recuperação.');
                 }
             }
+        } catch (Throwable $e) {
+            if ($conn instanceof PDO && $conn->inTransaction()) {
+                $conn->rollBack();
+            }
+            error_log('Não foi possível preparar a recuperação de senha (' . get_class($e) . ').');
         }
 
         $_SESSION['recuperacao_ultima_solicitacao'] = time();
-        $_SESSION['recuperacao_fluxo'] = ['token' => $token, 'email' => mascararEmail($email)];
+        $_SESSION['recuperacao_fluxo'] = ['token' => $tokenParaVerificar, 'email' => mascararEmail($email)];
         unset($_SESSION['recuperacao_verificada']);
         header('Location: verificar-codigo.php');
         exit;

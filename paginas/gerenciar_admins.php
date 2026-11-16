@@ -12,7 +12,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $_SESSION['admin_message'] = 'Conta administrativa atualizada.';
         header('Location: gerenciar_admins.php'); exit;
     } catch (InvalidArgumentException|DomainException $e) { http_response_code(422); $erroAdmin=$e->getMessage(); }
-    catch (Throwable $e) { http_response_code(500); $erroAdmin='Não foi possível atualizar a conta.'; }
+    catch (Throwable $e) { error_log('Falha ao gerenciar conta administrativa: '.$e->getMessage()); http_response_code(500); $erroAdmin='Não foi possível atualizar a conta.'; }
 }
 $nome=authTexto($_POST['nome_completo'] ?? ''); $email=authTexto($_POST['email'] ?? '');
 

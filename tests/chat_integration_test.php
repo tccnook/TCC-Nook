@@ -53,7 +53,7 @@ function chatEndpoint(string $route, int $user, array $post = [], array $get = [
     return [(int) $status[1], $data];
 }
 try {
-    $conn->exec("INSERT INTO usuario (id_user,nome_completo,username,data_nascimento,email,senha) OVERRIDING SYSTEM VALUE VALUES (800101,'Chat owner','chat_owner','2000-01-01','chat-owner@test.invalid','hash'),(800102,'Chat member','chat_member','2000-01-01','chat-member@test.invalid','hash'),(800103,'Chat admin','chat_admin','2000-01-01','chat-admin@test.invalid','hash'),(800104,'Chat outsider','chat_outsider','2000-01-01','chat-outsider@test.invalid','hash')");
+    $conn->exec("INSERT INTO usuario (id_user,nome_completo,username,data_nascimento,email,senha) OVERRIDING SYSTEM VALUE VALUES (800101,'Chat owner','chat_owner','2000-01-01','chat-owner@test.invalid','hash'),(800102,'Chat member','chat_member','2000-01-01','chat-member@test.invalid','hash'),(800103,'Chat admin','chat_admin','2000-01-01','chat-admin@test.invalid','hash'),(800104,'Chat outsider','chat_outsider','2000-01-01','chat-outsider@test.invalid','hash'),(800105,'Random reader','random_reader','2000-01-01','random-reader@test.invalid','hash')");
     $conn->exec("INSERT INTO conversa (id_conversa,tipo,nome_conversa,id_dono) OVERRIDING SYSTEM VALUE VALUES (800201,'grupo','Group one',800101),(800202,'grupo','Group two',800101),(800203,'direct','Stale title',800101)");
     $conn->exec("INSERT INTO conversa_participante (id_conversa,id_user,cargo) VALUES (800201,800101,'admin'),(800201,800102,'Integrante'),(800201,800103,'Admin'),(800202,800101,'Admin'),(800202,800102,'Integrante'),(800203,800101,'Integrante'),(800203,800102,'Integrante')");
     $conn->exec("INSERT INTO follow (id_follower,id_following,status_follow) VALUES (800101,800104,'seguindo')");
@@ -61,6 +61,22 @@ try {
     chatIntegrationCheck($status === 200 && str_contains($html, 'Toda boa conversa começa com uma história.'), 'The group management page renders its default description.');
     [$status] = chatEndpoint('gerenciar_grupo.php', 800101, ['id_conversa' => 800201, 'csrf' => 'integration-token', 'acao' => 'editar', 'nome' => 'Group one', 'descricao' => 'A space for literary discussions'], [], 'POST', false);
     chatIntegrationCheck($status === 302 && $conn->query('SELECT descricao FROM conversa WHERE id_conversa=800201')->fetchColumn() === 'A space for literary discussions', 'A group admin can save its description.');
+    [$status,$data] = chatEndpoint('criar_grupo_api.php', 800101, ['nome_grupo' => 'Group without photo', 'participantes' => ['800104'], 'csrf' => 'integration-token']);
+    $created = $conn->query("SELECT id_conversa,foto_conversa_url FROM conversa WHERE nome_conversa='Group without photo' AND id_dono=800101")->fetch(PDO::FETCH_ASSOC);
+    chatIntegrationCheck($status === 201 && $data['sucesso'] && $created && $created['foto_conversa_url'] === null, 'Creating a group without a photo returns JSON and stores it.');
+    chatIntegrationCheck($conn->query('SELECT cargo FROM conversa_participante WHERE id_conversa=' . (int) $created['id_conversa'] . ' AND id_user=800101')->fetchColumn() === 'Admin', 'The creator joins the new group with a consistent admin role.');
+    [$status,$data] = chatEndpoint('criar_grupo_api.php', 800101, ['nome_grupo' => 'Modal group', 'participantes' => ['800104','800104'], 'csrf' => 'integration-token']);
+    chatIntegrationCheck($status === 201 && $data['sucesso'] && (int) $conn->query("SELECT count(*) FROM conversa_participante WHERE id_conversa=" . (int) $data['id_conversa'])->fetchColumn() === 2, 'The modal creates a group and inserts each selected participant once.');
+    [$status,$data] = chatEndpoint('criar_grupo_api.php', 800101, ['nome_grupo' => 'Unfollowed modal group', 'participantes' => ['800102'], 'csrf' => 'integration-token']);
+    chatIntegrationCheck($status === 201 && $data['sucesso'] && (int) $conn->query('SELECT count(*) FROM conversa_participante WHERE id_conversa=' . (int) $data['id_conversa'])->fetchColumn() === 2, 'The modal can add an active reader with an existing direct conversation.');
+    [$status,$data] = chatEndpoint('criar_grupo_api.php', 800101, ['nome_grupo' => 'Group-only modal user', 'participantes' => ['800103'], 'csrf' => 'integration-token']);
+    chatIntegrationCheck($status === 422 && !$conn->query("SELECT 1 FROM conversa WHERE nome_conversa='Group-only modal user'")->fetchColumn(), 'The API rejects group members without a follow or direct conversation.');
+    [$status,$data] = chatEndpoint('criar_grupo_api.php', 800101, ['nome_grupo' => 'Random modal user', 'participantes' => ['800105'], 'csrf' => 'integration-token']);
+    chatIntegrationCheck($status === 422 && !$conn->query("SELECT 1 FROM conversa WHERE nome_conversa='Random modal user'")->fetchColumn(), 'The API rejects unrelated accounts.');
+    [$status,$data] = chatEndpoint('criar_grupo_api.php', 800101, ['nome_grupo' => 'Unknown modal group', 'participantes' => ['899999'], 'csrf' => 'integration-token']);
+    chatIntegrationCheck($status === 422 && !$conn->query("SELECT 1 FROM conversa WHERE nome_conversa='Unknown modal group'")->fetchColumn(), 'The API rejects unavailable group participants.');
+    [$status,$data] = chatEndpoint('criar_grupo_api.php', 800101, ['nome_grupo' => 'CSRF modal group', 'participantes' => ['800104'], 'csrf' => 'wrong']);
+    chatIntegrationCheck($status === 403 && !$data['sucesso'], 'The API rejects invalid CSRF tokens.');
     [$status,$data] = chatEndpoint('enviar_mensagem.php', 800101, ['id_conversa' => 800201, 'conteudo' => 'Visible message', 'csrf' => 'integration-token']);
     chatIntegrationCheck($status === 201 && $data['sucesso'], 'A valid member can send a message.');
     $message = $conn->query("SELECT id_mensagem,editado_em,delatado_em FROM mensagem WHERE id_conversa=800201")->fetch(PDO::FETCH_ASSOC);
@@ -86,8 +102,19 @@ try {
     chatIntegrationCheck($status === 200 && (int) $conn->query('SELECT count(*) FROM conversa_participante WHERE id_conversa=800201 AND id_user=800104')->fetchColumn() === 1, 'Adding a member inserts the selected reader rather than the actor.');
     chatEndpoint('adicionar_integrantes_grupo_2.php', 800101, ['id_conversa' => 800201, 'id_adicionar' => 800104, 'csrf' => 'integration-token']);
     chatIntegrationCheck((int) $conn->query('SELECT count(*) FROM conversa_participante WHERE id_conversa=800201 AND id_user=800104')->fetchColumn() === 1, 'Adding the same reader twice remains idempotent.');
-    [$status,$data] = chatEndpoint('buscar_amigos.php', 800101, [], ['nome' => 'outsider'], 'GET');
-    chatIntegrationCheck($status === 200 && (int) $data['amigos'][0]['id_following'] === 800104, 'Friend-search JSON matches the picker contract.');
+    [$status,$data] = chatEndpoint('buscar_amigos.php', 800101, [], ['nome' => ''], 'GET');
+    $pessoas = is_array($data['amigos'] ?? null) ? array_column($data['amigos'], null, 'id_following') : [];
+    chatIntegrationCheck($status === 200 && count($pessoas) === 2 && !isset($pessoas[800101], $pessoas[800103], $pessoas[800105]) && isset($pessoas[800104], $pessoas[800102]) && (int) $pessoas[800104]['seguindo'] === 1 && (int) $pessoas[800104]['conversa_iniciada'] === 0 && (int) $pessoas[800102]['seguindo'] === 0 && (int) $pessoas[800102]['conversa_iniciada'] === 1 && (int) $data['amigos'][0]['id_following'] === 800104, 'The picker limits people to followed accounts or existing direct conversations.');
+    [$status,$data] = chatEndpoint('buscar_amigos.php', 800101, [], ['nome' => '@chat_member'], 'GET');
+    chatIntegrationCheck($status === 200 && (int) $data['amigos'][0]['id_following'] === 800102, 'The picker searches usernames with an @ prefix.');
+    [$status,$data] = chatEndpoint('buscar_amigos.php', 800101, [], ['nome' => 'Chat Member'], 'GET');
+    chatIntegrationCheck($status === 200 && (int) $data['amigos'][0]['id_following'] === 800102, 'The picker searches display names.');
+    $conn->exec("INSERT INTO bloqueio (id_bloqueador,id_bloqueado,status_bloqueio) VALUES (800101,800104,'bloqueado')");
+    [$status,$data] = chatEndpoint('buscar_amigos.php', 800101, [], ['nome' => ''], 'GET');
+    $pessoas = is_array($data['amigos'] ?? null) ? array_column($data['amigos'], null, 'id_following') : [];
+    chatIntegrationCheck($status === 200 && !isset($pessoas[800104]), 'The picker hides people blocked by either account.');
+    [$status,$data] = chatEndpoint('criar_grupo_api.php', 800101, ['nome_grupo' => 'Blocked modal group', 'participantes' => ['800104'], 'csrf' => 'integration-token']);
+    chatIntegrationCheck($status === 422 && !$conn->query("SELECT 1 FROM conversa WHERE nome_conversa='Blocked modal group'")->fetchColumn(), 'The API refuses participants blocked by either account.');
     [$status,$data] = chatEndpoint('buscarconversas.php', 800101, [], ['nome' => 'chat_member'], 'GET');
     chatIntegrationCheck($status === 200 && $data['conversas'][0]['nome_conversa'] === 'chat_member', 'A direct conversation displays and searches the actual partner.');
     [$status,$data] = chatEndpoint('buscarmensagens.php', 800101, ['id_conversa' => 800201]);
@@ -97,19 +124,7 @@ try {
     [$status,$html] = chatEndpoint('chat.php', 800101, [], ['id_conversa' => 800201], 'GET', false);
     chatIntegrationCheck($status === 200 && str_contains($html, 'Group one'), 'The chat page renders a group with real schema and no undefined variables.');
     [$status,$html] = chatEndpoint('gerenciar_conversa.php', 800101, [], ['id_conversa' => 800203], 'GET', false);
-    chatIntegrationCheck($status === 200 && str_contains($html, 'chat_member'), 'Direct management loads its partner without requiring a profile-photo row.');
-    [$status,$html] = chatEndpoint('criar_conversa.php', 800101, ['nome_grupo' => 'Group without photo', 'csrf' => 'integration-token'], [], 'POST', false);
-    $created = $conn->query("SELECT id_conversa,foto_conversa_url FROM conversa WHERE nome_conversa='Group without photo' AND id_dono=800101")->fetch(PDO::FETCH_ASSOC);
-    chatIntegrationCheck($status === 302 && $created && $created['foto_conversa_url'] === null, 'Creating a group without a photo defines its optional image and redirects before HTML.');
-    chatIntegrationCheck($conn->query('SELECT cargo FROM conversa_participante WHERE id_conversa=' . (int) $created['id_conversa'] . ' AND id_user=800101')->fetchColumn() === 'Admin', 'The creator joins the new group with a consistent admin role.');
-    [$status,$data] = chatEndpoint('criar_conversa.php', 800101, ['nome_grupo' => 'Modal group', 'participantes' => ['800104','800104'], 'csrf' => 'integration-token']);
-    chatIntegrationCheck($status === 201 && $data['sucesso'], 'Modal creates a group and returns its ID.');
-    $groupId = (int) $data['id_conversa'];
-    chatIntegrationCheck((int) $conn->query("SELECT count(*) FROM conversa_participante WHERE id_conversa=$groupId")->fetchColumn() === 2, 'Creator and selected member are inserted once.');
-    [$status,$data] = chatEndpoint('criar_conversa.php', 800101, ['nome_grupo' => 'Forbidden modal group', 'participantes' => ['800102'], 'csrf' => 'integration-token']);
-    chatIntegrationCheck($status === 422 && !(bool)$conn->query("SELECT 1 FROM conversa WHERE nome_conversa='Forbidden modal group'")->fetchColumn(), 'Unfollowed participants rejected without creating a group.');
-    [$status,$data] = chatEndpoint('criar_conversa.php', 800101, ['nome_grupo' => 'CSRF modal group', 'participantes' => ['800104'], 'csrf' => 'wrong']);
-    chatIntegrationCheck($status === 422 && !$data['sucesso'], 'Group modal rejects invalid CSRF.');
+    chatIntegrationCheck($status === 200 && str_contains($html, 'href="perfil_user_terceiro.php?id_user=800102">@chat_member</a>'), 'Direct conversation details link the partner username to their public profile.');
     echo "PASS: $checks chat PostgreSQL integration checks.\n";
 } finally {
     if ($conn->inTransaction()) {
@@ -117,9 +132,10 @@ try {
     }
 
     $conn->exec('DELETE FROM conversa WHERE id_conversa IN (800201,800202,800203) OR id_dono=800101');
-    $conn->exec('DELETE FROM sessao_usuario WHERE id_user IN (800101,800102,800103,800104)');
-    $conn->exec('DELETE FROM follow WHERE id_follower IN (800101,800102,800103,800104) OR id_following IN (800101,800102,800103,800104)');
-    $conn->exec('DELETE FROM usuario WHERE id_user IN (800101,800102,800103,800104)');
+    $conn->exec('DELETE FROM bloqueio WHERE id_bloqueador IN (800101,800102,800103,800104,800105) OR id_bloqueado IN (800101,800102,800103,800104,800105)');
+    $conn->exec('DELETE FROM sessao_usuario WHERE id_user IN (800101,800102,800103,800104,800105)');
+    $conn->exec('DELETE FROM follow WHERE id_follower IN (800101,800102,800103,800104,800105) OR id_following IN (800101,800102,800103,800104,800105)');
+    $conn->exec('DELETE FROM usuario WHERE id_user IN (800101,800102,800103,800104,800105)');
     foreach (glob($sessionDir . '/*') as $file) {
         unlink($file);
     }

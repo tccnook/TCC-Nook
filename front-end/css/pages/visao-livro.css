@@ -576,15 +576,19 @@
 
 .dialog-close {
     display: grid;
-    width: 2rem;
-    aspect-ratio: 1;
+    width: var(--size-control-height);
+    height: var(--size-control-height);
     place-items: center;
     border-radius: 50%;
-    color: var(--text-title);
+    border: 1px solid var(--color-gold);
+    background: var(--color-primary);
+    color: var(--color-gold);
+    font: 700 var(--font-size-heading) / 1 var(--font-primary);
 }
 
-.dialog-close svg {
-    width: 1.15rem;
+.dialog-close:hover {
+    background: var(--color-accent2);
+    color: var(--text-on-dark);
 }
 
 .dialog-form > label,
@@ -602,10 +606,9 @@
 .review-rating-picker {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.3rem;
+    gap: var(--space-3);
     border: 0;
     padding: 0;
-    gap: 1.2rem;
 }
 
 .review-rating-picker legend {
@@ -615,16 +618,25 @@
 
 .review-rating-picker label {
     display: grid;
-    min-width: 2.4rem;
-    min-height: 2.4rem;
+    min-width: var(--size-control-height);
+    min-height: var(--size-control-height);
     place-items: center;
     border-radius: var(--radius-control);
     color: var(--rating-empty);
     cursor: pointer;
 }
 
-.review-rating-picker label:has(input:checked) {
-    color: var(--color-accent2);
+.review-rating-picker input:checked + span[aria-hidden="true"] {
+    padding: var(--space-1) var(--space-2);
+    border-radius: var(--radius-control);
+    background: var(--color-primary);
+    color: var(--color-gold);
+    font-weight: 700;
+}
+
+.review-rating-picker label:focus-within {
+    outline: 2px solid var(--color-accent2);
+    outline-offset: 2px;
 }
 
 .review-rating-picker input {

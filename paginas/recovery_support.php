@@ -29,6 +29,7 @@ function enviarCodigoRecuperacao(string $email, string $codigo): bool
 {
     $root = dirname(__DIR__);
     if (!is_file($root . '/vendor/autoload.php')) {
+        error_log('Envio de recuperação indisponível: dependências Composer ausentes.');
         return false;
     }
     require_once $root . '/vendor/autoload.php';
@@ -37,6 +38,10 @@ function enviarCodigoRecuperacao(string $email, string $codigo): bool
         $env = static fn ($key) => nookEnv($key);
         require_once __DIR__ . '/google_mail_support.php';
         if (nookGoogleMailConfigured()) {
+            if (nookGoogleMailRefreshToken() === '') {
+                error_log('Envio de recuperação indisponível: Gmail API ainda não foi autorizada.');
+                return false;
+            }
             $sender = nookGoogleMailSender();
             nookGmailSendMessage(
                 nookGoogleMailSendingClient(),
@@ -50,11 +55,13 @@ function enviarCodigoRecuperacao(string $email, string $codigo): bool
         }
 
         if (!$env('MAIL_HOST') || !$env('MAIL_USERNAME') || !$env('MAIL_PASSWORD') || !filter_var($env('MAIL_FROM'), FILTER_VALIDATE_EMAIL)) {
+            error_log('Envio de recuperação indisponível: configuração de e-mail incompleta.');
             return false;
         }
 
         $port = filter_var($env('MAIL_PORT') ?: '587', FILTER_VALIDATE_INT, ['options' => ['min_range' => 1, 'max_range' => 65535]]);
         if (!$port) {
+            error_log('Envio de recuperação indisponível: porta de e-mail inválida.');
             return false;
         }
 
@@ -75,7 +82,7 @@ function enviarCodigoRecuperacao(string $email, string $codigo): bool
         $mail->send();
         return true;
     } catch (Throwable $e) {
-        error_log('Não foi possível enviar o código de recuperação.');
+        error_log('Não foi possível enviar o código de recuperação (' . get_class($e) . ').');
         return false;
     }
 }
