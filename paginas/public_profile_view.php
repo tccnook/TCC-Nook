@@ -28,6 +28,10 @@ if (realpath($_SERVER['SCRIPT_FILENAME'] ?? '') === __FILE__) {
         href="../front-end/css/pages/public-profile.css?v=<?= substr(hash_file('sha256', __DIR__ . '/../front-end/css/pages/public-profile.css'), 0, 12) ?>"
     >
     <link
+        rel="stylesheet"
+        href="../front-end/css/pages/header-perfil.css"
+    >
+    <link
         href="https://fonts.googleapis.com/css2?family=Lora:wght@400;500;600&family=Manrope:wght@400;500;600;700&display=swap"
         rel="stylesheet"
     >
@@ -80,13 +84,22 @@ if (realpath($_SERVER['SCRIPT_FILENAME'] ?? '') === __FILE__) {
                     <h1 id="profile-name"><?= $esc($perfil['nome_completo']) ?></h1>
                     <p class="public-profile-username">@<?= $esc($perfil['username']) ?></p>
                     <?php if ($perfil['bio']): ?><p class="public-profile-bio"><?= nl2br($esc($perfil['bio'])) ?></p><?php endif; ?>
-                    <div class="public-profile-social"><span><i
-                                data-lucide="users"
-                                aria-hidden="true"
-                            ></i><?= (int) $estatisticas['seguidores'] ?> Seguidores</span><span><i
-                                data-lucide="users"
-                                aria-hidden="true"
-                            ></i><?= (int) $estatisticas['seguindo'] ?> Seguindo</span></div>
+                    <div class="public-profile-social">
+                        <?php foreach (['seguidores' => ['Seguidores', 'users'], 'seguindo' => ['Seguindo', 'user-check']] as $tipoRelacao => [$rotuloRelacao, $iconeRelacao]): ?>
+                        <?php if ($visitante): ?><button
+                            type="button"
+                            class="profile-relation-trigger"
+                            data-profile-relation="<?= $tipoRelacao ?>"
+                            data-profile-count="<?= (int) $estatisticas[$tipoRelacao] ?>"
+                            data-profile-user="<?= (int) $titular ?>"
+                            aria-haspopup="dialog"
+                            aria-controls="modalRelacoesPerfil"
+                        ><i data-lucide="<?= $iconeRelacao ?>" aria-hidden="true"></i><strong><?= (int) $estatisticas[$tipoRelacao] ?></strong> <?= $rotuloRelacao ?></button><?php else: ?><span><i
+                            data-lucide="<?= $iconeRelacao ?>"
+                            aria-hidden="true"
+                        ></i><?= (int) $estatisticas[$tipoRelacao] ?> <?= $rotuloRelacao ?></span><?php endif; ?>
+                        <?php endforeach; ?>
+                    </div>
                 </div>
                 <div class="public-profile-actions">
                     <?php if ($visitante === $titular): ?><a
@@ -343,6 +356,21 @@ if (realpath($_SERVER['SCRIPT_FILENAME'] ?? '') === __FILE__) {
             >Voltar ao Nook</a>
         </section><?php endif; ?>
     </main>
+    <?php if ($visitante && $permitido): ?>
+    <dialog id="modalRelacoesPerfil" class="profile-relations-dialog" aria-labelledby="modalRelacoesTitulo">
+        <header>
+            <div>
+                <h2 id="modalRelacoesTitulo">Seguidores</h2>
+                <p data-relations-count></p>
+            </div>
+            <button type="button" data-close-relations aria-label="Fechar lista de relações"><i data-lucide="x"></i></button>
+        </header>
+        <ul data-relations-list aria-label="Pessoas"></ul>
+        <p data-relations-status role="status" aria-live="polite"></p>
+        <button type="button" data-relations-more hidden>Carregar mais</button>
+    </dialog>
+    <script src="../front-end/js/pages/profile-relations.js" defer></script>
+    <?php endif; ?>
     <?php require __DIR__ . '/footer.php'; ?>
     <script
         src="../front-end/js/pages/share-profile.js"

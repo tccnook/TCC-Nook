@@ -34,6 +34,44 @@ function idiomaPortugues($idioma): bool
     return is_string($idioma) && preg_match('/^(?:pt(?:[-_][a-z]{2})?|por|portugu[eê]s)$/iu', trim($idioma)) === 1;
 }
 
+function normalizarResultadoPesquisaGoogleBooks(array $volume): ?array
+{
+    $id = is_string($volume['id'] ?? null) ? trim($volume['id']) : '';
+    $info = is_array($volume['volumeInfo'] ?? null) ? $volume['volumeInfo'] : [];
+    $titulo = is_string($info['title'] ?? null) ? trim($info['title']) : '';
+    $idioma = $info['language'] ?? null;
+    if (!preg_match('/^[A-Za-z0-9_-]{1,100}$/D', $id) || $titulo === '' || ($idioma !== null && !idiomaPortugues($idioma))) {
+        return null;
+    }
+
+    $autores = is_array($info['authors'] ?? null) ? $info['authors'] : [];
+    $autores = array_values(array_filter(array_map(
+        static fn ($autor) => is_string($autor) ? trim($autor) : '',
+        $autores
+    )));
+    $capa = null;
+    foreach (['extraLarge', 'large', 'medium', 'thumbnail', 'smallThumbnail'] as $tamanho) {
+        $url = $info['imageLinks'][$tamanho] ?? null;
+        if (!is_string($url) || trim($url) === '') {
+            continue;
+        }
+
+        $url = preg_replace('/^http:/i', 'https:', trim($url));
+        if (filter_var($url, FILTER_VALIDATE_URL) && str_starts_with($url, 'https://')) {
+            $capa = $url;
+            break;
+        }
+    }
+
+    return [
+        'id' => $id,
+        'titulo_livro' => mb_substr($titulo, 0, 180),
+        'nome_autor' => mb_substr(implode(', ', $autores), 0, 250),
+        'capa_url' => $capa,
+        'url' => 'https://books.google.com/books?id=' . rawurlencode($id)
+    ];
+}
+
 function normalizarAcessoDigitalLivro(array $volume): array
 {
     $acesso = is_array($volume['accessInfo'] ?? null) ? $volume['accessInfo'] : [];

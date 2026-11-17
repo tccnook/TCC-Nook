@@ -21,11 +21,11 @@ if (!isset($_SESSION['id_user'])) {
 $idUser = (int) $_SESSION['id_user'];
 $idPost = filter_var($_POST['id_post'] ?? null, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
 $acao = is_string($_POST['acao'] ?? null) ? $_POST['acao'] : '';
-if (!$idPost || !in_array($acao, ['curtir', 'comentar', 'listar_comentarios'], true)) {
+if (!$idPost || !in_array($acao, ['curtir', 'descurtir', 'comentar', 'listar_comentarios'], true)) {
     responderAcaoPost(422, ['mensagem' => 'Ação inválida.']);
 }
 
-if (in_array($acao, ['curtir', 'comentar'], true)
+if (in_array($acao, ['curtir', 'descurtir', 'comentar'], true)
     && (!is_string($_POST['csrf'] ?? null)
         || empty($_SESSION['post_csrf'])
         || !hash_equals($_SESSION['post_csrf'], $_POST['csrf']))) {
@@ -34,6 +34,7 @@ if (in_array($acao, ['curtir', 'comentar'], true)
 
 require_once __DIR__ . '/conexao.php';
 require_once __DIR__ . '/privacy_settings.php';
+require_once __DIR__ . '/notifications_support.php';
 require_once __DIR__ . '/post_support.php';
 $conn = (new Database())->conectar();
 $config = configuracoesUsuario($conn, $idUser);
@@ -76,12 +77,36 @@ if ($acao === 'listar_comentarios') {
 }
 
 try {
-    if ($acao === 'curtir') {
-        $stmt = $conn->prepare("INSERT INTO curtida (id_user,categoria_curtido,id_coisocurtido) SELECT :user,'post',:post WHERE NOT EXISTS(SELECT 1 FROM curtida WHERE id_user=:check_user AND categoria_curtido='post' AND id_coisocurtido=:check_post)");
-        $stmt->execute([':user' => $idUser, ':post' => $idPost, ':check_user' => $idUser, ':check_post' => $idPost]);
+    if ($acao === 'curtir' || $acao === 'descurtir') {
+        $conn->beginTransaction();
+        $lock = $conn->prepare('SELECT id_post FROM post WHERE id_post=:post FOR UPDATE');
+        $lock->execute([':post' => $idPost]);
+        if (!$lock->fetchColumn()) {
+            $conn->rollBack();
+            responderAcaoPost(404, ['mensagem' => 'Post não encontrado.']);
+        }
+
+        if ($acao === 'curtir') {
+            $stmt = $conn->prepare("INSERT INTO curtida (id_user,categoria_curtido,id_coisocurtido) SELECT :user,'post',:post WHERE NOT EXISTS(SELECT 1 FROM curtida WHERE id_user=:check_user AND categoria_curtido='post' AND id_coisocurtido=:check_post)");
+            $stmt->execute([':user' => $idUser, ':post' => $idPost, ':check_user' => $idUser, ':check_post' => $idPost]);
+        } else {
+            $stmt = $conn->prepare("DELETE FROM curtida WHERE id_user=:user AND categoria_curtido='post' AND id_coisocurtido=:post");
+            $stmt->execute([':user' => $idUser, ':post' => $idPost]);
+        }
+
+        $curtido = $acao === 'curtir';
+        if ($curtido && $stmt->rowCount() > 0) {
+            registrarNotificacao($conn, (int) $post['id_user'], $idUser, 'curtida_post', (int) $idPost);
+        }
         $stmt = $conn->prepare("SELECT COUNT(*) FROM curtida WHERE categoria_curtido='post' AND id_coisocurtido=:post");
         $stmt->execute([':post' => $idPost]);
-        responderAcaoPost(200, ['mensagem' => 'Post curtido.', 'total_curtidas' => (int) $stmt->fetchColumn(), 'curtido' => true]);
+        $totalCurtidas = (int) $stmt->fetchColumn();
+        $conn->commit();
+        responderAcaoPost(200, [
+            'mensagem' => $curtido ? 'Post curtido.' : 'Curtida removida.',
+            'total_curtidas' => $totalCurtidas,
+            'curtido' => $curtido
+        ]);
     }
 
 
@@ -104,6 +129,7 @@ try {
     $stmt = $conn->prepare("INSERT INTO comentario (id_user,categoria_curtida,id_coisocurtido,comentario) VALUES (:user,'post',:post,:comentario) RETURNING id_comentario");
     $stmt->execute([':user' => $idUser, ':post' => $idPost, ':comentario' => $comentario]);
     $idComentario = (int) $stmt->fetchColumn();
+    registrarNotificacao($conn, (int) $post['id_user'], $idUser, 'comentario_post', (int) $idPost);
     registrarMencoes($conn, $destinos, $idUser, 'post', (int) $idPost);
     $comentarios = comentariosPostParaModal($conn, (int) $idPost);
     $stmt = $conn->prepare("SELECT COUNT(*) FROM comentario WHERE categoria_curtida='post' AND id_coisocurtido=:post");

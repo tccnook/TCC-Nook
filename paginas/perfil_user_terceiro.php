@@ -1,140 +1,185 @@
 <?php
 
 session_start();
-require_once __DIR__ . '/conexao.php';
-require_once __DIR__ . '/profile_access.php';
-require_once __DIR__ . '/reading_library.php';
-require_once __DIR__ . '/list_view_support.php';
-require_once __DIR__ . '/publishing_service.php';
-$visitante = (int) ($_SESSION['id_user'] ?? 0);
-$titular = filter_var($_GET['id_user'] ?? $_GET['id_user_terceiro'] ?? null, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
-if (!$titular) {
-    http_response_code(400);
-    exit('Link de perfil inválido.');
-}
-$conn = (new Database())->conectar();
-$stmt = $conn->prepare("SELECT u.id_user,u.nome_completo,u.username,c.bio,c.foto_perfil_url,c.banner_url,COALESCE(c.visibilidade,'publico') AS visibilidade FROM usuario u LEFT JOIN conta c USING(id_user) WHERE u.id_user=:id");
-$stmt->execute([':id' => $titular]);
-$perfil = $stmt->fetch(PDO::FETCH_ASSOC);
-$bloqueado = false;
-if ($visitante && $perfil) {
-    $stmt = $conn->prepare("SELECT 1 FROM bloqueio WHERE status_bloqueio='bloqueado' AND ((id_bloqueador=:v AND id_bloqueado=:t) OR (id_bloqueador=:t2 AND id_bloqueado=:v2)) LIMIT 1");
-    $stmt->execute([':v' => $visitante, ':t' => $titular, ':t2' => $titular, ':v2' => $visitante]);
-    $bloqueado = (bool) $stmt->fetchColumn();
-}
-if (!$perfil || $bloqueado) {
-    http_response_code(404);
-    exit('Perfil não encontrado.');
-}
-$permitido = podeVerPerfil($perfil['visibilidade'], $visitante, $titular, $bloqueado);
-$_SESSION['public_profile_csrf'] ??= bin2hex(random_bytes(32));
-$erroAcao = '';
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    if (!$visitante || (!$permitido && !in_array($_POST['acao'] ?? '', ['deixar-seguir', 'bloquear'], true)) || $visitante === $titular || !is_string($_POST['csrf'] ?? null) || !hash_equals($_SESSION['public_profile_csrf'], $_POST['csrf'])) {
-        http_response_code(403);
-        exit('Ação não permitida.');
-    }
 
-    try {
-        $conn->beginTransaction();
-        $stmt = $conn->prepare('SELECT pg_advisory_xact_lock(CAST(:id AS BIGINT))');
-        $stmt->execute([':id' => min($visitante, $titular)]);
-        if (($_POST['acao'] ?? '') === 'seguir') {
-            $stmt = $conn->prepare("INSERT INTO follow(id_follower,id_following,status_follow) SELECT :v,:t,'seguindo' WHERE NOT EXISTS(SELECT 1 FROM follow WHERE id_follower=:v2 AND id_following=:t2)");
-            $stmt->execute([':v' => $visitante, ':t' => $titular, ':v2' => $visitante, ':t2' => $titular]);
-            $conn->prepare("UPDATE follow SET status_follow = 'seguindo' WHERE id_follower = ? AND id_following = ?")
-                ->execute([$visitante, $titular]);
-        } elseif (($_POST['acao'] ?? '') === 'deixar-seguir') {
-            $stmt = $conn->prepare('DELETE FROM follow WHERE id_follower=:v AND id_following=:t');
-            $stmt->execute([':v' => $visitante, ':t' => $titular]);
-        } elseif (($_POST['acao'] ?? '') === 'bloquear') {
-            $conn->prepare("INSERT INTO bloqueio(id_bloqueador, id_bloqueado, status_bloqueio) SELECT ?, ?, 'bloqueado' WHERE NOT EXISTS (SELECT 1 FROM bloqueio WHERE id_bloqueador = ? AND id_bloqueado = ?)")
-                ->execute([$visitante, $titular, $visitante, $titular]);
-            $conn->prepare("UPDATE bloqueio SET status_bloqueio = 'bloqueado', data_bloqueio = CURRENT_TIMESTAMP WHERE id_bloqueador = ? AND id_bloqueado = ?")
-                ->execute([$visitante, $titular]);
-            $conn->prepare('DELETE FROM follow WHERE (id_follower = ? AND id_following = ?) OR (id_follower = ? AND id_following = ?)')
-                ->execute([$visitante, $titular, $titular, $visitante]);
-            $conn->commit();
-            header('Location: bloqueados.php');
-            exit;
-        } elseif (($_POST['acao'] ?? '') === 'mensagem') {
-            $stmt = $conn->prepare("SELECT c.id_conversa FROM conversa c WHERE c.tipo='direct' AND EXISTS(SELECT 1 FROM conversa_participante WHERE id_conversa=c.id_conversa AND id_user=:v) AND EXISTS(SELECT 1 FROM conversa_participante WHERE id_conversa=c.id_conversa AND id_user=:t) AND (SELECT COUNT(DISTINCT id_user) FROM conversa_participante WHERE id_conversa=c.id_conversa)=2 LIMIT 1");
-            $stmt->execute([':v' => $visitante, ':t' => $titular]);
-            $conversa = $stmt->fetchColumn();
-            if (!$conversa) {
-                $stmt = $conn->prepare("INSERT INTO conversa(tipo,nome_conversa,foto_conversa_url,id_dono) VALUES ('direct',:nome,:foto,:dono) RETURNING id_conversa");
-                $stmt->execute([':nome' => $perfil['username'], ':foto' => $perfil['foto_perfil_url'], ':dono' => $visitante]);
-                $conversa = $stmt->fetchColumn();
-                $stmt = $conn->prepare("INSERT INTO conversa_participante(id_conversa,id_user,cargo,last_read_message) VALUES (:conversa,:usuario,'Integrante',CURRENT_TIMESTAMP)");
-                foreach ([$visitante, $titular] as $participante) {
-                    $stmt->execute([':conversa' => $conversa, ':usuario' => $participante]);
-                }
-            }
-        } else {
-            throw new InvalidArgumentException('Ação inválida.');
-        }
+// require_once('header_perfil.php');
+require_once('conexao.php');
+$db = new Database;
+$conn = $db->conectar();
 
-        $conn->commit();
-        header('Location: ' . (isset($conversa) ? 'chat.php?id_conversa=' . (int) $conversa : 'perfil_user_terceiro.php?id_user=' . (int) $titular));
-        exit;
-    } catch (Throwable $erro) {
-        if ($conn->inTransaction()) {
-            $conn->rollBack();
-        }
+if(!isset($_SESSION['id_user'])){
+    header("location:login.php");
+    exit();
+}
 
-        error_log('Ação no perfil: ' . $erro->getMessage());
-        $erroAcao = 'Não foi possível concluir a ação. Tente novamente.';
-    }
-}
-$abas = ['visao-geral' => 'Visão Geral', 'livros-lidos' => 'Livros lidos', 'listas-leitura' => 'Listas de leitura', 'resenhas' => 'Resenhas'];
-if ($permitido && ehAutor($conn, (int) $titular)) {
-    $abas['livros-publicados'] = 'Livros publicados';
-}
-$aba = is_string($_GET['aba'] ?? null) && isset($abas[$_GET['aba']]) ? $_GET['aba'] : 'visao-geral';
-$seguindo = false;
-if ($visitante) {
-    $stmt = $conn->prepare("SELECT 1 FROM follow WHERE id_follower=:v AND id_following=:t AND status_follow='seguindo'");
-    $stmt->execute([':v' => $visitante, ':t' => $titular]);
-    $seguindo = (bool) $stmt->fetchColumn();
-}
-$livros = $lidos = $listas = $resenhas = [];
-$estatisticas = [];
-$genero = $autor = $melhor = false;
-if ($permitido) {
-    $stmt = $conn->prepare("SELECT l.id_livro,l.titulo_livro,l.nome_autor,l.capa_url,(SELECT c.nota_avaliacao FROM comentario c WHERE c.id_coisocurtido=l.id_livro AND c.id_user=t.id_user AND c.categoria_curtida='livro' ORDER BY c.criado_em DESC LIMIT 1) AS nota_avaliacao FROM top5_livros t JOIN livro l USING(id_livro) WHERE t.id_user=:id AND l.visibilidade='publico' ORDER BY t.posicao LIMIT 5");
-    $stmt->execute([':id' => $titular]);
-    $livros = $stmt->fetchAll();
-    $lidos = livrosLidosUsuario($conn, (int) $titular, true);
-    if ($aba === 'listas-leitura') {
-        $listas = buscarListasPerfil($conn, (int) $titular, true);
-    }
+$id_user = $_SESSION['id_user']; 
 
-    if ($aba === 'resenhas') {
-        $stmt = $conn->prepare("SELECT r.id_resenha,r.id_livro,r.titulo_resenha,r.sinopse,r.data_publi,l.titulo_livro,l.nome_autor,l.capa_url FROM resenha r JOIN livro l USING(id_livro) WHERE r.id_user=:id AND r.visibilidade='publico' AND l.visibilidade='publico' ORDER BY r.data_publi DESC,r.id_resenha DESC");
-        $stmt->execute([':id' => $titular]);
-        $resenhas = $stmt->fetchAll();
-    }
-
-    $stmt = $conn->prepare("WITH registros AS (SELECT id_livro,100 AS progresso,0 AS capitulos FROM livros_lidos WHERE id_user=:id UNION ALL SELECT id_livro,LEAST(porcentagem_progresso,100),capitulo_atual FROM progresso_leitura WHERE id_user=:id), leitura AS (SELECT id_livro,MAX(progresso) AS progresso,MAX(capitulos) AS capitulos FROM registros GROUP BY id_livro) SELECT SUM(FLOOR(l.paginas*leitura.progresso/100.0)) AS paginas,SUM(leitura.capitulos) AS capitulos FROM leitura JOIN livro l USING(id_livro) WHERE l.visibilidade='publico'");
-    $stmt->execute([':id' => $titular]);
-    $estatisticas = $stmt->fetch();
-    $stmt = $conn->prepare("SELECT AVG(c.nota_avaliacao) FROM comentario c JOIN livro l ON l.id_livro=c.id_coisocurtido WHERE c.id_user=:id AND c.categoria_curtida='livro' AND l.visibilidade='publico'");
-    $stmt->execute([':id' => $titular]);
-    $estatisticas['media'] = $stmt->fetchColumn();
-    $stmt = $conn->prepare("SELECT (SELECT COUNT(*) FROM follow WHERE id_following=:id AND status_follow='seguindo') AS seguidores,(SELECT COUNT(*) FROM follow WHERE id_follower=:id AND status_follow='seguindo') AS seguindo");
-    $stmt->execute([':id' => $titular]);
-    $estatisticas += $stmt->fetch();
-    $leituras = "(SELECT id_livro FROM livros_lidos WHERE id_user=:id UNION SELECT id_livro FROM progresso_leitura WHERE id_user=:id AND porcentagem_progresso=100)";
-    $stmt = $conn->prepare("SELECT p.nome_preferencia,COUNT(*) AS quantidade FROM $leituras r JOIN livro l USING(id_livro) JOIN preferencia_livro pl USING(id_livro) JOIN preferencia p USING(id_preferencia) WHERE l.visibilidade='publico' GROUP BY p.id_preferencia,p.nome_preferencia ORDER BY quantidade DESC,p.nome_preferencia LIMIT 1");
-    $stmt->execute([':id' => $titular]);
-    $genero = $stmt->fetch();
-    $stmt = $conn->prepare("SELECT l.nome_autor,COUNT(*) AS quantidade FROM $leituras r JOIN livro l USING(id_livro) WHERE l.visibilidade='publico' AND NULLIF(l.nome_autor,'') IS NOT NULL GROUP BY l.nome_autor ORDER BY quantidade DESC,l.nome_autor LIMIT 1");
-    $stmt->execute([':id' => $titular]);
-    $autor = $stmt->fetch();
-    $stmt = $conn->prepare("SELECT l.titulo_livro,c.nota_avaliacao FROM comentario c JOIN livro l ON l.id_livro=c.id_coisocurtido WHERE c.id_user=:id AND c.categoria_curtida='livro' AND l.visibilidade='publico' AND c.nota_avaliacao IS NOT NULL ORDER BY c.nota_avaliacao DESC,c.criado_em DESC LIMIT 1");
-    $stmt->execute([':id' => $titular]);
-    $melhor = $stmt->fetch();
+if(!isset($_GET['id_user_terceiro'])){
+    header("location:pesquisar_usuarios.php");
+    exit();
 }
-$esc = static fn ($v) => htmlspecialchars((string) ($v ?? ''), ENT_QUOTES, 'UTF-8');
-$imagemPerfil = static fn ($value): string => $esc(nookPublicUrl($value));
-require __DIR__ . '/public_profile_view.php';
+
+$id_user_terceiro = $_GET['id_user_terceiro'];
+
+echo '<h2> Top 5 Livros </h2>';
+
+$select_top5 = "
+select t.posicao, l.id_livro, l.titulo_livro, l.capa_url, AVG(c.nota_avaliacao) as nota_avaliacao
+from top5_livros t 
+inner join livro l on l.id_livro = t.id_livro
+left join comentario c on c.id_coisocurtido = l.id_coisocurtido and c.categoria_curtida = 'livro'
+where t.id_user = :id_user_terceiro
+group by t.posicao, l.id_livro, l.titulo_livro, l.capa_url
+order by t.posicao;
+";
+
+$stmt = $conn->prepare($select_top5);
+$stmt->execute([
+    ":id_user_terceiro" => $id_user_terceiro
+]);
+$top5_livros = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+foreach($top5_livros as $top5_livro){
+    echo $top5_livro['titulo_livro'];
+    echo '<br>';
+    echo '<img src="'.htmlspecialchars($top5_livro['capa_url']).'" alt="'.htmlspecialchars($top5_livro['titulo_livro']).'" width="100px" height="auto">';
+    echo '<br>';
+    echo $top5_livro['nota_avaliacao'];
+    echo '<br>';
+    echo '<br><br><br><hr>';
+}
+
+// ------------------------------------------------------------------------------------------------------
+//                                    Estatísticas de Leitura
+
+
+
+echo 'Estatísticas de Leitura';
+
+$select_capitulos = 'select count(*) as total_livros_lidos 
+from progresso_leitura where id_user = :id_user_terceiro and porcentagem_progresso = 100;';
+try{
+    $stmt = $conn->prepare($select_capitulos);
+    $stmt->execute([
+        ":id_user_terceiro" => $id_user_terceiro
+    ]);
+} catch(PDOException $e){
+    echo 'Erro: '.$e->getMessage();
+}
+
+$total_livros_lidos = $stmt->fetch(PDO::FETCH_ASSOC)['total_livros_lidos'];
+
+$select_avaliacoes = "select AVG(nota_avaliacao) as media_avaliacoes 
+from comentario where id_user = :id_user_terceiro and categoria_curtida = 'livro';";
+try{
+    $stmt = $conn->prepare($select_avaliacoes);
+    $stmt->execute([
+        ":id_user_terceiro" => $id_user_terceiro
+    ]);
+} catch(PDOException $e){
+    echo 'Erro: '.$e->getMessage();
+}
+$media_avaliacoes = $stmt->fetch(PDO::FETCH_ASSOC)['media_avaliacoes'];
+
+$select_capitulo = 'select SUM(capitulo_atual) as total_capitulos_lidos 
+from progresso_leitura where id_user = :id_user_terceiro;';
+try{
+    $stmt = $conn->prepare($select_capitulo);
+    $stmt->execute([
+        ":id_user_terceiro" => $id_user_terceiro
+    ]);
+} catch(PDOException $e){
+    echo 'Erro: '.$e->getMessage();
+}
+$total_capitulos_lidos = $stmt->fetch(PDO::FETCH_ASSOC)['total_capitulos_lidos'];
+
+echo 'Livros lidos: '.$total_livros_lidos.'<br>';
+echo 'Capítulos Lidos: '.$total_capitulos_lidos.'<br>';
+echo 'Média de Avaliações: '.$media_avaliacoes.'<br>';
+
+
+
+// --------------------------------------------------------------------------------------------------
+//                                          Perfil Literário
+
+$select_generos_lidos = 'SELECT 
+p.nome_preferencia,
+COUNT(DISTINCT pr.id_livro) AS quantidade_livros
+FROM progresso_leitura pr
+INNER JOIN preferencia_livro pl 
+ON pl.id_livro = pr.id_livro
+INNER JOIN preferencia p 
+ON p.id_preferencia = pl.id_preferencia
+WHERE pr.id_user = :id_user_terceiro
+GROUP BY p.id_preferencia, p.nome_preferencia
+ORDER BY quantidade_livros DESC
+LIMIT 1;';
+
+try{
+    $stmt = $conn->prepare($select_generos_lidos);
+    $stmt->execute([
+        ":id_user_terceiro" => $id_user_terceiro
+    ]);
+} catch(PDOException $e){
+    echo 'Erro: '.$e->getMessage();
+}
+$genero_mais_lido = $stmt->fetch(PDO::FETCH_ASSOC);
+
+$select_autores_lidos = 'SELECT 
+a.nome_autor,
+COUNT(DISTINCT pr.id_livro) AS quantidade_autores
+FROM progresso_leitura pr
+INNER JOIN livro l 
+ON l.id_livro = pr.id_livro
+INNER JOIN autor a 
+ON l.nome_autor = a.nome_autor
+WHERE pr.id_user = :id_user_terceiro
+GROUP BY a.id_autor, a.nome_autor
+ORDER BY quantidade_autores DESC
+LIMIT 1;';
+
+try{
+    $stmt = $conn->prepare($select_autores_lidos);
+    $stmt->execute([
+        ":id_user_terceiro" => $id_user_terceiro
+    ]);
+} catch(PDOException $e){
+    echo 'Erro: '.$e->getMessage();
+}
+$autor_mais_lido = $stmt->fetch(PDO::FETCH_ASSOC);
+
+$select_livros_lidos = 'select l.titulo_livro, COUNT(c.id_capitulo) as quantidade_capitulos
+from capitulo c
+inner join livro l
+on l.id_livro = c.id_livro
+inner join progresso_leitura pl
+on pl.id_livro = l.id_livro
+where pl.id_user = :id_user_terceiro
+and pl.porcentagem_progresso = 100
+group by l.id_livro, l.titulo_livro
+order by quantidade_capitulos desc
+limit 1;';
+
+try{
+    $stmt = $conn->prepare($select_livros_lidos);
+    $stmt->execute([
+        ":id_user_terceiro" => $id_user_terceiro
+    ]);
+} catch(PDOException $e){
+    echo 'Erro: '.$e->getMessage();
+}
+$maior_livro_lido = $stmt->fetch(PDO::FETCH_ASSOC);
+
+echo 'Gênero mais lido: <br>'; 
+echo $genero_mais_lido['nome_preferencia'].' - '.$genero_mais_lido['quantidade_livros'].' livros <br>';
+echo 'Autor mais lido: <br>';
+echo $autor_mais_lido['nome_autor'].' - '.$autor_mais_lido['quantidade_autores'].' livros <br>';
+echo 'Maio livro lido: <br>';
+echo $maior_livro_lido['titulo_livro'].' - '.$maior_livro_lido['quantidade_capitulos'].' capítulo <br>';
+
+
+echo '<a href="paginaprincipal.php"> Home </a>';
+echo '<a href="catalogo.php"> Catálogo </a>';
+
+
+?>

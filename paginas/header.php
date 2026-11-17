@@ -36,6 +36,7 @@ $foto_default = '../img/foto_perfil/foto_perfil_default.png';
 <?php
 require_once __DIR__ . '/privacy_settings.php';
 $_SESSION['post_csrf'] ??= bin2hex(random_bytes(32));
+$_SESSION['notification_csrf'] ??= bin2hex(random_bytes(32));
 $configPostHeader = configuracoesUsuario($conn_header, (int) $_SESSION['id_user']);
 ?>
 <!-- o header só funciona com o lucide; se a página já carregar, não duplica -->
@@ -73,10 +74,13 @@ $configPostHeader = configuracoesUsuario($conn_header, (int) $_SESSION['id_user'
         <section class="menu-header" id="menu-notificacoes">
             <button type="button" class="header-btn" id="btnNotificacoes" aria-label="Notificações" aria-haspopup="true" aria-expanded="false">
                 <i data-lucide="bell"></i>
+                <span class="notification-count" id="notificationCount" hidden aria-live="polite"></span>
             </button>
-            <section class="dropdown-header" id="dropdown-notificacoes">
+            <section class="dropdown-header dropdown-notifications" id="dropdown-notificacoes">
                 <h4>Notificações</h4>
-                <p class="dropdown-vazio">Você não tem notificações no momento.</p>
+                <p class="dropdown-vazio" id="notificationStatus">Carregando notificações...</p>
+                <div class="notification-list" id="notificationList"></div>
+                <button type="button" class="notification-mark-all" id="markAllNotifications" hidden>Marcar todas como lidas</button>
             </section>
         </section>
 
@@ -105,6 +109,10 @@ $configPostHeader = configuracoesUsuario($conn_header, (int) $_SESSION['id_user'
     <a href="catalogo.php"><i data-lucide="search"></i><span>Explorar</span></a>
     <button type="button" id="mobileCriarPost"><i data-lucide="square-plus"></i><span>Criar</span></button>
     <a href="conversas.php"><i data-lucide="messages-square"></i><span>Conversas</span></a>
+    <button type="button" class="mobile-notifications-trigger" id="btnNotificacoesMobile" aria-label="Notificações" aria-haspopup="true" aria-expanded="false">
+        <i data-lucide="bell"></i><span>Notificações</span>
+        <span class="notification-count" id="notificationCountMobile" hidden aria-live="polite"></span>
+    </button>
     <a href="perfil.php"><i data-lucide="user-round"></i><span>Perfil</span></a>
 </nav>
 
@@ -178,16 +186,118 @@ $configPostHeader = configuracoesUsuario($conn_header, (int) $_SESSION['id_user'
     document.querySelectorAll(".dropdown-header.ativo").forEach(function (d) {
     d.classList.remove("ativo");
     });
-    document.querySelectorAll(".header-btn[aria-expanded]").forEach(function (b) {
+    document.querySelectorAll(".header-btn[aria-expanded], .mobile-notifications-trigger[aria-expanded]").forEach(function (b) {
     b.setAttribute("aria-expanded", "false");
     });
     }
 
-    document.getElementById("btnNotificacoes").addEventListener("click", function (e) {
+    const notificationButton = document.getElementById("btnNotificacoes");
+    const notificationDropdown = document.getElementById("dropdown-notificacoes");
+    const notificationList = document.getElementById("notificationList");
+    const notificationStatus = document.getElementById("notificationStatus");
+    const notificationCount = document.getElementById("notificationCount");
+    const mobileNotificationButton = document.getElementById("btnNotificacoesMobile");
+    const mobileNotificationCount = document.getElementById("notificationCountMobile");
+    const markAllNotifications = document.getElementById("markAllNotifications");
+
+    function atualizarContadorNotificacoes(count) {
+    const unread = Math.max(0, Number(count) || 0);
+    [notificationCount, mobileNotificationCount].forEach((badge) => {
+    badge.hidden = unread === 0;
+    badge.textContent = unread > 99 ? "99+" : String(unread);
+    });
+    const label = unread ? `Notificações, ${unread} não lidas` : "Notificações";
+    notificationButton.setAttribute("aria-label", label);
+    mobileNotificationButton.setAttribute("aria-label", label);
+    markAllNotifications.hidden = unread === 0;
+    }
+
+    function renderizarNotificacoes(items) {
+    notificationList.replaceChildren();
+    items.forEach((item) => {
+    const link = document.createElement("a");
+    link.className = `notification-item${item.lida ? "" : " is-unread"}`;
+    link.href = item.url;
+    link.dataset.notificationId = String(item.id);
+    const title = document.createElement("strong");
+    title.textContent = item.titulo;
+    const date = document.createElement("time");
+    date.dateTime = item.criada_em;
+    const parsedDate = new Date(item.criada_em);
+    date.textContent = Number.isNaN(parsedDate.getTime())
+        ? ""
+        : parsedDate.toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" });
+    link.append(title, date);
+    notificationList.append(link);
+    });
+    notificationStatus.hidden = items.length > 0;
+    notificationStatus.textContent = items.length ? "" : "Você não tem notificações no momento.";
+    }
+
+    async function carregarNotificacoes() {
+    const response = await fetch("notificacoes_api.php", { headers: { Accept: "application/json" } });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.mensagem || "Não foi possível carregar as notificações.");
+    renderizarNotificacoes(Array.isArray(data.notificacoes) ? data.notificacoes : []);
+    atualizarContadorNotificacoes(data.nao_lidas);
+    }
+
+    async function marcarNotificacoes(action, id = null) {
+    const form = new FormData();
+    form.set("acao", action);
+    form.set("csrf", <?= json_encode($_SESSION['notification_csrf']) ?>);
+    if (id !== null) form.set("id", id);
+    const response = await fetch("notificacoes_api.php", { method: "POST", body: form, headers: { Accept: "application/json" } });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.mensagem || "Não foi possível atualizar as notificações.");
+    await carregarNotificacoes();
+    }
+
+    function alternarNotificacoes(e) {
     e.stopPropagation();
     fecharDropdowns();
-    alternarDropdown(this, document.getElementById("dropdown-notificacoes"));
+    const button = e.currentTarget;
+    alternarDropdown(button, notificationDropdown);
+    notificationButton.setAttribute("aria-expanded", notificationDropdown.classList.contains("ativo"));
+    mobileNotificationButton.setAttribute("aria-expanded", notificationDropdown.classList.contains("ativo"));
+    if (notificationDropdown.classList.contains("ativo")) {
+    carregarNotificacoes().catch((error) => {
+    notificationStatus.hidden = false;
+    notificationStatus.textContent = error.message;
     });
+    }
+    }
+
+    notificationButton.addEventListener("click", alternarNotificacoes);
+    mobileNotificationButton.addEventListener("click", alternarNotificacoes);
+
+    notificationList.addEventListener("click", async function (event) {
+    const link = event.target.closest("a[data-notification-id]");
+    if (!link || !link.classList.contains("is-unread")) return;
+    event.preventDefault();
+    try {
+    await marcarNotificacoes("marcar_lida", link.dataset.notificationId);
+    window.location.assign(link.href);
+    } catch (error) {
+    notificationStatus.hidden = false;
+    notificationStatus.textContent = error.message;
+    }
+    });
+
+    markAllNotifications.addEventListener("click", () => {
+    marcarNotificacoes("marcar_todas_lidas").catch((error) => {
+    notificationStatus.hidden = false;
+    notificationStatus.textContent = error.message;
+    });
+    });
+
+    carregarNotificacoes().catch((error) => {
+    notificationStatus.hidden = false;
+    notificationStatus.textContent = error.message;
+    });
+    window.setInterval(() => {
+    if (!document.hidden) carregarNotificacoes().catch((error) => console.error("Notificações:", error));
+    }, 30000);
 
     document.getElementById("btnMenuPerfil").addEventListener("click", function (e) {
     e.stopPropagation();
@@ -213,12 +323,14 @@ $configPostHeader = configuracoesUsuario($conn_header, (int) $_SESSION['id_user'
     const campoPesquisa = document.getElementById("pesquisa-header");
     const resultadosHeader = document.getElementById("resultados-header");
     let timeoutPesquisa;
+    let sequenciaPesquisa = 0;
 
     function escaparHtml(texto) {
     return String(texto ?? "").replace(/[&<>"']/g, function (c) {
-        return { "&": "&amp;", "<": "&lt;" , ">" : "&gt;" , '"' : "&quot;" , "'" : "&#39;" }[c]; }); } function pesquisarHeader() { const termo=campoPesquisa.value.trim(); if (termo.length < 2) { resultadosHeader.hidden=true; resultadosHeader.innerHTML="" ; return; } fetch("buscar_geral.php?q=" + encodeURIComponent(termo))
+        return { "&": "&amp;", "<": "&lt;" , ">" : "&gt;" , '"' : "&quot;" , "'" : "&#39;" }[c]; }); } function pesquisarHeader() { const sequencia = ++sequenciaPesquisa; const termo=campoPesquisa.value.trim(); if (termo.length < 2) { resultadosHeader.hidden=true; resultadosHeader.innerHTML="" ; return; } fetch("buscar_geral.php?q=" + encodeURIComponent(termo))
             .then(function (resposta) { return resposta.json(); })
             .then(function (dados) {
+                if (sequencia !== sequenciaPesquisa || termo !== campoPesquisa.value.trim()) return;
                 let html = "";
 
                 if (dados.usuarios && dados.usuarios.length > 0) {
@@ -243,6 +355,21 @@ $configPostHeader = configuracoesUsuario($conn_header, (int) $_SESSION['id_user'
                 <img src="${escaparHtml(l.capa_url || '../img/livro-sem-capa.svg')}" alt="" class="capa">
                 <section>
                     <strong>${escaparHtml(l.titulo_livro)}</strong>
+                    <small>${escaparHtml(l.nome_autor || "Autor não informado")}</small>
+                </section>
+            </a>`;
+            });
+            }
+
+            if (dados.google_books && dados.google_books.length > 0) {
+            html += '<h4>Google Books</h4>';
+            dados.google_books.forEach(function (l) {
+            html += `
+            <a class="resultado-item" href="${escaparHtml(l.url)}" target="_blank" rel="noopener noreferrer">
+                <img src="${escaparHtml(l.capa_url || '../img/livro-sem-capa.svg')}" alt="" class="capa">
+                <section>
+                    <strong>${escaparHtml(l.titulo_livro)}</strong>
+                    <small>${escaparHtml(l.nome_autor || "Autor não informado")}</small>
                 </section>
             </a>`;
             });
@@ -262,6 +389,7 @@ $configPostHeader = configuracoesUsuario($conn_header, (int) $_SESSION['id_user'
             }
 
             campoPesquisa.addEventListener("input", function () {
+            sequenciaPesquisa++;
             clearTimeout(timeoutPesquisa);
             timeoutPesquisa = setTimeout(pesquisarHeader, 300);
             });

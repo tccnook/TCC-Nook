@@ -1,132 +1,100 @@
 <?php
+
+
+// DEIXAR ESSA PÁGINA PRA DEPOIS
+// MUITO COMPLICADA E VAI PRECISAR DE UM COISO DE JAVASCRIPT
+
+
 session_start();
-if (!isset($_SESSION['id_user'])) {
-    header('Location: login.php');
-    exit();
+
+// require_once('header_perfil.php');
+require_once('conexao.php');
+$db = new Database;
+$conn = $db->conectar();
+
+$id_user = $_SESSION['id_user'];
+
+
+$select_boas_vindas = "select u.nome_completo, c.foto_perfil_url 
+from usuario u
+left join conta c on c.id_user = u.id_user
+where u.id_user = :id_user;";
+try{
+    $stmt = $conn->prepare($select_boas_vindas);
+    $stmt->execute([
+        ":id_user" => $id_user
+    ]);
+} catch(PDOException $e){
+    echo 'Erro: '.$e->getMessage();
+}
+$boas_vindas = $stmt->fetch(PDO::FETCH_ASSOC);
+
+//  --------------------------------------------------------
+//                     Exibir POSTS
+// ======================================================
+// PROCESSAR CURTIDA
+// ======================================================
+
+if (isset($_POST['curtida'])) {
+
+    $id_post = $_POST['id_postcurt'];
+
+    $insert_curtida = "
+        INSERT INTO curtida 
+        (id_user, categoria_curtido , id_coisocurtido)
+        VALUES (:id_user, 'post', :id_post)
+    ";
+
+    try {
+
+        $stmt = $conn->prepare($insert_curtida);
+
+        $stmt->execute([
+            ":id_user" => $id_user,
+            ":id_post" => $id_post
+        ]);
+
+    } catch (PDOException $e) {
+
+        echo 'Erro: ' . $e->getMessage();
+
+    }
 }
 
-$id_user = (int) $_SESSION['id_user'];
-require_once __DIR__ . '/conexao.php';
-$conn = (new Database())->conectar();
-require_once __DIR__ . '/schema_support.php';
-$schema = schemaProjeto($conn);
-require_once __DIR__ . '/privacy_settings.php';
-$configLeitura = configuracoesUsuario($conn, $id_user);
 
-$stmt = $conn->prepare('SELECT u.nome_completo, u.username, c.foto_perfil_url FROM usuario u LEFT JOIN conta c ON c.id_user = u.id_user WHERE u.id_user = :id_user');
-$stmt->execute([':id_user' => $id_user]);
-$usuario = $stmt->fetch(PDO::FETCH_ASSOC) ?: [];
+// ======================================================
+// PROCESSAR COMENTÁRIO
+// ======================================================
 
-$stmt = $conn->prepare("
-    SELECT p.id_post, p.titulo_post, p.conteudo, p.legenda, p.url_imagem, p.criado_em, p.visibilidade, p.conteudo_sensivel,p.conteudo_adulto,
-           EXISTS(SELECT 1 FROM follow f WHERE f.id_follower=:viewer_visit AND f.id_following=p.id_user) AS visitante_segue,
-           u.id_user AS autor_id, u.nome_completo, u.username, c.foto_perfil_url,
-           (SELECT COUNT(*) FROM curtida cur WHERE cur.id_coisocurtido = p.id_post AND cur.categoria_curtido = 'post') AS curtidas,
-           (SELECT COUNT(*) FROM comentario co WHERE co.id_coisocurtido=p.id_post AND co.categoria_curtida='post') AS total_comentarios,
-           EXISTS (SELECT 1 FROM curtida cur WHERE cur.id_coisocurtido = p.id_post AND cur.categoria_curtido = 'post' AND cur.id_user = :viewer_like) AS curtido
-    FROM post p
-    INNER JOIN usuario u ON u.id_user = p.id_user
-    LEFT JOIN conta c ON c.id_user = u.id_user
-    WHERE (p.id_user = :viewer_own OR (p.visibilidade = 'publico' AND p.id_user <> :viewer_other))
-    AND NOT EXISTS (
-        SELECT 1 FROM bloqueio b WHERE b.status_bloqueio = 'bloqueado'
-        AND ((b.id_bloqueador = :viewer_block AND b.id_bloqueado = p.id_user)
-            OR (b.id_bloqueador = p.id_user AND b.id_bloqueado = :viewer_blocked))
-    )
-    AND (p.id_user = :viewer_filtro OR ((NOT p.conteudo_sensivel OR :sensivel = 1) AND (NOT p.conteudo_adulto OR :adulto = 1)))
-    ORDER BY CASE WHEN EXISTS (SELECT 1 FROM follow f WHERE f.id_follower = :viewer_follow AND f.id_following = p.id_user) THEN 0 ELSE 1 END,
-             p.criado_em DESC
-    LIMIT 20
-");
-$stmt->execute([
-    ':viewer_block' => $id_user, ':viewer_blocked' => $id_user,
-    ':viewer_like' => $id_user,
-    ':viewer_own' => $id_user,
-    ':viewer_other' => $id_user,
-    ':viewer_visit' => $id_user, ':viewer_follow' => $id_user,
-    ':viewer_filtro' => $id_user, ':sensivel' => (int) $configLeitura['permitir_sensivel'], ':adulto' => (int) $configLeitura['permitir_adulto']
-]);
-$posts = $stmt->fetchAll(PDO::FETCH_ASSOC);
-require_once __DIR__ . '/post_composer_support.php';
-$imagensPosts = imagensDosPosts($conn, array_column($posts, 'id_post'));
+if (isset($_POST['enviar'])) {
 
-$stmt = $conn->prepare("
-    WITH pessoas_em_comum AS (
-        SELECT destino.id_following AS id_user, COUNT(DISTINCT comum.id_following) AS em_comum
-        FROM follow comum
-        INNER JOIN follow destino ON destino.id_follower = comum.id_following
-        WHERE comum.id_follower = :id_user_comum AND destino.id_following <> :id_user_proprio
-        GROUP BY destino.id_following
-    )
-    SELECT u.id_user, u.username, u.nome_completo, conta.foto_perfil_url, COALESCE(p.em_comum, 0) AS em_comum
-    FROM usuario u
-    LEFT JOIN conta ON conta.id_user = u.id_user
-    LEFT JOIN pessoas_em_comum p ON p.id_user = u.id_user
-    WHERE NOT EXISTS (
-        SELECT 1 FROM bloqueio b WHERE b.status_bloqueio = 'bloqueado'
-        AND ((b.id_bloqueador = :suggestion_block AND b.id_bloqueado = u.id_user)
-            OR (b.id_bloqueador = u.id_user AND b.id_bloqueado = :suggestion_blocked))
-    )
-    AND u.id_user <> :id_user_excluir
-      AND NOT EXISTS (SELECT 1 FROM follow f WHERE f.id_follower = :id_user_seguindo AND f.id_following = u.id_user)
-    ORDER BY em_comum DESC, u.criacao_conta DESC
-    LIMIT 6
-");
-$stmt->execute([
-    ':suggestion_block' => $id_user, ':suggestion_blocked' => $id_user,
-    ':id_user_comum' => $id_user,
-    ':id_user_proprio' => $id_user,
-    ':id_user_excluir' => $id_user,
-    ':id_user_seguindo' => $id_user
-]);
-$usuarios_sugeridos = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    $id_post = $_POST['id_postcoment'];
+    $comentario = $_POST['comentario'];
 
-$grupos_usuario = [];
-$stmt = $conn->prepare("SELECT c.id_conversa,c.nome_conversa,c.foto_conversa_url,COUNT(DISTINCT participante.id_user) AS total_participantes FROM conversa c INNER JOIN conversa_participante membro ON membro.id_conversa=c.id_conversa AND membro.id_user=:membro INNER JOIN conversa_participante participante ON participante.id_conversa=c.id_conversa WHERE c.tipo='grupo' GROUP BY c.id_conversa,c.nome_conversa,c.foto_conversa_url ORDER BY c.id_conversa DESC LIMIT 5");
-$stmt->execute([':membro' => $id_user]);
-$grupos_usuario = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    $insert_comentario = "
+        INSERT INTO comentario
+        (id_user, categoria_curtida, id_coisocurtido, comentario)
+        VALUES (:id_user, 'post', :id_post, :comentario)
+    ";
 
-$livros_em_alta = $conn->query("SELECT l.id_livro,l.titulo_livro,l.nome_autor,l.capa_url,((SELECT COUNT(*) FROM resenha r WHERE r.id_livro=l.id_livro AND r.visibilidade='publico' AND r.data_publi>CURRENT_TIMESTAMP-INTERVAL '30 days')+(SELECT COUNT(*) FROM progresso_leitura pr WHERE pr.id_livro=l.id_livro AND pr.ultima_leitura>CURRENT_TIMESTAMP-INTERVAL '30 days')) AS atividade FROM livro l WHERE l.visibilidade='publico' ORDER BY atividade DESC,l.data_publi DESC NULLS LAST,l.titulo_livro LIMIT 5")->fetchAll(PDO::FETCH_ASSOC);
+    try {
 
-require_once __DIR__ . '/list_view_support.php';
-$listas_sugeridas = buscarListasPublicas($conn, '', 1, 5)['listas'];
+        $stmt = $conn->prepare($insert_comentario);
 
-$temSeguidoresAutor = isset($schema['follow_autor']);
-$consultaAutores = $temSeguidoresAutor
-    ? "SELECT a.id_autor, a.nome_autor, a.autor, a.foto_url, COUNT(DISTINCT fa.id_follower) AS seguidores FROM autor a LEFT JOIN follow_autor fa ON fa.id_autor = a.id_autor GROUP BY a.id_autor, a.nome_autor, a.autor, a.foto_url ORDER BY seguidores DESC, a.nome_autor ASC LIMIT 6"
-    : "SELECT id_autor, nome_autor, autor, foto_url, NULL AS seguidores FROM autor ORDER BY nome_autor LIMIT 6";
-$stmt = $conn->query($consultaAutores);
-$autores_em_alta = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        $stmt->execute([
+            ":id_user" => $id_user,
+            ":id_post" => $id_post,
+            ":comentario" => $comentario
+        ]);
 
-$stmt = $conn->prepare("SELECT l.id_livro, l.titulo_livro, l.nome_autor, l.capa_url, pr.porcentagem_progresso FROM progresso_leitura pr INNER JOIN livro l ON l.id_livro = pr.id_livro WHERE pr.id_user = :id AND pr.porcentagem_progresso > 0 AND pr.porcentagem_progresso < 100 ORDER BY pr.ultima_leitura DESC LIMIT 8");
-$stmt->execute([':id' => $id_user]);
-$leituras_em_andamento = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    } catch (PDOException $e) {
 
-$esc = static fn ($valor) => htmlspecialchars((string) ($valor ?? ''), ENT_QUOTES, 'UTF-8');
-$imagemUrl = static fn ($caminho) => $esc(nookPublicUrl($caminho));
-$fotoUsuario = !empty($usuario['foto_perfil_url']) ? $imagemUrl($usuario['foto_perfil_url']) : '';
-$primeiroNome = explode(' ', trim($usuario['nome_completo'] ?? ''))[0] ?? 'leitor';
-$fotoFallback = mb_strtoupper(mb_substr($usuario['username'] ?? 'N', 0, 1));
-?>
-<!DOCTYPE html>
-<html lang="pt-br">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="../front-end/css/main.css">
-    <link rel="stylesheet" href="../front-end/css/pages/paginaprincipal.css">
-    <link rel="stylesheet" href="../front-end/css/components/reading-rail.css">
-    <link rel="stylesheet" href="../front-end/css/pages/perfil-listas.css">
-    <link rel="shortcut icon" href="../img/icons/ico-nook/ico-nook.ico" type="image/x-icon">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Lora:wght@400;500;600;700&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <title>Início | Nook</title>
-    <link rel="stylesheet" href="../front-end/css/pages/home-feed.css">
-</head>
-<body>
-    <?php require_once __DIR__ . '/header.php'; ?>
+        echo 'Erro: ' . $e->getMessage();
 
+<<<<<<< HEAD
+    }
+}
+=======
     <main class="home-page" data-post-csrf="<?= $esc($_SESSION['post_csrf']) ?>">
         <div class="home-columns">
             <nav class="home-sidebar" aria-label="Navegação da comunidade">
@@ -183,7 +151,7 @@ $fotoFallback = mb_strtoupper(mb_substr($usuario['username'] ?? 'N', 0, 1));
                                 </figure><?php endforeach;?></div><?php elseif ($galeriaPost):?><img class="post-image" src="<?= $imagemUrl($galeriaPost[0]) ?>" alt="Imagem publicada por @<?= $esc($post['username']) ?>" loading="lazy"><?php endif; ?>
                         </div>
                         <div class="post-actions">
-                            <button type="button" data-curtir-post="<?= (int) $post['id_post'] ?>" aria-pressed="<?= $postCurtido ? 'true' : 'false' ?>" <?= $postCurtido ? 'disabled' : '' ?>><i data-lucide="heart"></i> <span><?= (int) $post['curtidas'] ?></span></button>
+                            <button type="button" data-curtir-post="<?= (int) $post['id_post'] ?>" aria-label="<?= $postCurtido ? 'Descurtir publicação' : 'Curtir publicação' ?>" aria-pressed="<?= $postCurtido ? 'true' : 'false' ?>"><i data-lucide="heart"></i> <span><?= (int) $post['curtidas'] ?></span></button>
                             <button type="button" data-abrir-comentarios="<?= (int) $post['id_post'] ?>" aria-label="Ver <?= (int) $post['total_comentarios'] ?> comentários"><i data-lucide="message-circle" aria-hidden="true"></i><span data-contagem-comentarios><?= (int) $post['total_comentarios'] ?></span></button>
                             <button type="button" data-compartilhar-post="<?= (int) $post['id_post'] ?>" aria-label="Compartilhar publicação"><i data-lucide="share-2" aria-hidden="true"></i><span class="sr-only">Compartilhar</span></button>
                         </div>
@@ -228,7 +196,7 @@ $fotoFallback = mb_strtoupper(mb_substr($usuario['username'] ?? 'N', 0, 1));
                         <?php endforeach; ?>
                     </div>
                     <?php else: ?><p class="home-empty">Você ainda não participa de grupos.</p><?php endif; ?>
-                    <a class="home-create-group" href="criar_conversa.php"><i data-lucide="plus" aria-hidden="true"></i> Criar grupo de leitura</a>
+                    <a class="home-create-group" href="conversas.php?criar_grupo=1"><i data-lucide="plus" aria-hidden="true"></i> Criar grupo de leitura</a>
                 </section>
 
                 <section class="home-section home-trending-books" aria-labelledby="livros-em-alta-title">
@@ -249,111 +217,621 @@ $fotoFallback = mb_strtoupper(mb_substr($usuario['username'] ?? 'N', 0, 1));
                     </div>
                     <?php else: ?><p class="home-empty">Os livros mais conversados aparecerão aqui.</p><?php endif; ?>
                 </section>
+>>>>>>> df9f652 (Subindo o que apresentamos pro Anselmo hoje)
 
 
-                <section class="home-section home-people-suggestions">
-                    <header class="home-section-heading">
-                        <div>
-                            <p>ENCONTRE SUA COMUNIDADE</p>
-                            <h2>Leitores para seguir</h2>
-                        </div><a class="home-section-more" href="pesquisa_user.php">Ver todos <i data-lucide="arrow-up-right"></i></a>
-                    </header>
-                    <?php if ($usuarios_sugeridos): ?>
-                    <div class="home-people-row">
-                        <?php foreach ($usuarios_sugeridos as $sugerido): ?>
-                        <article class="home-person-card" data-persona="<?= (int) $sugerido['id_user'] ?>">
-                            <a href="perfil_user_terceiro.php?id_user=<?= (int) $sugerido['id_user'] ?>" class="home-person-card-link">
-                                <?php if (!empty($sugerido['foto_perfil_url']) && (preg_match('~^https?://~i', $sugerido['foto_perfil_url']) || is_file(dirname(__DIR__) . '/' . ltrim($sugerido['foto_perfil_url'], '/')))): ?><img src="<?= $imagemUrl($sugerido['foto_perfil_url']) ?>" alt="Foto de <?= $esc($sugerido['username']) ?>" loading="lazy"><?php else: ?><span class="home-person-avatar-fallback"><?= $esc(mb_strtoupper(mb_substr($sugerido['username'], 0, 1))) ?></span><?php endif; ?>
-                                <strong>@<?= $esc($sugerido['username']) ?></strong>
-                                <span class="home-person-name"><?= $esc($sugerido['nome_completo']) ?></span>
-                                <?php if ((int) $sugerido['em_comum']): ?><small><?= (int) $sugerido['em_comum'] ?> em comum</small><?php endif; ?>
-                            </a>
-                            <button type="button" data-seguir-usuario="<?= (int) $sugerido['id_user'] ?>"><i data-lucide="user-plus"></i> Seguir</button>
-                            <a class="home-person-message" href="#" hidden aria-label="Enviar mensagem"><i data-lucide="message-circle"></i></a>
-                        </article>
-                        <?php endforeach; ?>
-                    </div>
-                    <?php else: ?><p class="home-empty">Você já segue todos os leitores sugeridos.</p><?php endif; ?>
-                </section>
+// ======================================================
+// BUSCAR POSTS
+// ======================================================
+
+$select_posts = "
+SELECT 
+    p.id_post,
+    u.nome_completo,
+    c.foto_perfil_url,
+    u.username,
+    p.criado_em,
+    p.conteudo,
+    p.legenda,
+    p.url_imagem,
+    p.visibilidade,
+
+    JSON_AGG(
+        JSON_BUILD_OBJECT(
+            'id_comentario', co.id_comentario,
+            'id_user', co.id_user,
+            'comentario', co.comentario,
+            'criado_em', co.criado_em,
+            'nome_usuario', uc.nome_completo,
+            'username', uc.username,
+            'foto_perfil', cc.foto_perfil_url
+        )
+    ) FILTER (
+        WHERE co.id_comentario IS NOT NULL
+    ) AS comentarios
+
+FROM post p
+
+INNER JOIN usuario u
+    ON u.id_user = p.id_user
+
+LEFT JOIN conta c
+    ON c.id_user = p.id_user
+
+LEFT JOIN comentario co
+    ON co.id_coisocurtido = p.id_post
+    AND co.categoria_curtida = 'post'
+
+LEFT JOIN usuario uc
+    ON uc.id_user = co.id_user
+
+LEFT JOIN conta cc
+    ON cc.id_user = co.id_user
+
+WHERE p.visibilidade = 'publico'
+
+GROUP BY
+    p.id_post,
+    u.nome_completo,
+    c.foto_perfil_url,
+    u.username,
+    p.criado_em,
+    p.conteudo,
+    p.legenda,
+    p.url_imagem,
+    p.visibilidade
+
+ORDER BY p.criado_em desc;
+";
+
+try {
+
+    $stmt = $conn->prepare($select_posts);
+
+    $stmt->execute();
+
+    $posts = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+} catch (PDOException $e) {
+
+    echo 'Erro: ' . $e->getMessage();
+
+    $posts = [];
+}
 
 
-                <section class="home-section home-list-suggestions">
-                    <header class="home-section-heading">
-                        <div>
-                            <p>CURADORIA DA COMUNIDADE</p>
-                            <h2>Listas para explorar</h2>
-                        </div><a class="home-section-more" href="explorar_listas.php">Ver mais <i data-lucide="arrow-up-right"></i></a>
-                    </header>
-                    <?php if ($listas_sugeridas): ?>
-                    <div class="listas-grid home-listas-grid">
-                        <?php $listasExibidas = $listas_sugeridas;
-                        require __DIR__ . '/list_cards.php'; ?>
-                    </div>
-                    <?php else: ?><p class="home-empty">Ainda não há listas públicas para sugerir.</p><?php endif; ?>
-                </section>
+// ======================================================
+// CABEÇALHO
+// ======================================================
 
-                <section class="home-section home-authors-trending">
-                    <header class="home-section-heading">
-                        <div>
-                            <p>EM ALTA NA COMUNIDADE</p>
-                            <h2>Autores em destaque</h2>
-                        </div><a class="home-section-more" href="pesquisa_autores.php">Ver todos <i data-lucide="arrow-up-right"></i></a>
-                    </header>
-                    <?php if ($autores_em_alta): ?>
-                    <div class="home-authors-row">
-                        <?php foreach ($autores_em_alta as $autor): ?>
-                        <a class="home-author-card" href="perfil_autor.php?id_autor=<?= (int) $autor['id_autor'] ?>">
-                            <?php if (!empty($autor['foto_url'])): ?><img src="<?= $imagemUrl($autor['foto_url']) ?>" alt="" loading="lazy"><?php else: ?><span><?= $esc(mb_strtoupper(mb_substr($autor['nome_autor'] ?: $autor['autor'], 0, 1))) ?></span><?php endif; ?>
-                            <strong><?= $esc($autor['nome_autor'] ?: $autor['autor']) ?></strong><small><?= $autor['seguidores'] === null ? 'Conhecer autor' : (int) $autor['seguidores'] . ' seguidores' ?></small>
-                        </a>
-                        <?php endforeach; ?>
-                    </div>
-                    <?php else: ?><p class="home-empty">Os autores em destaque aparecerão aqui.</p><?php endif; ?>
-                </section>
-            </aside>
+echo '<a href="pesquisar.php">
+        <section>
+            <input 
+                type="text" 
+                placeholder="Pesquise livros, usuários e autores" 
+                name="pesquisar">
+        </section>
+      </a>';
 
-        </div>
+echo '<a href="notificacoes.php">Notificações</a>';
+echo '<a href="mensagens.php">Mensagens</a>';
 
-    </main>
+echo '<br>';
 
-    <p id="home-feed-status" class="sr-only" role="status" aria-live="polite"></p>
+echo '<img src="' . $boas_vindas['foto_perfil_url'] . '" 
+      width="100px" 
+      height="auto" 
+      style="border-radius: 50%;">';
 
-    <dialog class="post-comments-dialog" id="postCommentsDialog" aria-labelledby="post-comments-title">
-        <div class="post-comments-shell">
-            <header class="post-comments-header">
-                <div>
-                    <p>Conversa da comunidade</p>
-                    <h2 id="post-comments-title">Publicação</h2>
-                </div>
-                <button type="button" data-fechar-comentarios aria-label="Fechar comentários"><i data-lucide="x" aria-hidden="true"></i></button>
-            </header>
-            <article class="post-comments-publication" aria-label="Publicação selecionada">
-                <div data-modal-post-author></div>
-                <div data-modal-post-story></div>
-                <div data-modal-post-actions></div>
-            </article>
-            <section class="post-comments-section" aria-labelledby="post-comments-list-title">
-                <header class="post-comments-list-heading">
-                    <h3 id="post-comments-list-title">Comentários <span data-modal-comments-count>(0)</span></h3>
-                    <label><span class="sr-only">Ordenar comentários</span><select data-comments-sort>
-                            <option value="recentes">Mais recentes</option>
-                            <option value="antigos">Mais antigos</option>
-                        </select></label>
-                </header>
-                <form class="post-modal-comment-form" data-modal-comment-form>
-                    <?php if ($fotoUsuario): ?><img src="<?= $fotoUsuario ?>" alt="" width="40" height="40"><?php else: ?><span class="home-avatar-fallback" aria-hidden="true"><?= $fotoFallback ?></span><?php endif; ?>
-                    <label class="sr-only" for="post-modal-comment-input">Escreva um comentário</label>
-                    <textarea id="post-modal-comment-input" name="comentario" maxlength="1000" rows="1" placeholder="Escreva um comentário..." required></textarea>
-                    <button type="submit" aria-label="Enviar comentário"><i data-lucide="send" aria-hidden="true"></i></button>
-                </form>
-                <p class="post-modal-comment-permission" data-modal-comment-permission hidden>Os comentários desta publicação estão limitados pelo autor.</p>
-                <p class="post-modal-status" data-modal-comment-status role="status" aria-live="polite">Selecione uma publicação para ver os comentários.</p>
-                <div class="post-modal-comment-list" data-modal-comment-list aria-live="polite"></div>
-            </section>
-        </div>
-    </dialog>
+echo '<br><br>';
 
-    <?php require_once __DIR__ . '/footer.php'; ?>
-    <script src="../front-end/js/pages/home-feed.js" defer></script>
-</body>
-</html>
+
+// ======================================================
+// NOME DO USUÁRIO
+// ======================================================
+
+$nome_boas_vindas = explode(' ', $boas_vindas['nome_completo']);
+
+echo 'Olá ' . htmlspecialchars($nome_boas_vindas[0]) . ', seja bem-vindo!<br>';
+
+echo 'Qual a sua vibe para hoje?';
+
+echo '<br><br>';
+
+
+// ======================================================
+// CRIAR POST
+// ======================================================
+
+echo '<section>
+
+    <img src="' . $boas_vindas['foto_perfil_url'] . '" 
+         width="100px" 
+         height="auto" 
+         style="border-radius:50%">
+
+    <br>
+
+    <h2>Criar Post</h2>
+
+    <form 
+        name="post" 
+        method="POST" 
+        action="#" 
+        enctype="multipart/form-data">
+
+        <label for="titulo_post"> Título do POST </label>
+        <input type="text" name="titulo_post">
+        <br>
+        <label for="foto_post">
+            Adicionar foto do post
+        </label>
+
+        <input 
+            type="file" 
+            name="foto_post" 
+            accept="image/*">
+
+        <br>
+
+        <input 
+            type="text" 
+            name="conteudo_post" 
+            placeholder="Digite o que você quer falar">
+
+        <br>
+
+        <input 
+            type="text" 
+            name="legenda" 
+            placeholder="Algum comentário ou descrição extra?">
+
+        <br>
+
+        <input 
+            type="radio" 
+            name="visibilidade" 
+            value="publico">
+
+        Público
+
+        <input 
+            type="radio" 
+            name="visibilidade" 
+            value="privado">
+
+        Privado
+
+        <input 
+            type="submit" 
+            name="postar" 
+            value="Postar">
+
+    </form>
+
+</section>';
+
+echo '<br><br>';
+
+if(isset($_POST['postar'])){
+    if(isset($_POST['foto_post'])){
+    $insert_post = 'insert into post (titulo_post, id_user, url_imagem, conteudo, visibilidade, legenda) values
+    (:titulo_post, :id_user, :url_imagem, :conteudo, :visibilidade, :legenda);';
+
+    try{
+        $stmt = $conn->prepare($insert_post);
+        $stmt->execute([
+            ":titulo_post" => $_POST['titulo_post'],
+            ":id_user" => $id_user,
+            ":url_imagem" => $_POST['foto_post'],
+            ":conteudo" => $_POST['conteudo_post'],
+            ":visibilidade" => $_POST['visibilidade'],
+            ":legenda" => $_POST['legenda']
+
+        ]);
+    } catch(PDOException $e){
+        echo 'Erro: '.$e->getMessage();
+    }
+    } else {
+        $insert_post = 'insert into post (titulo_post, id_user, conteudo, visibilidade, legenda) values
+    (:titulo_post, :id_user, :conteudo, :visibilidade, :legenda);';
+
+    try{
+        $stmt = $conn->prepare($insert_post);
+        $stmt->execute([
+            ":titulo_post" => $_POST['titulo_post'],
+            ":id_user" => $id_user,
+            ":conteudo" => $_POST['conteudo_post'],
+            ":visibilidade" => $_POST['visibilidade'],
+            ":legenda" => $_POST['legenda']
+
+        ]);
+    } catch(PDOException $e){
+        echo 'Erro: '.$e->getMessage();
+    }
+    }
+}
+
+
+// ======================================================
+// POSTS
+// ======================================================
+
+echo '<section>';
+
+foreach ($posts as $post) {
+
+    echo '<section>';
+
+    
+    // ==================================================
+    // INFORMAÇÕES DO USUÁRIO
+    // ==================================================
+
+    echo '<img src="' . $post['foto_perfil_url'] . '" 
+          width="70px" 
+          height="auto" 
+          style="border-radius:50%">';
+
+    echo '<br>';
+
+    echo htmlspecialchars($post['nome_completo'])
+        . ' - @'
+        . htmlspecialchars($post['username']);
+
+    echo '<br>';
+
+
+    // ==================================================
+    // TEMPO DO POST
+    // ==================================================
+
+    $data_post = new DateTime($post['criado_em']);
+
+    $agora = new DateTime();
+
+    $tempo_criacao = $agora->diff($data_post);
+
+    if ($tempo_criacao->y > 0) {
+
+        echo 'Postado há mais de um ano.';
+
+    } elseif ($tempo_criacao->m > 0) {
+
+        echo 'Postado há ' . $tempo_criacao->m . ' mês(es).';
+
+    } elseif ($tempo_criacao->d > 0) {
+
+        echo 'Postado há ' . $tempo_criacao->d . ' dia(s).';
+
+    } elseif ($tempo_criacao->h > 0) {
+
+        echo 'Postado há ' . $tempo_criacao->h . ' hora(s).';
+
+    } elseif ($tempo_criacao->i > 1) {
+
+        echo 'Postado há ' . $tempo_criacao->i . ' minutos.';
+
+    } elseif ($tempo_criacao->i > 0) {
+
+        echo 'Postado há 1 minuto.';
+
+    } else {
+
+        echo 'Postado agora.';
+
+    }
+
+    echo '<br>';
+
+
+    // ==================================================
+    // IMAGEM DO POST
+    // ==================================================
+
+    if (!empty($post['url_imagem'])) {
+
+        echo '<img src="' . $post['url_imagem'] . '" 
+              width="100px" 
+              height="auto">';
+
+        echo '<br>';
+    }
+
+
+    // ==================================================
+    // CONTEÚDO
+    // ==================================================
+
+    echo htmlspecialchars($post['conteudo']);
+
+    echo '<br>';
+
+    echo htmlspecialchars($post['legenda']);
+
+    echo '<br><br>';
+
+
+    // ==================================================
+    // BOTÃO CURTIR
+    // ==================================================
+
+    echo '<form 
+            name="curtir" 
+            method="POST" 
+            action="#">
+
+        <input 
+            type="hidden" 
+            name="id_postcurt" 
+            value="' . $post['id_post'] . '">
+
+        <input 
+            type="submit" 
+            name="curtida" 
+            value="Curtir">
+
+    </form>';
+
+
+    // ==================================================
+    // BOTÃO COMENTÁRIOS
+    // ==================================================
+
+    echo '<form 
+            name="comentarios" 
+            method="POST" 
+            action="#">
+
+        <input 
+            type="hidden" 
+            name="id_post_comentarios" 
+            value="' . $post['id_post'] . '">
+
+        <input 
+            type="submit" 
+            name="mostrar_comentarios" 
+            value="Comentários">
+
+    </form>';
+
+
+    // ==================================================
+    // VERIFICAR SE O USUÁRIO CLICOU EM COMENTÁRIOS
+    // ==================================================
+
+    if (
+        isset($_POST['mostrar_comentarios']) &&
+        isset($_POST['id_post_comentarios']) &&
+        $_POST['id_post_comentarios'] == $post['id_post']
+    ) {
+
+        // ----------------------------------------------
+        // TRANSFORMAR JSON EM ARRAY PHP
+        // ----------------------------------------------
+
+        $comentarios = [];
+
+        if (!empty($post['comentarios'])) {
+
+            $comentarios = json_decode(
+                $post['comentarios'],
+                true
+            );
+
+        }
+
+
+        // ----------------------------------------------
+        // EXIBIR COMENTÁRIOS
+        // ----------------------------------------------
+
+        echo '<div>';
+
+        if (!empty($comentarios)) {
+
+            foreach ($comentarios as $comentario) {
+
+                echo '<div>';
+
+                // Foto do usuário
+                if (!empty($comentario['foto_perfil'])) {
+
+                    echo '<img 
+                            src="' . $comentario['foto_perfil'] . '" 
+                            width="40px" 
+                            height="auto" 
+                            style="border-radius:50%;">';
+
+                    echo '<br>';
+                }
+
+
+                // Nome
+                echo '<strong>';
+
+                echo htmlspecialchars(
+                    $comentario['nome_usuario']
+                );
+
+                echo '</strong>';
+
+                echo ' @';
+
+                echo htmlspecialchars(
+                    $comentario['username']
+                );
+
+                echo '<br>';
+
+
+                // Comentário
+                echo htmlspecialchars(
+                    $comentario['comentario']
+                );
+
+                echo '<br>';
+
+
+                // Data
+                if (!empty($comentario['criado_em'])) {
+
+                    $data_comentario = new DateTime(
+                        $comentario['criado_em']
+                    );
+
+                    echo $data_comentario->format(
+                        'd/m/Y H:i'
+                    );
+
+                }
+
+                echo '<br><br>';
+
+                echo '</div>';
+            }
+
+        } else {
+
+            echo 'Nenhum comentário ainda.<br>';
+
+        }
+
+        echo '</div>';
+
+
+        // ----------------------------------------------
+        // FORMULÁRIO PARA COMENTAR
+        // ----------------------------------------------
+
+        echo '<form 
+                name="comentar" 
+                method="POST" 
+                action="#">
+
+            <input 
+                type="hidden" 
+                name="id_postcoment" 
+                value="' . $post['id_post'] . '">
+
+            <input 
+                type="text" 
+                name="comentario" 
+                placeholder="Escreva um comentário..."
+                required>
+
+            <input 
+                type="submit" 
+                name="enviar" 
+                value="Enviar">
+
+        </form>';
+
+    }
+
+
+    echo '</section>';
+
+    echo '<br>';
+
+}
+
+echo '</section>';
+
+// -----------------------------------------------------------------------------------------------
+//                                 RECOMENDAÇÕES DE SEGUIDORES
+
+$select_recomendacoes_seguidores = "SELECT 
+    u.id_user,
+    u.nome_completo,
+    u.username,
+    c.foto_perfil_url,
+    COUNT(*) AS seguidores_em_comum,
+    STRING_AGG(u_comum.username, ', ') AS nomes_em_comum
+FROM follow f1
+INNER JOIN follow f2 ON f1.id_following = f2.id_follower
+INNER JOIN usuario u ON u.id_user = f2.id_following
+INNER JOIN usuario u_comum ON u_comum.id_user = f1.id_following
+INNER JOIN conta c ON c.id_user = u.id_user
+WHERE f1.id_follower = :id_user
+AND f2.id_following <> :id_user
+AND NOT EXISTS (
+    SELECT 1 FROM follow f3
+    WHERE f3.id_follower = :id_user AND f3.id_following = f2.id_following)
+GROUP BY
+    u.id_user, u.nome_completo, u.username, c.foto_perfil_url
+ORDER BY seguidores_em_comum DESC
+LIMIT 5;";
+
+try{
+    $stmt = $conn->prepare($select_recomendacoes_seguidores);
+    $stmt->execute([
+        ":id_user"=> $id_user
+    ]);
+} catch(PDOException $e){
+    echo 'Erro: '.$e->getMessage();
+}
+$recomendacaoseguidores = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+    if(isset($_POST['seguir'])){
+        $insert_seguidor = 'insert into follow (id_follower, id_following) values (:id_user, :id_seguido);';
+        try{
+            $stmt = $conn->prepare($insert_seguidor);
+            $stmt->execute([
+                ":id_user" => $id_user,
+                ":id_seguido" => $recomendacaoseguidor['id_user']
+            ]);
+        } catch(PDOException $e){
+            echo 'Erro: '.$e->getMessage();
+        }
+    }
+
+foreach($recomendacaoseguidores as $recomendacaoseguidor){
+    echo '<img src="'.$recomendacaoseguidor['foto_perfil_url'].'" width="40px" height="auto" style="border-radius: 50%;">';
+    echo $recomendacaoseguidor['nome_completo'].' - '.$recomendacaoseguidor['username'].'<br>';
+    echo 'Seguido por:'.$recomendacaoseguidor['nomes_em_comum'].'<br>';
+    echo '<form name="seguir" method="POST" action="#">
+    <input type="hidden" name="id_seguir" value="'.$recomendacaoseguidor['id_user'].'">
+    <input type="submit" name="seguir" value="seguir">
+    </form>';
+} 
+
+
+
+// --------------------------------------------------------------------------------------------------
+//                                      RECOMENDAÇÃO DE LIVROS
+
+$select_livros_recomendados = "
+select l.capa_url, l.titulo_livro, l.id_livro, l.nome_autor, l.class_ind, count(*) as preferencia_em_comum
+from livro l
+inner join preferencia_livro pl on pl.id_livro = l.id_livro
+inner join preferencia_user pu on pu.id_preferencia = pl.id_preferencia
+inner join usuario u on u.id_user = pu.id_user
+where l.visibilidade = 'publico' and pu.id_user = :id_user
+group by l.capa_url, l.titulo_livro, l.id_livro, l.nome_autor, l.class_ind
+order by preferencia_em_comum desc
+limit 5";
+
+try{
+    $stmt = $conn->prepare($select_livros_recomendados);
+    $stmt->execute([
+        ":id_user" => $id_user
+    ]);
+} catch(PDOException $e){
+    echo 'Erro: '.$e->getMessage();
+}
+
+$livros_recomendados = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+foreach($livros_recomendados as $livro_recomendado){
+    echo '<img src="'.$livro_recomendado['capa_url'].'" width="40px" height="auto" style="border-radius: 50%;">';
+    echo $livro_recomendado['titulo_livro'].' - '.$livro_recomendado['class_ind'].'<br>';
+    echo $livro_recomendado['nome_autor'].'<br>';
+    echo '<a href="ver_livro.php?id_livro='.htmlspecialchars($livro_recomendado['id_livro']).'"> Ver Livro </a>';
+}
+
+
+
+
+
+?>

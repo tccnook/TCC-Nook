@@ -14,34 +14,40 @@ function nookEnvironment(): array
     }
 
     $config = [];
-    $file = nookRoot() . '/.env';
+    $files = [nookRoot() . '/.env', nookRoot() . '/.env.local'];
     $autoload = nookRoot() . '/vendor/autoload.php';
     if (is_file($autoload)) {
         require_once $autoload;
     }
 
-    if (!is_file($file)) {
-        return $config;
-    }
-
-    if (!is_readable($file)) {
-        throw new RuntimeException('O arquivo .env não permite leitura pelo PHP.');
-    }
-
-    try {
-        if (class_exists(\Dotenv\Dotenv::class)) {
-            return $config = \Dotenv\Dotenv::parse(file_get_contents($file));
+    foreach ($files as $file) {
+        if (!is_file($file)) {
+            continue;
         }
 
-        $parsed = @parse_ini_file($file, false, INI_SCANNER_RAW);
-        if ($parsed === false) {
-            throw new RuntimeException();
+        if (!is_readable($file)) {
+            throw new RuntimeException('Um arquivo de configuração do ambiente não permite leitura pelo PHP.');
         }
 
-        return $config = $parsed;
-    } catch (Throwable $error) {
-        throw new RuntimeException('Não foi possível ler .env. Confira a sintaxe e coloque valores com espaços ou símbolos entre aspas.');
+        try {
+            $contents = file_get_contents($file);
+            if (class_exists(\Dotenv\Dotenv::class)) {
+                $parsed = \Dotenv\Dotenv::parse($contents);
+            } else {
+                $iniContents = preg_replace('/^\s*#.*$/m', '', $contents);
+                $parsed = @parse_ini_string($iniContents, false, INI_SCANNER_RAW);
+                if ($parsed === false) {
+                    throw new RuntimeException();
+                }
+            }
+
+            $config = array_replace($config, $parsed);
+        } catch (Throwable $error) {
+            throw new RuntimeException('Não foi possível ler um arquivo de configuração do ambiente. Confira a sintaxe e coloque valores com espaços ou símbolos entre aspas.');
+        }
     }
+
+    return $config;
 }
 
 function nookEnv(string $name, string $default = ''): string

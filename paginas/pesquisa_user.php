@@ -1,167 +1,106 @@
-<?php
-session_start();
-if (!isset($_SESSION['id_user'])) {
-    header('Location: login.php');
-    exit();
-}
+<?php //melhorar pesquisa com JS e fazer n aparecer user bloqueados
+    session_start();
+    require_once('conexao.php');
 
-$id_user = (int) $_SESSION['id_user'];
-$busca = is_string($_GET['pesquisa'] ?? null) ? mb_substr(trim($_GET['pesquisa']), 0, 100) : '';
-require_once __DIR__ . '/conexao.php';
-$conn = (new Database())->conectar();
+    $db = new Database();
+    $conn = $db->conectar();
 
-$sql = "SELECT u.id_user, u.nome_completo, u.username, c.foto_perfil_url, EXISTS(SELECT 1 FROM follow WHERE id_follower = :seguidor AND id_following = u.id_user AND status_follow = 'seguindo') AS seguindo
-    FROM usuario u LEFT JOIN conta c ON c.id_user = u.id_user
-    WHERE u.id_user <> :id_user
-    AND NOT EXISTS (
-        SELECT 1 FROM bloqueio b WHERE b.status_bloqueio = 'bloqueado'
-        AND ((b.id_bloqueador = :bloqueador AND b.id_bloqueado = u.id_user)
-        OR (b.id_bloqueador = u.id_user AND b.id_bloqueado = :bloqueado))
-    )";
-$parametros = [':seguidor' => $id_user, ':id_user' => $id_user, ':bloqueador' => $id_user, ':bloqueado' => $id_user];
-if ($busca !== '') {
-    $sql .= ' AND (u.nome_completo ILIKE :nome OR u.username ILIKE :username)';
-    $parametros[':nome'] = '%' . $busca . '%';
-    $parametros[':username'] = '%' . $busca . '%';
-}
-$sql .= ' ORDER BY u.criacao_conta DESC LIMIT 60';
-$stmt = $conn->prepare($sql);
-$stmt->execute($parametros);
-$usuarios = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-$esc = static fn ($valor) => htmlspecialchars((string) ($valor ?? ''), ENT_QUOTES, 'UTF-8');
-$imagemUrl = static function ($caminho) use ($esc) {
-    $caminho = trim((string) ($caminho ?? ''));
-    if ($caminho === '') {
-        return '';
+    if(!isset($_SESSION['id_user'])){
+        header('location:login.php');
+        exit();
     }
 
-    if (preg_match('~^(https?:)?//|^/~i', $caminho)) {
-        return $esc($caminho);
-    }
-
-    return $esc('../' . ltrim($caminho, './'));
-};
+    $id_user = $_SESSION['id_user'];
 ?>
+
 <!DOCTYPE html>
 <html lang="pt-br">
-
 <head>
-    <link
-        rel="icon"
-        href="../img/icons/ico-nook/ico-nook.ico"
-        type="image/x-icon"
-    >
     <meta charset="UTF-8">
-    <meta
-        name="viewport"
-        content="width=device-width, initial-scale=1.0"
-    >
-    <link
-        rel="stylesheet"
-        href="../front-end/css/main.css"
-    >
-    <link
-        rel="stylesheet"
-        href="../front-end/css/pages/community-search.css"
-    >
-    <link
-        rel="preconnect"
-        href="https://fonts.googleapis.com"
-    >
-    <link
-        rel="preconnect"
-        href="https://fonts.gstatic.com"
-        crossorigin
-    >
-    <link
-        href="https://fonts.googleapis.com/css2?family=Lora:wght@400;500;600;700&family=Manrope:wght@400;500;600;700&display=swap"
-        rel="stylesheet"
-    >
-    <title>Leitores | Nook</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>pesquisa de usuario</title>
 </head>
-
 <body>
-    <?php require_once __DIR__ . '/header.php'; ?>
-    <main class="community-page">
-        <a
-            class="community-back"
-            href="paginaprincipal.php"
-        ><i data-lucide="arrow-left"></i> Início</a>
-        <header class="community-heading">
-            <p>ENCONTRE SUA COMUNIDADE</p>
-            <h1>Leitores para conhecer</h1><span><?= count($usuarios) ?> resultados</span>
-        </header>
-        <form
-            class="community-search"
-            method="GET"
-            action="pesquisa_user.php"
-        >
-            <i data-lucide="search"></i>
-            <input
-                type="search"
-                name="pesquisa"
-                value="<?= $esc($busca) ?>"
-                placeholder="Buscar por nome ou username"
-                aria-label="Buscar por nome ou username"
-            >
-            <button type="submit">Buscar</button>
+    <section>
+        <form action="#" method="GET">
+            <input type="text" name="pesquisa" placeholder="Pesquisar usuários">
+            <input type="submit" value="Buscar" name="buscar">
         </form>
-        <?php if ($usuarios): ?>
-        <div class="community-results">
-            <?php foreach ($usuarios as $usuario): ?>
-            <article class="community-person">
-                <a href="perfil_user_terceiro.php?id_user=<?= (int) $usuario['id_user'] ?>">
-                    <?php if (!empty($usuario['foto_perfil_url'])): ?><img
-                        src="<?= $imagemUrl($usuario['foto_perfil_url']) ?>"
-                        alt=""
-                        loading="lazy"
-                    ><?php else: ?><span class="community-person-fallback"><?= $esc(mb_strtoupper(mb_substr($usuario['username'], 0, 1))) ?></span><?php endif; ?>
-                    <span><strong><?= $esc($usuario['nome_completo']) ?></strong><small>@<?= $esc($usuario['username']) ?></small></span>
-                </a>
-                <button
-                    type="button"
-                    class="community-follow"
-                    data-seguir-usuario="<?= (int) $usuario['id_user'] ?>"
-                    data-seguindo="<?= $usuario['seguindo'] ? 'true' : 'false' ?>"
-                    aria-pressed="<?= $usuario['seguindo'] ? 'true' : 'false' ?>"
-                ><?= $usuario['seguindo'] ? 'Deixar de seguir' : 'Seguir' ?></button>
-            </article>
-            <?php endforeach; ?>
-        </div>
-        <?php else: ?><p class="community-empty"><?= $busca !== '' ? 'Nenhum leitor corresponde à sua busca.' : 'Não há outros leitores para exibir.' ?></p><?php endif; ?>
-    </main>
-    <?php require_once __DIR__ . '/footer.php'; ?>
-    <script>
-        document.querySelectorAll('[data-seguir-usuario]').forEach((button) => button.addEventListener('click', async () => {
-            button.disabled = true;
-            const dados = new FormData();
-            dados.append('id_user', button.dataset.seguirUsuario);
-            dados.append('acao', button.dataset.seguindo === 'true' ? 'deixar-seguir' : 'seguir');
-            dados.append('csrf', <?= json_encode($_SESSION['post_csrf']) ?>);
-            try {
-                const resposta = await fetch('seguir_usuario.php', {
-                    method: 'POST',
-                    body: dados,
-                    headers: {
-                        Accept: 'application/json'
-                    }
-                });
-                const resultado = await resposta.json();
-                if (!resposta.ok) throw new Error(resultado.mensagem || 'Não foi possível seguir este leitor.');
-                button.dataset.seguindo = String(resultado.seguindo);
-                button.setAttribute('aria-pressed', String(resultado.seguindo));
-                button.textContent = resultado.seguindo ? 'Deixar de seguir' : 'Seguir';
-                if (window.lucide) lucide.createIcons();
-            } catch (erro) {
-                button.title = erro.message;
-                window.alert(erro.message);
-            } finally {
-                button.disabled = false;
-            }
-        }));
-        if (window.lucide) lucide.createIcons();
-    </script>
-</body>
+    </section>
+    <?php
+        if(isset($_GET['buscar'])){
+            $pesquisa = $_GET['pesquisa'] ?? '';
+            
+            if(trim($pesquisa) !== ''){
+                
+                $pesquisa = '%'.$pesquisa.'%';
+                //busca usuarios q n tem relaçao com a tabela de bloqueios e n exibe o propio user
+                $busca_user =  "SELECT 
+                        u.id_user,
+                        u.nome_completo,
+                        u.username,
+                        c.foto_perfil_url
+                    FROM usuario u
+                    LEFT JOIN conta c 
+                        ON c.id_user = u.id_user
+                    WHERE (
+                        u.nome_completo ILIKE :pesquisa
+                        OR u.username ILIKE :pesquisa
+                    )
+                    AND u.id_user <> :id_user
+                    AND NOT EXISTS (
+                        SELECT 1
+                        FROM bloqueio b
+                        WHERE b.status_bloqueio = 'bloqueado'
+                        AND (
+                            (b.id_bloqueador = :id_user 
+                            AND b.id_bloqueado = u.id_user)
+                            OR
+                            (b.id_bloqueador = u.id_user 
+                            AND b.id_bloqueado = :id_user)
+                        )
+                    )
+                    ORDER BY u.nome_completo;";
+                
+                $stmt = $conn->prepare($busca_user);
+                $stmt->execute([
+                    ":pesquisa" => $pesquisa,
+                    "id_user" => $id_user
+                ]);
+                $usuarios = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
+                foreach ($usuarios as $usuario){
+                    $id_user_buscado = $usuario['id_user'];
+
+                    $select_foto_users = "select foto_perfil_url from conta where id_user = :id_user_buscado;";
+                    $stmt = $conn->prepare($select_foto_users);
+                    $stmt->execute([":id_user_buscado" => $id_user_buscado]);
+                    $foto = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+                    //arrumar para quando n tiver foto de perfil
+            ?>
+                    <a href="perfil_user_terceiro.php?id_user=<?= $usuario['id_user']?>" style="text-decoration:none">
+                        <section>
+                            <?php
+                                if(empty($foto['foto_perfil_url'])){
+                                    echo "<img src='../img/foto_perfil/foto_perfil_default.png' alt='Foto de Perfil'>";
+                                } else {
+                                    echo "<img src='../".htmlspecialchars($foto['foto_perfil_url'])."' alt='Foto de Perfil'>";
+                                }
+                            ?>
+                            <h3><?= htmlspecialchars($usuario['nome_completo'])?></h3>
+                            <p>@<?= htmlspecialchars($usuario['username'])?></p>
+                        </section>
+                    </a>
+        
+            <?php
+                    }
+                }
+            }
+        ?>
+
+    <section>
+
+    </section>
+</body>
 </html>

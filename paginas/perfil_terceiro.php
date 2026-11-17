@@ -1,3 +1,3 @@
 <?php
-
-require __DIR__ . '/perfil_user_terceiro.php';
+    require_once('header_perfil_user_terceiro.php');
+?>

@@ -302,6 +302,10 @@ function verificarEspacoAutor(PDO $c, int $autor): void
 
     $bytes = 0;
     foreach (array_unique($keys) as $key) {
+        if (!is_string($key) || !preg_match('/^[a-f0-9]{40}\.(pdf|png|jpg|webp)$/D', $key)) {
+            continue;
+        }
+
         $path = caminhoPublicacao($key);
         if (is_file($path)) {
             $bytes += filesize($path);
